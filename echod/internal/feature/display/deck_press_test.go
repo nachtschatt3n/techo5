@@ -131,7 +131,8 @@ func TestADeckReasonHasNothingOfTheError(t *testing.T) {
 }
 
 // The foot's line is the failure while there is one, then what is away, OBS before a computer; a deck
-// with a computer away is not told that OBS was never set up.
+// with a computer away is not told that OBS was never set up. These are pages with an OBS button on
+// them; one without is in TestTheFootSaysNothingOfOBSWithoutOBSButtons.
 func TestTheDeckFootLine(t *testing.T) {
 	for _, c := range []struct {
 		what    string
@@ -139,13 +140,13 @@ func TestTheDeckFootLine(t *testing.T) {
 		want    string
 		failure bool
 	}{
-		{"all well", deckView{obsSet: true, connected: true}, "", false},
-		{"a press failed", deckView{obsSet: true, problem: "OBS refused the password", away: "Studio", reason: "OBS refused that"}, "OBS refused that", true},
-		{"OBS away, with why", deckView{obsSet: true, problem: "OBS refused the password", away: "Studio"}, "OBS refused the password", false},
-		{"OBS on its way", deckView{obsSet: true}, tr("connecting_to_obs"), false},
-		{"a computer away", deckView{obsSet: true, connected: true, away: "Studio"}, "Studio is not answering", false},
-		{"a computer away and no OBS", deckView{away: "Studio"}, "Studio is not answering", false},
-		{"no OBS", deckView{}, "OBS isn't set up: setup page → Screen → Deck", false},
+		{"all well", deckView{obs: true, obsSet: true, connected: true}, "", false},
+		{"a press failed", deckView{obs: true, obsSet: true, problem: "OBS refused the password", away: "Studio", reason: "OBS refused that"}, "OBS refused that", true},
+		{"OBS away, with why", deckView{obs: true, obsSet: true, problem: "OBS refused the password", away: "Studio"}, "OBS refused the password", false},
+		{"OBS on its way", deckView{obs: true, obsSet: true}, tr("connecting_to_obs"), false},
+		{"a computer away", deckView{obs: true, obsSet: true, connected: true, away: "Studio"}, "Studio is not answering", false},
+		{"a computer away and no OBS", deckView{obs: true, away: "Studio"}, "Studio is not answering", false},
+		{"no OBS", deckView{obs: true}, "OBS isn't set up: setup page → Screen → Deck", false},
 	} {
 		if got, failure := c.v.footLine(); got != c.want || failure != c.failure {
 			t.Errorf("%s: %q (a failure %v), want %q (%v)", c.what, got, failure, c.want, c.failure)
