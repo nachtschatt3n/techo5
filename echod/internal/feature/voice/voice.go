@@ -459,10 +459,13 @@ var (
 
 // Interrupt is the stop word.
 //
-// It only acts while the device is making a sound. "Stop" is an ordinary word: somebody halfway through
-// "stop the timer" is talking to Home Assistant, not to the device, and cutting their turn off there
-// would be worse than not listening for it at all. Nothing is playing then, so there is nothing the word
-// could sensibly mean.
+// It only acts while the device is making a sound, or while it waits on an answer. "Stop" is an
+// ordinary word: somebody halfway through "stop the timer" is talking to Home Assistant, not to the
+// device, and cutting their turn off there would be worse than not listening for it at all. Nothing is
+// playing then, so there is nothing the word could sensibly mean. Once the turn is waiting on its
+// answer, though, nobody is in the middle of a request any more: the microphone has stopped listening,
+// and an assistant can take many seconds to answer. "Stop" then is somebody calling the answer off, as
+// it would be a moment later over the reply itself.
 func (v *Voice) Interrupt() {
 	// "<wake word>, stop" over a video: the turn's listening screen covered it and paused it under it,
 	// so nothing sounds, and the music below cannot find it either; the video is what was meant. While
@@ -473,6 +476,12 @@ func (v *Voice) Interrupt() {
 		slog.Info("stop word after the wake word: stopping the video")
 		v.turn.Cancel()
 		stopVideo()
+		return
+	}
+	// No video under it: the turn waiting on its answer is what the word calls off.
+	if v.turn.Phase() == phaseThinking && !ring.IsSounding() {
+		slog.Info("stop word while waiting on an answer: canceling the turn")
+		v.turn.Cancel()
 		return
 	}
 	// "<wake word>, stop" over music: the stop word hears "stop" while the turn the wake word opened is

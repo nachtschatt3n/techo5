@@ -1699,7 +1699,9 @@ device's log then says `pipeline asked for an answer; not listening for it` with
 
 **The stop word.** Say "stop", with no wake word, while the device is making a sound: it stops a
 ringing alarm or timer, an answer, an announcement or the music, and it ends a video playing on the
-screen (music is paused, a video stopped). After an alarm it also lets go of a wake light held on. With nothing playing it does nothing, so "stop the timer" said to Home Assistant
+screen (music is paused, a video stopped). After an alarm it also lets go of a wake light held on.
+While the device waits on an answer, it calls the request off, so the answer isn't spoken. Otherwise,
+with nothing playing, it does nothing, so "stop the timer" said to Home Assistant
 isn't cut off. **Stop word threshold** (on the device's microphone in Home Assistant, 0.70 to start
 with) sets how sure it has to be. At the top of its range, the stop word is off. A "stop" that came
 close and wasn't heard leaves a `wake near miss` line with `slot=101` in the device's log, and shows in
