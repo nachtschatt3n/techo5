@@ -354,7 +354,7 @@ func deckLauncherPage() config.Deck {
 		}
 	}
 	_, music := libClient()
-	add(config.DeckScreenLibrary, tr("music"), music && deckLibraryDrawn())
+	add(config.DeckScreenLibrary, tr("music"), music)
 	add(config.DeckScreenDashboard, tr("dashboard"), dashboard.Get().Mode() != config.DashboardOff)
 	add(config.DeckScreenCalendar, tr("ui_calendar"), calendarsShown())
 	add(config.DeckScreenWeather, tr("weather"), config.Get().Home.WeatherEntity() != "")
@@ -372,17 +372,10 @@ var (
 // deckScreenDo opens the page a button for one of the screen's pages is for; a variable for the tests.
 var deckScreenDo = func(d *Display, b config.DeckButton) error { return d.screenPress(b) }
 
-// deckLibraryDrawn is whether the music library has a drawn dashboard (Drawn or Tessera) to open over,
-// which it needs.
-func deckLibraryDrawn() bool {
-	m := dashboard.Get().Mode()
-	return m == config.DashboardDrawn || m == config.DashboardTessera
-}
-
 // screenPress opens the page b is for, from the deck on the screen or from Home Assistant's
 // deck_press. The calendar, the forecast and the drawer come up over the deck, which is there again
-// when they go, as it is under a camera. The dashboard, the music library over it and Now Playing are
-// pages the deck gives way to.
+// when they go, as it is under a camera; the music library up on its own goes back to it with Done.
+// The dashboard and Now Playing are pages the deck gives way to.
 func (d *Display) screenPress(b config.DeckButton) error {
 	d.mu.Lock()
 	fromDeck := d.deckUp && d.deckOnScreen
@@ -390,12 +383,13 @@ func (d *Display) screenPress(b config.DeckButton) error {
 	slog.Info("deck: screen page", "action", b.Action, "from deck", fromDeck)
 	switch b.Action {
 	case config.DeckScreenLibrary:
-		// A fresh library on this device's player, over the drawn dashboard, as a card navigating to
-		// #techo5-library opens it.
-		if !deckLibraryDrawn() || !d.openDashboard() {
-			return errScreenOff
+		// A fresh library on this device's player, up on its own whatever the dashboard is
+		// (library_alone.go), and Done goes back to the deck it was opened from.
+		back := libBackNone
+		if fromDeck {
+			back = libBackDeck
 		}
-		d.openLibrary("", "", true)
+		d.openLibraryAlone(back)
 		return nil
 	case config.DeckScreenDashboard:
 		if dashboard.Get().Mode() == config.DashboardOff {

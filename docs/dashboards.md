@@ -163,8 +163,8 @@ With a drawn dashboard (*Drawn* or *Tessera*) the library opens over the dashboa
 *Streamed* dashboard, or none, it opens as a page of its own, over whatever was on the screen. A
 streamed dashboard is a picture of a browser on the dashcast server, so the device can't put anything
 of its own into that page; the library doesn't need the page under it, though. It looks and works
-the same either way, and its **Done** goes back to where you opened it from: the clock or Now
-Playing.
+the same either way, and its **Done** goes back to where you opened it from: the clock, Now Playing,
+or the deck.
 
 **Opening it**
 

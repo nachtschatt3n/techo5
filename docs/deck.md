@@ -76,20 +76,20 @@ The **This screen** actions open the Show's own pages. They need neither OBS nor
 | **Cameras** | The drawer's Cameras tab | — |
 | **Now playing** | Now Playing, while something plays | — |
 
-- The music library opens over the dashboard, so it needs a drawn one (*Drawn* or *Tessera*), as
-  the library does everywhere ([Music library](dashboards.md#music-library)).
+- The music library opens over the deck, whatever the dashboard is (a streamed one included), and
+  its **Done** brings the deck back.
 - The calendar, the weather and the drawer come up over the deck, and the deck is there again when
-  they go. The dashboard, the music library and Now Playing take the screen, and the deck goes.
+  they go. The dashboard and Now Playing take the screen, and the deck goes.
 - A **Dashboard** button with a path makes that the dashboard shown from then on, as the
   `dashboard_path` action does: swiping in from the left edge later opens it there too. If you have
   more than one dashboard button, give each its path (`lovelace/0` for the default dashboard's first
   view). A streamed dashboard connects again when the path changes, which takes a moment.
 - A button whose page isn't there says so at the foot of the deck: no weather entity, no calendar
-  shown on this device, the dashboard off (or not drawn, for the music library), or nothing playing.
+  shown on this device, the dashboard off, or nothing playing.
 
 **Without any buttons:** set **Tap on the clock** to **Deck**, and a tap on the clock opens a
 built-in page of the screen's own pages: one large button each for the music library (with Music
-Assistant set up and a drawn dashboard), the dashboard (when one is set up), the calendar (when
+Assistant set up), the dashboard (when one is set up), the calendar (when
 this device shows one), the weather, the radio and the cameras. The swipe up from the bottom edge
 stays the volume until the deck has buttons of its own. Once it has, they replace the built-in
 page.

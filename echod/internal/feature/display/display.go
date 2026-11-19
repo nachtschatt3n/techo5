@@ -254,9 +254,10 @@ type Display struct {
 	link          linkWatch             // whether Home Assistant and the Wi-Fi are there, for the header
 
 	// libAlone is the music library up as a page of its own rather than over the dashboard
-	// (library_alone.go), and libTouched when a finger was last on it. libOnScreen is whether the last
-	// frame drew it so, and the fingers are its.
+	// (library_alone.go), libBack where Done goes back to, and libTouched when a finger was last on it.
+	// libOnScreen is whether the last frame drew it so, and the fingers are its.
 	libAlone    bool
+	libBack     int
 	libTouched  time.Time
 	libOnScreen bool
 
