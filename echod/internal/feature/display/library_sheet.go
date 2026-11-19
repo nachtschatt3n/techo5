@@ -1445,7 +1445,7 @@ func (d *Display) reopenLibrary(queue bool) {
 		}
 	} else {
 		d.mu.Lock()
-		d.libAlone, d.libTouched = true, time.Now()
+		d.libAlone, d.libBack, d.libTouched = true, libBackNone, time.Now()
 		d.dash, d.deckUp = false, false
 		d.mu.Unlock()
 	}
