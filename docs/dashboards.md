@@ -176,6 +176,8 @@ Playing.
 - Or, on a drawn dashboard, give any card a tap action that navigates to `#techo5-library`. With an
   `entity` (a media player), the library plays on Music Assistant's player for it, found the way the
   media sheet finds it. Without one, it plays on this device.
+- Or from a [TECHO5 Deck](deck.md) button whose action is **Music library**, for example on the
+  deck that **Tap on the clock** set to *Deck* opens. It plays on this device.
 
 ```yaml
 type: button

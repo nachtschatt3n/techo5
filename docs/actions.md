@@ -2303,7 +2303,8 @@ actions:
 In YAML, refer to this action as `esphome.<node>_deck_press`.
 
 Does what a TECHO5 Deck button does, as if it were pressed on the screen: an automation can switch
-an OBS scene or start the stream with it. Show only. See [TECHO5 Deck](deck.md).
+an OBS scene or start the stream with it, or open one of the screen's own pages (the music library,
+the dashboard at a button's path). Show only. See [TECHO5 Deck](deck.md).
 
 ### page (Required)
 

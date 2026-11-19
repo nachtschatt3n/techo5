@@ -971,11 +971,12 @@ other Shows don't have the switches.
   neither theme select changes when the mode does. On the screen, Settings > Display > Theme sets the
   theme it is wearing. The night clock keeps its own look.
 - **Tap on the clock** (Show): *Assist*, as it always was, *Dashboard* to open the dashboard, *Deck*
-  to open TECHO5 Deck (until a deck has buttons, a tap still starts Assist), or *Nothing*, for a panel
-  you only talk to. A voice request under way still
-  takes the tap. Also on the setup page's Screen tab. See [Dashboards](dashboards.md) for the
-  rest of a panel setup.
-- **TECHO5 Deck** (Show): pages of buttons for OBS Studio, opened with a swipe up from the bottom
+  to open TECHO5 Deck (until a deck has buttons of its own, a page of the screen's own pages: the
+  music library, the dashboard, the calendar, the weather, the radio and the cameras), or *Nothing*,
+  for a panel you only talk to. A voice request under way still takes the tap. Also on the setup
+  page's Screen tab. See [Dashboards](dashboards.md) for the rest of a panel setup.
+- **TECHO5 Deck** (Show): pages of buttons for OBS Studio, a computer, or the screen's own pages
+  (the music library, the dashboard at a path you choose), opened with a swipe up from the bottom
   edge of the clock. Set up on the setup page's Screen tab. See [TECHO5 Deck](deck.md).
 - **Video** (Show and Spot): videos full screen from Home Assistant's `play_video` action and, with **DLNA
   video** on, from DLNA apps. Off on a new device. On the setup page's Screen tab. See

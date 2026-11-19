@@ -126,3 +126,30 @@ func TestDeckSectionEscapes(t *testing.T) {
 		t.Error("the page's form is missing")
 	}
 }
+
+// The screen's own pages are offered on the page, and a Dashboard button keeps its path from the box
+// that holds a scene or an input for the others.
+func TestDeckPageFormScreenButtons(t *testing.T) {
+	config.Use(filepath.Join(t.TempDir(), "state.json"))
+	_ = config.Set().Deck().Grid(2, 1)
+	f := pageForm("0",
+		[6]string{"Energy", "screen_dashboard", "/dashboard-energy/today/", "", "green", ""},
+		[6]string{"", "screen_library", "", "", "", ""})
+	if p := saveDeckPage(deckPost(f)); p != "" {
+		t.Fatal(p)
+	}
+	d := config.Get().Deck
+	if b := d.Button(0, 0); b.Action != config.DeckScreenDashboard || b.Path != "dashboard-energy/today" || b.Scene != "" {
+		t.Errorf("dashboard button %+v", b)
+	}
+	if b := d.Button(0, 1); b.Action != config.DeckScreenLibrary {
+		t.Errorf("library button %+v", b)
+	}
+	w := httptest.NewRecorder()
+	deckSection(w, "tok")
+	body := w.Body.String()
+	if !strings.Contains(body, `<optgroup label="This screen">`) || !strings.Contains(body, `value="screen_library" selected`) ||
+		!strings.Contains(body, `value="dashboard-energy/today"`) {
+		t.Error("the screen's pages, or the path kept, are missing from the page")
+	}
+}

@@ -14,7 +14,7 @@ import (
 )
 
 func streamerDeck(connected bool) deckView {
-	v := deckView{cols: 4, rows: 3, pages: 2, connected: connected, obsSet: true}
+	v := deckView{cols: 4, rows: 3, pages: 2, connected: connected, obsSet: true, obs: true}
 	if !connected {
 		v.problem = "OBS refused the password"
 	}
