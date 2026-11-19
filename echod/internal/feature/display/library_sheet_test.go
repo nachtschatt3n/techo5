@@ -101,7 +101,10 @@ func libFind(t *testing.T, zones []mediaZone, kind, index int) mediaZone {
 // noLibrary keeps a test away from any Music Assistant and Home Assistant: no music library is set up,
 // no player is found, nothing is this device's, and a play does not leave the library.
 func noLibrary(t *testing.T) {
-	pc, pf, po, pl, pq, ps := libClient, libFindPlayer, libIsOwn, libLeaveAfter, libQueueOf, libOpenSheet
+	pc, pf, po, pl, pq, ps, pk := libClient, libFindPlayer, libIsOwn, libLeaveAfter, libQueueOf, libOpenSheet, libCall
+	// The library on its own (no drawn dashboard, as in a test) calls Home Assistant directly: here it
+	// goes to whatever sheetTap the test has put in, so a test sees its plays whatever the dashboard is.
+	libCall = func(a dashboard.Action) { sheetTap(a) }
 	libClient = func() (musicassistant.Client, bool) { return musicassistant.Client{}, false }
 	libFindPlayer = func(string) string { return "" }
 	libIsOwn = func(string) bool { return false }
@@ -109,7 +112,7 @@ func noLibrary(t *testing.T) {
 	libQueueOf = func(string) string { return "" }
 	libOpenSheet = func(*Display, string) bool { return false }
 	t.Cleanup(func() {
-		libClient, libFindPlayer, libIsOwn, libLeaveAfter, libQueueOf, libOpenSheet = pc, pf, po, pl, pq, ps
+		libClient, libFindPlayer, libIsOwn, libLeaveAfter, libQueueOf, libOpenSheet, libCall = pc, pf, po, pl, pq, ps, pk
 	})
 }
 
@@ -117,10 +120,11 @@ func noLibrary(t *testing.T) {
 func recordTaps(t *testing.T) func() []dashboard.Action {
 	var mu sync.Mutex
 	var asked []dashboard.Action
-	prev, prevAfter := sheetTap, libAfter
+	prev, prevCall, prevAfter := sheetTap, libCall, libAfter
 	sheetTap = func(a dashboard.Action) { mu.Lock(); asked = append(asked, a); mu.Unlock() }
+	libCall = func(a dashboard.Action) { sheetTap(a) } // the library on its own calls Home Assistant directly
 	libAfter = func(_ time.Duration, f func()) *time.Timer { f(); return nil }
-	t.Cleanup(func() { sheetTap, libAfter = prev, prevAfter })
+	t.Cleanup(func() { sheetTap, libCall, libAfter = prev, prevCall, prevAfter })
 	return func() []dashboard.Action {
 		mu.Lock()
 		defer mu.Unlock()
@@ -1389,5 +1393,48 @@ func TestATrackTapQueuesTheRestOfItsList(t *testing.T) {
 	defer mu.Unlock()
 	if len(plays) != 1 || plays[0]["media_id"] != tracks[0].URI {
 		t.Errorf("Play next with a list asked %v, want the track alone", plays)
+	}
+}
+
+// Over a drawn dashboard the library's plays go through the dashboard's session, as the media sheet's
+// do. A streamed dashboard, or none, has no drawn session to call through, so the library on its own
+// calls Home Assistant directly rather than dropping the play.
+func TestTheLibrarysPlaysReachHomeAssistantWithoutADrawnDashboard(t *testing.T) {
+	config.Use(filepath.Join(t.TempDir(), "state.json"))
+	var viaSheet, viaCall []dashboard.Action
+	prev, prevCall := sheetTap, libCall
+	sheetTap = func(a dashboard.Action) { viaSheet = append(viaSheet, a) }
+	libCall = func(a dashboard.Action) { viaCall = append(viaCall, a) }
+	t.Cleanup(func() { sheetTap, libCall = prev, prevCall })
+
+	play := dashboard.Action{Entity: "media_player.ma_test", Service: "music_assistant.play_media",
+		Data: map[string]any{"media_id": "library://track/1", "media_type": "track", "enqueue": "replace"}}
+	for _, mode := range []config.DashboardMode{config.DashboardDrawn, config.DashboardTessera, config.DashboardStreamed, config.DashboardOff} {
+		viaSheet, viaCall = nil, nil
+		_ = config.Set().Dashboard().Mode(mode)
+		libTap(play)
+		drawn := mode == config.DashboardDrawn || mode == config.DashboardTessera
+		if drawn && (len(viaSheet) != 1 || len(viaCall) != 0) || !drawn && (len(viaSheet) != 0 || len(viaCall) != 1) {
+			t.Errorf("%s: %d through the dashboard, %d to Home Assistant directly", mode, len(viaSheet), len(viaCall))
+		}
+	}
+}
+
+// The direct call names the player as entity_id, unless the data names one already, and keeps the rest
+// of the data as it is.
+func TestTheLibrarysDirectCall(t *testing.T) {
+	domain, service, data, ok := libCallOf(dashboard.Action{Entity: "media_player.ma_test", Service: "music_assistant.play_media",
+		Data: map[string]any{"media_id": "library://album/2", "enqueue": "next"}})
+	want := map[string]any{"entity_id": "media_player.ma_test", "media_id": "library://album/2", "enqueue": "next"}
+	if !ok || domain != "music_assistant" || service != "play_media" || fmt.Sprint(data) != fmt.Sprint(want) {
+		t.Errorf("%v %s.%s %v", ok, domain, service, data)
+	}
+	_, _, data, _ = libCallOf(dashboard.Action{Entity: "media_player.ma_test", Service: "media_player.media_seek",
+		Data: map[string]any{"entity_id": "media_player.other", "seek_position": 30.0}})
+	if data["entity_id"] != "media_player.other" {
+		t.Errorf("entity_id %v, want the data's own", data["entity_id"])
+	}
+	if _, _, _, ok := libCallOf(dashboard.Action{Service: "nodomain"}); ok {
+		t.Error("a service without a domain was taken as a call")
 	}
 }

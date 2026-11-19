@@ -19,12 +19,15 @@ import (
 	"github.com/HuskerMinion/techo5/echod/internal/config"
 	"github.com/HuskerMinion/techo5/echod/internal/feature/dashboard"
 	"github.com/HuskerMinion/techo5/echod/internal/feature/home"
+	"github.com/HuskerMinion/techo5/echod/internal/lib/hass"
 	"github.com/HuskerMinion/techo5/echod/internal/lib/musicassistant"
 )
 
 // The music library: a page over the drawn dashboard to browse Music Assistant's library and play from
 // it, opened from the media sheet's Library button or from a card whose tap navigates to
-// dashboard.LibraryPath. Pill tabs along the top hold the artists, albums, playlists, tracks and radio
+// dashboard.LibraryPath, or from Now Playing's Library button. Without a drawn dashboard to go over, it
+// comes up as a page of its own (library_alone.go). Pill tabs along the top hold the artists, albums,
+// playlists, tracks and radio
 // stations, and a search; each is a grid of covers that a finger scrolls up and down, and the next of
 // the library is asked for as the grid nears its end. An artist opens on its albums and top tracks, an
 // album or a playlist on its tracks, each a page of its own that Back leaves for the one before, where
@@ -347,7 +350,47 @@ var libFindPlayer = func(entity string) string {
 }
 
 // libTap is how the library's plays reach Home Assistant; the media sheet's, so that a test sees both.
-func libTap(a dashboard.Action) { sheetTap(a) }
+func libTap(a dashboard.Action) {
+	if libraryOverDashboard() {
+		sheetTap(a)
+		return
+	}
+	// A streamed dashboard (dashcast) has no drawn session for sheetTap to call through, so a play from
+	// the library on its own was dropped without a word. It goes to Home Assistant directly instead.
+	libCall(a)
+}
+
+// libCall calls a's service in Home Assistant with the device's own token; a variable for the tests.
+var libCall = func(a dashboard.Action) {
+	domain, service, data, ok := libCallOf(a)
+	if !ok {
+		return
+	}
+	go func() {
+		if err := hass.Get().Call(domain, service, data); err != nil {
+			slog.Warn("dashboard music library: Home Assistant refused the play", "service", a.Service, "err", err)
+			return
+		}
+		slog.Info("dashboard music library: played through Home Assistant", "service", a.Service)
+	}()
+}
+
+// libCallOf is a as a call to Home Assistant: its service's domain and name, and its data with the
+// entity as entity_id when the data doesn't name one. A service without a domain is no call.
+func libCallOf(a dashboard.Action) (domain, service string, data map[string]any, ok bool) {
+	domain, service, ok = strings.Cut(a.Service, ".")
+	if !ok {
+		return "", "", nil, false
+	}
+	data = make(map[string]any, len(a.Data)+1)
+	for k, v := range a.Data {
+		data[k] = v
+	}
+	if _, has := data["entity_id"]; !has && a.Entity != "" {
+		data["entity_id"] = a.Entity
+	}
+	return domain, service, data, true
+}
 
 // libAfter waits before the play after Home Assistant is asked to set the shuffle; a variable for the
 // tests.
@@ -933,9 +976,7 @@ func (d *Display) libraryTap(x, y int) bool {
 	p := l.current()
 	switch z.kind {
 	case libPartDone:
-		d.mu.Lock()
-		d.dashLibrary = nil
-		d.mu.Unlock()
+		d.libDone()
 	case libPartNowPlaying:
 		// The library and the dashboard under it go, and Now Playing is the idle screen again.
 		d.showMusicPage()
@@ -1350,7 +1391,8 @@ func (d *Display) libLeave(target, from string) {
 		d.mu.Unlock()
 		return
 	}
-	d.dashLibrary = nil
+	alone := d.libAlone
+	d.libGoneLocked()
 	if own {
 		// Kept as it was left, for the Now Playing page's Library button to come back to.
 		libLast.Store(l)
@@ -1365,8 +1407,11 @@ func (d *Display) libLeave(target, from string) {
 	case own:
 		// The dashboard goes, and the idle screen is Now Playing as the stream comes: held up for it
 		// (musicPending), so the clock does not show for the half second to a second the stream takes.
+		// A library up on its own had no dashboard under it to put away.
 		d.musicPendingStart(true)
-		d.closeDashboard()
+		if !alone {
+			d.closeDashboard()
+		}
 	case strings.HasPrefix(from, "media_player."):
 		libOpenSheet(d, from)
 	}
@@ -1378,25 +1423,31 @@ func (d *Display) libLeave(target, from string) {
 var libLast atomic.Pointer[librarySheet]
 
 // nowPlayingLibraryWord is the word on the Now Playing page's Library button: empty, for no button,
-// without Music Assistant set up or a dashboard the library can be drawn over.
+// without Music Assistant set up. Whatever the dashboard is, the library has somewhere to go: over a
+// drawn one, and up on its own otherwise (library_alone.go).
 func nowPlayingLibraryWord() string {
 	if _, set := libClient(); !set {
-		return ""
-	}
-	if m := dashboard.Get().Mode(); m != config.DashboardDrawn && m != config.DashboardTessera {
 		return ""
 	}
 	return libWord(libWordLibrary)
 }
 
-// reopenLibrary is the Now Playing page's Library button: the dashboard up with the library over it,
-// as the last play on this device left it, on the page and at the place it was; a fresh library on
-// this device's player when there is none to go back to. What moves on by itself (the favorites, what
-// was played lately, the queue) is read afresh if that is what it shows. With queue it opens on the
-// queue tab, what plays next, in place of where it was left (the Queue button).
+// reopenLibrary is the Now Playing page's Library button: the library as the last play on this device
+// left it, on the page and at the place it was; a fresh library on this device's player when there is
+// none to go back to. What moves on by itself (the favorites, what was played lately, the queue) is
+// read afresh if that is what it shows. With queue it opens on the queue tab, what plays next, in place
+// of where it was left (the Queue button). With a drawn dashboard it is over the dashboard, put up for
+// it; otherwise it is up on its own, and Done goes back to Now Playing.
 func (d *Display) reopenLibrary(queue bool) {
-	if !d.openDashboard() {
-		return
+	if libraryOverDashboard() {
+		if !d.openDashboard() {
+			return
+		}
+	} else {
+		d.mu.Lock()
+		d.libAlone, d.libTouched = true, time.Now()
+		d.dash, d.deckUp = false, false
+		d.mu.Unlock()
 	}
 	last := libLast.Load()
 	if last == nil {

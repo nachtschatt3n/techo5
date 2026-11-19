@@ -265,6 +265,13 @@ type Display struct {
 	recordHolds   bool                  // an announcement is being recorded: a hold on its strip throws it away
 	link          linkWatch             // whether Home Assistant and the Wi-Fi are there, for the header
 
+	// libAlone is the music library up as a page of its own rather than over the dashboard
+	// (library_alone.go), and libTouched when a finger was last on it. libOnScreen is whether the last
+	// frame drew it so, and the fingers are its.
+	libAlone    bool
+	libTouched  time.Time
+	libOnScreen bool
+
 	poke chan struct{}
 
 	// shots are screenshot requests, answered with a copy of the next frame drawn.
@@ -721,7 +728,7 @@ func (d *Display) Name() string { return "screen" }
 func turnShown(s scene) bool {
 	return s.eq != nil && !s.callPageUp() && !s.ring.any() && !s.setupAsking && !s.bt.Pairing &&
 		!s.showWifi && !s.showSheet && !s.showCamera && !s.showAlert && !s.showCalendar && !s.showRadar &&
-		!s.showWeather && !s.showDash && !s.showDeck
+		!s.showWeather && !s.showDash && !s.showDeck && !s.showLibrary
 }
 
 // turnStyleSel is the Turn screen setting in Home Assistant.
@@ -1063,6 +1070,7 @@ func (d *Display) changed(s voice.State) {
 			d.closeAlert()
 			d.sheet, d.quiet = false, true
 			d.dash, d.deckUp = false, false
+			d.libGoneLocked()
 			d.customs.up, d.customs.awayUntil = "", time.Time{} // home is the idle screen, when there is one
 			go home.Get().HideCamera()
 			go d.endMusic()
@@ -1533,6 +1541,12 @@ func (d *Display) gesture(g touch.Gesture) {
 	d.mu.Unlock()
 	if castUp {
 		d.castGesture(g)
+		d.wake()
+		return
+	}
+	// The music library up on its own (library_alone.go): every finger is its, as on the deck.
+	if d.libraryAloneUp() {
+		d.libraryAloneGesture(g)
 		d.wake()
 		return
 	}
@@ -3231,13 +3245,14 @@ func (d *Display) frame() (next time.Duration) {
 	d.castScene(&s, s.showSheet || ring.any() || s.callPageUp())
 	d.addonScene(&s, now)
 	d.deckScene(&s, now)
+	d.libraryScene(&s)
 	d.customScene(&s, now)
 	// A call drawn over the page leaves the page as it was: the dashboard, the photos, the
 	// screensaver.
 	d.dashScene(&s, s.showSheet || ring.any() || s.callPageUp() || s.showCast)
 	boring := s.phase == "idle" && !s.callPageUp() && !ring.any() && !s.bt.Pairing &&
 		!s.showWifi && !s.showSheet && !s.showCamera && !s.showRadar && !s.showWeather && !s.showCalendar && !s.showAlert && !s.nowPlaying &&
-		!s.showDash && !s.showCast && !s.showDeck && s.custom.name == "" && s.addonPage == nil
+		!s.showDash && !s.showCast && !s.showDeck && !s.showLibrary && s.custom.name == "" && s.addonPage == nil
 	// A browser waiting to be let in is a page of its own, over whatever is on the screen: asking for
 	// the setup page is done from the settings screen, so the answer has to reach somebody who is
 	// still standing in it. It was set only on the idle page once, and the press could not be given
@@ -3354,7 +3369,7 @@ func (d *Display) frame() (next time.Duration) {
 
 	// The Call button is on the clock itself and only there: on any other page a tap where it would be
 	// still does what that page does.
-	s.callButton = callButton.Load() && hasMicrophone() && s.call.Phase == phone.Idle && s.phase == "idle" && !s.nowPlaying && !s.strip && !s.showWeather && !s.showCalendar && !s.showDeck && s.custom.name == "" && s.addonPage == nil &&
+	s.callButton = callButton.Load() && hasMicrophone() && s.call.Phase == phone.Idle && s.phase == "idle" && !s.nowPlaying && !s.strip && !s.showWeather && !s.showCalendar && !s.showDeck && !s.showLibrary && s.custom.name == "" && s.addonPage == nil &&
 		s.sunrise == 0 && s.slideshowScreensaver == nil && !s.showDrawer && !s.showSheet
 	d.mu.Lock()
 	d.callShown = s.callButton

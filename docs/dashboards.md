@@ -199,17 +199,26 @@ Home Assistant itself has no view of these names, so the same card does nothing 
 
 ## Music library
 
-On the Echo Show (and the Skylight and Panel builds), a drawn dashboard can open Music Assistant's
-whole library over the page, to browse it and play from it. The Echo Dot and the Echo Spot don't
-have it.
+On the Echo Show (and the Skylight and Panel builds), the device can open Music Assistant's whole
+library, to browse it and play from it. The Echo Dot and the Echo Spot don't have it.
+
+With a drawn dashboard (*Drawn* or *Tessera*) the library opens over the dashboard's page. With a
+*Streamed* dashboard, or none, it opens as a page of its own, over whatever was on the screen. A
+streamed dashboard is a picture of a browser on the dashcast server, so the device can't put anything
+of its own into that page; the library doesn't need the page under it, though. It looks and works
+the same either way, and its **Done** goes back to where you opened it from: the clock or Now
+Playing.
 
 **Opening it**
 
-- Long press a media player for its sheet, and tap **Library**. The button is there when Music
-  Assistant plays to that player, and the library plays on it.
-- Or give any card a tap action that navigates to `#techo5-library`. With an `entity` (a media
-  player), the library plays on Music Assistant's player for it, found the way the media sheet finds
-  it. Without one, it plays on this device.
+- On Now Playing (and the music strip), tap **Library**. The button is there whenever Music Assistant
+  is set up, whatever the dashboard is. It comes back to the library as your last play on this device
+  left it.
+- Long press a media player for its sheet (drawn dashboards), and tap **Library**. The button is
+  there when Music Assistant plays to that player, and the library plays on it.
+- Or, on a drawn dashboard, give any card a tap action that navigates to `#techo5-library`. With an
+  `entity` (a media player), the library plays on Music Assistant's player for it, found the way the
+  media sheet finds it. Without one, it plays on this device.
 
 ```yaml
 type: button
@@ -244,6 +253,8 @@ grayed out, and a line at the top says so.
   The **Library** button on Now Playing returns to the library. While Music Assistant music plays,
   the round **Queue** button in the footer opens the Queue tab to show what plays next. AirPlay,
   Bluetooth and the device's own stations have no queue there, so they have no Queue button.
+- Opened on its own, it closes by itself after the **Dashboard returns** time without a touch, as
+  a dashboard opened by hand does.
 - Search opens the on-screen keyboard. It finds artists, albums, playlists, tracks and radio
   stations, in the library and in your music services, each kind in a row of its own.
 - A second row of tabs has **Podcasts** and **Audiobooks**, with icon tabs for favorites, recently

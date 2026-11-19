@@ -229,8 +229,9 @@ func TestAHeldQueueItemIsMovedOrRemoved(t *testing.T) {
 	}
 }
 
-// The Now Playing page's Library button shows only with Music Assistant set up and a dashboard the
-// library can be drawn over. It brings the library back as a play on this device left it: the tab, the
+// The Now Playing page's Library button shows only with Music Assistant set up. With a drawn dashboard
+// (the case here; a streamed one is TestTheLibraryOnItsOwnWithAStreamedDashboard) it brings the
+// library back as a play on this device left it: the tab, the
 // album opened from it, how far each was scrolled, the sheet put away, nothing read again; a queue tab
 // is read afresh. With no library left, it opens a new one on the Artists tab.
 func TestNowPlayingGoesBackToTheLibrary(t *testing.T) {
