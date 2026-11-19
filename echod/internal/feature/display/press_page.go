@@ -69,6 +69,11 @@ func pageOf(s *scene) pageID {
 			p.dashOver, p.lib = 5, libPageID{tab: l.tab, depth: len(l.stack), menu: l.menu.open, typing: l.typing}
 		}
 	}
+	if s.showLibrary && s.dashLibrary != nil {
+		// The library up on its own is the same page as over the dashboard, with no page under it.
+		l := s.dashLibrary.sheet
+		p.dashOver, p.lib = 6, libPageID{tab: l.tab, depth: len(l.stack), menu: l.menu.open, typing: l.typing}
+	}
 	return p
 }
 
