@@ -4,7 +4,7 @@ name: ci-linux-tests
 
 on:
   push:
-    branches: [ci-lib-v2]
+    branches: [ci-house-v2]
   workflow_dispatch:
 
 permissions:
@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        branch: [library-without-drawn-dashboard-v2]
+        branch: [house-build-v2]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
