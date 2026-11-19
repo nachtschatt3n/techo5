@@ -125,6 +125,9 @@ func (d *Display) putDeckUp(launcher bool) bool {
 	d.closeAlert()
 	d.calUntil, d.weatherUntil = time.Time{}, time.Time{}
 	d.sheet, d.dash, d.drawer = false, false, false
+	if d.libAlone {
+		d.libGoneLocked() // the deck asked for comes first, as it does over the dashboard
+	}
 	pages := len(d.deckNowLocked().Pages)
 	if d.deckPage >= pages {
 		d.deckPage = 0

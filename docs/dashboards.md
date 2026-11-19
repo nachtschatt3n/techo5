@@ -156,17 +156,26 @@ and symbols only, and a field in a frame from another site on the page doesn't b
 
 ## Music library
 
-On the Echo Show (and the Skylight and Panel builds), a drawn dashboard can open Music Assistant's
-whole library over the page, to browse it and play from it. The Echo Dot and the Echo Spot don't
-have it.
+On the Echo Show (and the Skylight and Panel builds), the device can open Music Assistant's whole
+library, to browse it and play from it. The Echo Dot and the Echo Spot don't have it.
+
+With a drawn dashboard (*Drawn* or *Tessera*) the library opens over the dashboard's page. With a
+*Streamed* dashboard, or none, it opens as a page of its own, over whatever was on the screen. A
+streamed dashboard is a picture of a browser on the dashcast server, so the device can't put anything
+of its own into that page; the library doesn't need the page under it, though. It looks and works
+the same either way, and its **Done** goes back to where you opened it from: the clock or Now
+Playing.
 
 **Opening it**
 
-- Long press a media player for its sheet, and tap **Library**. The button is there when Music
-  Assistant plays to that player, and the library plays on it.
-- Or give any card a tap action that navigates to `#techo5-library`. With an `entity` (a media
-  player), the library plays on Music Assistant's player for it, found the way the media sheet finds
-  it. Without one, it plays on this device.
+- On Now Playing (and the music strip), tap **Library**. The button is there whenever Music Assistant
+  is set up, whatever the dashboard is. It comes back to the library as your last play on this device
+  left it.
+- Long press a media player for its sheet (drawn dashboards), and tap **Library**. The button is
+  there when Music Assistant plays to that player, and the library plays on it.
+- Or, on a drawn dashboard, give any card a tap action that navigates to `#techo5-library`. With an
+  `entity` (a media player), the library plays on Music Assistant's player for it, found the way the
+  media sheet finds it. Without one, it plays on this device.
 - Or from a [TECHO5 Deck](deck.md) button whose action is **Music library**, for example on the
   deck that **Tap on the clock** set to *Deck* opens. It plays on this device.
 
@@ -199,6 +208,8 @@ grayed out, and a line at the top says so.
   playlist or artist. Whatever plays replaces what was queued. What you tapped lights up, and then
   the library closes: to this device's Now Playing screen when it plays here, or to the media sheet
   of the speaker it plays on when you opened the library from one.
+- Opened on its own, it closes by itself after the **Dashboard returns** time without a touch, as
+  a dashboard opened by hand does.
 - Search opens the on-screen keyboard. It finds artists, albums, playlists, tracks and radio
   stations, in the library and in your music services, each kind in a row of its own.
 - A second row of tabs has **Podcasts** and **Audiobooks**, with icon tabs for favorites, recently
