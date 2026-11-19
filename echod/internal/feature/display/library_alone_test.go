@@ -32,7 +32,7 @@ func TestTheLibraryOnItsOwnWithAStreamedDashboard(t *testing.T) {
 	r := newRenderer(image.NewRGBA(image.Rect(0, 0, showWide, showHigh)))
 	d := &Display{r: r, poke: make(chan struct{}, 1)}
 	d.reopenLibrary()
-	if libUp(d) == nil || !d.libAlone || d.dash {
+	if libUp(d) == nil || !d.libAlone || d.dash || d.libBack != libBackNone {
 		t.Fatalf("library %v, on its own %v, dashboard up %v", libUp(d) != nil, d.libAlone, d.dash)
 	}
 
@@ -79,6 +79,17 @@ func TestTheLibraryOverADrawnDashboardIsUnchanged(t *testing.T) {
 	d.reopenLibrary()
 	if libUp(d) == nil || d.libAlone || !d.dash {
 		t.Fatalf("library %v, on its own %v, dashboard up %v", libUp(d) != nil, d.libAlone, d.dash)
+	}
+
+	// The deck's Music library button puts it up on its own even so, and the drawn dashboard's frame
+	// doesn't take it away.
+	d = deckUpOn()
+	_ = d.screenPress(config.DeckButton{Action: config.DeckScreenLibrary})
+	s := scene{phase: "idle", now: time.Now()}
+	d.libraryScene(&s)
+	d.dashScene(&s, false)
+	if !s.showLibrary || libUp(d) == nil {
+		t.Error("the drawn dashboard's frame took the library on its own away")
 	}
 }
 

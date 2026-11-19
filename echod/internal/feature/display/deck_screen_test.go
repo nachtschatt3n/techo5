@@ -20,32 +20,44 @@ func deckUpOn() *Display {
 	return d
 }
 
-// The deck's Music library button opens a fresh library over the drawn dashboard, as a card navigating
-// to #techo5-library does, and the deck gives way. Without a drawn dashboard to open it over, it says
-// so at the foot of the deck. From Home Assistant's deck_press it is the same.
-func TestTheDecksLibraryButton(t *testing.T) {
+// The deck's Music library button puts the library up on its own over the deck, whatever the
+// dashboard is, and Done puts the deck back as it was.
+func TestTheDecksLibraryButtonComesBackToTheDeck(t *testing.T) {
 	noLibrary(t)
 	config.Use(filepath.Join(t.TempDir(), "state.json"))
-	b := config.DeckButton{Action: config.DeckScreenLibrary}
-	for _, mode := range []config.DashboardMode{config.DashboardStreamed, config.DashboardOff} {
+	for _, mode := range []config.DashboardMode{config.DashboardStreamed, config.DashboardDrawn, config.DashboardOff} {
 		_ = config.Set().Dashboard().Mode(mode)
 		d := deckUpOn()
-		err := d.screenPress(b)
-		if !errors.Is(err, errScreenOff) || libUp(d) != nil || !d.deckUp {
-			t.Errorf("%s: %v, library %v, deck up %v", mode, err, libUp(d) != nil, d.deckUp)
+		d.deckPage = 1
+		if err := d.screenPress(config.DeckButton{Action: config.DeckScreenLibrary}); err != nil {
+			t.Fatalf("%s: %v", mode, err)
 		}
-		if r := deckReason(b, err); r != tr("deck_screen_off") {
-			t.Errorf("%s: the foot says %q", mode, r)
+		if libUp(d) == nil || !d.libAlone || d.libBack != libBackDeck || d.deckUp || d.dash {
+			t.Fatalf("%s: library %v, on its own %v, back %d, deck up %v, dashboard up %v", mode, libUp(d) != nil,
+				d.libAlone, d.libBack, d.deckUp, d.dash)
+		}
+		d.libDone()
+		if libUp(d) != nil || d.libAlone || !d.deckUp || d.deckPage != 1 {
+			t.Errorf("%s: after Done, library %v, deck up %v on page %d", mode, libUp(d) != nil, d.deckUp, d.deckPage)
 		}
 	}
-	_ = config.Set().Dashboard().Mode(config.DashboardDrawn)
-	for _, d := range []*Display{deckUpOn(), {poke: make(chan struct{}, 1)}} {
-		if err := d.screenPress(b); err != nil {
-			t.Fatal(err)
-		}
-		if libUp(d) == nil || !d.dash || d.deckUp {
-			t.Errorf("library %v, dashboard up %v, deck up %v", libUp(d) != nil, d.dash, d.deckUp)
-		}
+}
+
+// From Home Assistant's deck_press, with no deck on the screen, Done leaves the library for what was
+// under it.
+func TestALibraryFromDeckPressGoesBackToTheScreen(t *testing.T) {
+	noLibrary(t)
+	config.Use(filepath.Join(t.TempDir(), "state.json"))
+	d := &Display{poke: make(chan struct{}, 1)}
+	if err := d.screenPress(config.DeckButton{Action: config.DeckScreenLibrary}); err != nil {
+		t.Fatal(err)
+	}
+	if d.libBack != libBackNone {
+		t.Errorf("back to %d", d.libBack)
+	}
+	d.libDone()
+	if d.deckUp || libUp(d) != nil {
+		t.Error("Done opened the deck, or left the library up")
 	}
 }
 
@@ -170,12 +182,8 @@ func TestTheBuiltInLauncherPage(t *testing.T) {
 	}
 	libClient = func() (musicassistant.Client, bool) { return musicassistant.Client{URL: "http://ma.invalid"}, true }
 	_ = config.Set().Dashboard().Mode(config.DashboardStreamed)
-	if got := actions(); len(got) != 4 || got[0] != config.DeckScreenDashboard {
-		t.Errorf("with a streamed dashboard, which the library can't open over: %v", got)
-	}
-	_ = config.Set().Dashboard().Mode(config.DashboardDrawn)
 	if got := actions(); len(got) != 5 || got[0] != config.DeckScreenLibrary || got[1] != config.DeckScreenDashboard {
-		t.Errorf("with the library and a drawn dashboard: %v", got)
+		t.Errorf("with the library and a dashboard: %v", got)
 	}
 	cols, rows := deckLauncherPage().Grid()
 	if cols != 3 || rows != 2 {
