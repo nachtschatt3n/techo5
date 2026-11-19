@@ -4,7 +4,7 @@ name: ci-linux-tests
 
 on:
   push:
-    branches: [ci-linux-tests]
+    branches: [ci-lib-v2]
   workflow_dispatch:
 
 permissions:
@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        branch: [rainbow-scroll-long-answers, deck-screen-pages-launcher, library-without-drawn-dashboard, library-play-media-type, house-build]
+        branch: [library-without-drawn-dashboard-v2]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -61,6 +61,16 @@ jobs:
         if: always()
         working-directory: echod
         run: go test -tags spot ./...
+
+      - name: go test -tags dot,donut ./...
+        if: always()
+        working-directory: echod
+        run: go test -tags dot,donut ./...
+
+      - name: go test -tags panel ./...
+        if: always()
+        working-directory: echod
+        run: go test -tags panel ./...
 
       - name: go vet ./... and gofmt -l .
         if: always()
