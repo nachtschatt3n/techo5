@@ -5,8 +5,9 @@ import (
 	"slices"
 )
 
-// Deck is TECHO5 Deck: pages of buttons on the Show's screen that act straight on OBS (and, later, on a
-// computer through the deck agent), opened by a swipe up from the bottom edge of the clock.
+// Deck is TECHO5 Deck: pages of buttons on the Show's screen that act straight on OBS, on a computer
+// through the deck agent, or on the Show itself (its music library, its dashboard, its own pages),
+// opened by a swipe up from the bottom edge of the clock or a tap on it.
 type Deck struct {
 	// OBS is the OBS Studio the deck's OBS buttons act on.
 	OBS DeckOBS `json:"obs,omitempty"`
@@ -73,6 +74,10 @@ type DeckButton struct {
 	// keys to press ("ctrl+shift+m"), the text to type, the app or website to open, the script to run.
 	Computer string `json:"computer,omitempty"`
 	Value    string `json:"value,omitempty"`
+
+	// Path is the dashboard a screen_dashboard button goes to, as dashboard_path takes it
+	// ("dashboard-energy/today"); empty opens the dashboard as it was last left.
+	Path string `json:"path,omitempty"`
 }
 
 // DeckAction is what a deck button does.
@@ -90,6 +95,15 @@ const (
 	DeckPCType DeckAction = "pc_type" // type Value on Computer
 	DeckPCOpen DeckAction = "pc_open" // open the app or website Value on Computer
 	DeckPCRun  DeckAction = "pc_run"  // run the script Value on Computer
+
+	// The screen's own pages, which need neither OBS nor a computer.
+	DeckScreenLibrary    DeckAction = "screen_library"     // the music library, on this device's player
+	DeckScreenDashboard  DeckAction = "screen_dashboard"   // the dashboard, at Path when one is given
+	DeckScreenCalendar   DeckAction = "screen_calendar"    // the calendar
+	DeckScreenWeather    DeckAction = "screen_weather"     // the forecast
+	DeckScreenRadio      DeckAction = "screen_radio"       // the drawer's Radio tab
+	DeckScreenCameras    DeckAction = "screen_cameras"     // the drawer's Cameras tab
+	DeckScreenNowPlaying DeckAction = "screen_now_playing" // Now Playing, while something plays
 )
 
 // OnComputer is whether the action is done by a computer's agent.
@@ -97,10 +111,24 @@ func (a DeckAction) OnComputer() bool {
 	return a == DeckPCKeys || a == DeckPCType || a == DeckPCOpen || a == DeckPCRun
 }
 
+// OnScreen is whether the action opens one of the screen's own pages: it is done by the display, and
+// needs neither OBS nor a computer to be there.
+func (a DeckAction) OnScreen() bool {
+	return slices.Contains(deckScreenActions, a)
+}
+
+// OnOBS is whether the action is done by OBS.
+func (a DeckAction) OnOBS() bool {
+	return a == DeckOBSScene || a == DeckOBSStream || a == DeckOBSRecord || a == DeckOBSMute || a == DeckOBSSource
+}
+
+var deckScreenActions = []DeckAction{DeckScreenLibrary, DeckScreenDashboard, DeckScreenCalendar, DeckScreenWeather,
+	DeckScreenRadio, DeckScreenCameras, DeckScreenNowPlaying}
+
 // DeckActions is every action, in the order a list shows them.
 func DeckActions() []DeckAction {
-	return []DeckAction{DeckNone, DeckOBSScene, DeckOBSStream, DeckOBSRecord, DeckOBSMute, DeckOBSSource,
-		DeckPCKeys, DeckPCType, DeckPCOpen, DeckPCRun}
+	return append([]DeckAction{DeckNone, DeckOBSScene, DeckOBSStream, DeckOBSRecord, DeckOBSMute, DeckOBSSource,
+		DeckPCKeys, DeckPCType, DeckPCOpen, DeckPCRun}, deckScreenActions...)
 }
 
 // Label is how a list names an action.
@@ -124,6 +152,20 @@ func (a DeckAction) Label() string {
 		return "Open app or website"
 	case DeckPCRun:
 		return "Run script"
+	case DeckScreenLibrary:
+		return "Music library"
+	case DeckScreenDashboard:
+		return "Dashboard"
+	case DeckScreenCalendar:
+		return "Calendar"
+	case DeckScreenWeather:
+		return "Weather"
+	case DeckScreenRadio:
+		return "Radio"
+	case DeckScreenCameras:
+		return "Cameras"
+	case DeckScreenNowPlaying:
+		return "Now playing"
 	}
 	return "Empty"
 }
@@ -197,7 +239,7 @@ func (b DeckButton) tidy() DeckButton {
 		return s
 	}
 	b.Label, b.Icon, b.Scene, b.Source, b.Input = clip(b.Label), clip(b.Icon), clip(b.Scene), clip(b.Source), clip(b.Input)
-	b.Computer = clip(b.Computer)
+	b.Computer, b.Path = clip(b.Computer), clip(b.Path)
 	if len(b.Value) > DeckValueMax {
 		b.Value = b.Value[:DeckValueMax]
 	}

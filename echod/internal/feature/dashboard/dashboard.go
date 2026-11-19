@@ -536,6 +536,27 @@ func modeOf(m config.DashboardMode) config.DashboardMode {
 	return m
 }
 
+// SetPath keeps which dashboard is shown, as dashboard_path does, and connects to it afresh.
+func (f *Feature) SetPath(path string) error {
+	p := navPath(path)
+	if err := config.Set().Dashboard().Path(p); err != nil {
+		return err
+	}
+	slog.Info("dashboard: path set", "path", p)
+	f.listBoards(config.Get().Dashboard)
+	f.setMode(f.Mode())
+	return nil
+}
+
+// GoTo is SetPath for a page that only wants the dashboard to be at path when it opens (a deck button):
+// a path it is already at is left alone, so a streamed page is not connected again for nothing.
+func (f *Feature) GoTo(path string) error {
+	if navPath(path) == navPath(config.Get().Dashboard.Path) {
+		return nil
+	}
+	return f.SetPath(path)
+}
+
 // Idle is whether the dashboard stands in for the clock.
 func (f *Feature) Idle() bool {
 	return config.Get().Dashboard.Idle && f.Mode() != config.DashboardOff
@@ -557,14 +578,7 @@ func (f *Feature) Actions() []*esphome.Action {
 			Name: "dashboard_path",
 			Args: []esphome.Arg{{Name: "path", Type: esphome.ArgString}},
 			Run: func(c esphome.Call) (any, error) {
-				p := navPath(c.String("path"))
-				if err := config.Set().Dashboard().Path(p); err != nil {
-					return nil, err
-				}
-				slog.Info("dashboard: path set", "path", p)
-				f.listBoards(config.Get().Dashboard)
-				f.setMode(f.Mode())
-				return nil, nil
+				return nil, f.SetPath(c.String("path"))
 			},
 		},
 		{

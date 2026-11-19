@@ -22,8 +22,10 @@ func deckSection(w http.ResponseWriter, token string) {
 	d := config.Get().Deck
 	st := deck.Get().OBS()
 	sectionOpen(w, "deck", "Deck", deckSummary(d, st.Connected, st.Problem != "")...)
-	fmt.Fprint(w, `<p class="note" style="margin-top:0">Buttons for OBS Studio on this screen. Swipe up from the bottom
-	  edge of the clock to open it, swipe down to put it away; swipe left and right for the pages.</p>`)
+	fmt.Fprint(w, `<p class="note" style="margin-top:0">Buttons on this screen for OBS Studio, for your computers, and for
+	  this screen's own pages (the music library, the dashboard, the calendar). Swipe up from the bottom edge of the
+	  clock to open it, or set Tap on the clock to Deck; swipe down to put it away, and left and right for the pages.
+	  With no buttons, Tap on the clock opens a page of this screen's own pages.</p>`)
 
 	// OBS.
 	status := "Not set up."
@@ -98,8 +100,10 @@ func deckSection(w http.ResponseWriter, token string) {
 		}
 		fmt.Fprint(w, `</p></form></details>`)
 	}
-	fmt.Fprint(w, `<p class="note"><strong>Scene or input</strong> is the scene to switch to, the input to mute, or
-	 the scene a source is in. <strong>Icon</strong> is a Material Design icon name (pictogrammers.com/library/mdi),
+	fmt.Fprint(w, `<p class="note"><strong>Scene, input or dashboard path</strong> is the scene to switch to, the input
+	 to mute, or the scene a source is in; for a Dashboard button, the dashboard to go to, like
+	 <code>dashboard-energy/today</code> (empty opens it as it was left). <strong>This screen</strong>'s buttons need
+	 neither OBS nor a computer. <strong>Icon</strong> is a Material Design icon name (pictogrammers.com/library/mdi),
 	 like <code>microphone-off</code>; empty uses the button's own. Home Assistant can press a button with the
 	 <code>deck_press</code> action.</p>`)
 	sectionClose(w)
@@ -118,8 +122,11 @@ func deckNames(w http.ResponseWriter, id string, names []string) {
 func deckButtonRow(w http.ResponseWriter, i, cols int, b config.DeckButton, pcs []config.DeckComputer) {
 	target := b.Scene
 	list := "deck-scenes"
-	if b.Action == config.DeckOBSMute {
+	switch b.Action {
+	case config.DeckOBSMute:
 		target, list = b.Input, "deck-inputs"
+	case config.DeckScreenDashboard:
+		target = b.Path
 	}
 	n := strconv.Itoa(i)
 	fmt.Fprintf(w, `<div class="deckrow"><p class="note" style="margin:.6em 0 .2em"><strong>Row %d, button %d</strong></p>`, i/cols+1, i%cols+1)
@@ -131,11 +138,13 @@ func deckButtonRow(w http.ResponseWriter, i, cols int, b config.DeckButton, pcs 
 			fmt.Fprint(w, `<optgroup label="OBS">`)
 		case config.DeckPCKeys:
 			fmt.Fprint(w, `</optgroup><optgroup label="Computer">`)
+		case config.DeckScreenLibrary:
+			fmt.Fprint(w, `</optgroup><optgroup label="This screen">`)
 		}
 		fmt.Fprintf(w, `<option value="%s"%s>%s</option>`, a, selected(a == b.Action), html.EscapeString(a.Label()))
 	}
 	fmt.Fprint(w, `</optgroup></select>`)
-	fmt.Fprintf(w, `<input name="target%s" value="%s" maxlength="200" placeholder="Scene or input" aria-label="Scene or input" list="%s" autocomplete="off">`,
+	fmt.Fprintf(w, `<input name="target%s" value="%s" maxlength="200" placeholder="Scene, input or dashboard path" aria-label="Scene, input or dashboard path" list="%s" autocomplete="off">`,
 		n, html.EscapeString(target), list)
 	fmt.Fprintf(w, `<input name="source%s" value="%s" maxlength="200" placeholder="Source (show/hide only)" aria-label="Source" autocomplete="off">`,
 		n, html.EscapeString(b.Source))
@@ -232,6 +241,8 @@ func saveDeckPage(r *http.Request) string {
 			b.Input = target
 		case config.DeckOBSScene, config.DeckOBSSource:
 			b.Scene = target
+		case config.DeckScreenDashboard:
+			b.Path = strings.Trim(target, "/")
 		}
 		if a == config.DeckOBSSource {
 			b.Source = strings.TrimSpace(r.PostFormValue("source" + n))

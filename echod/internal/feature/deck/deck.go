@@ -41,6 +41,7 @@ type Feature struct {
 	pcs computers
 
 	mu      sync.Mutex
+	screen  func(config.DeckButton) error
 	conf    obsws.Config
 	tracked []obsws.Item
 	reload  chan struct{}
@@ -171,6 +172,30 @@ func (f *Feature) Set() bool { return config.Get().Deck.Set() }
 // ErrEmpty is a press on a square with nothing on it.
 var ErrEmpty = errors.New("deck: nothing on that button")
 
+// ErrNoScreen is a press on a button for one of the screen's pages with no screen to open it: the
+// display has not said it takes them (SetScreen).
+var ErrNoScreen = errors.New("deck: no screen to open that on")
+
+// SetScreen is how the deck's buttons for the screen's own pages (config.DeckAction.OnScreen) are
+// done: the display opens the page. A press from Home Assistant (deck_press) comes here as well as one
+// from the screen, so both open the page the same way.
+func (f *Feature) SetScreen(do func(config.DeckButton) error) {
+	f.mu.Lock()
+	f.screen = do
+	f.mu.Unlock()
+}
+
+// Screen does what a button for one of the screen's pages does.
+func (f *Feature) Screen(b config.DeckButton) error {
+	f.mu.Lock()
+	do := f.screen
+	f.mu.Unlock()
+	if do == nil {
+		return ErrNoScreen
+	}
+	return do(b)
+}
+
 // Press does what page p's button i does.
 func (f *Feature) Press(p, i int) error {
 	b := config.Get().Deck.Button(p, i)
@@ -199,16 +224,23 @@ func (f *Feature) do(ctx context.Context, b config.DeckButton) error {
 	if b.Action.OnComputer() {
 		return f.pcDo(b)
 	}
+	if b.Action.OnScreen() {
+		return f.Screen(b)
+	}
 	return ErrEmpty
 }
 
 // Lit is whether a button shows as on: its scene is live, OBS is streaming or recording, its input
 // is muted, its source is shown. Known is false while its state isn't known (OBS away, an input or
 // source OBS doesn't have, a computer that isn't answering), and the button is then drawn dimmed.
-// A computer button is never lit: pressing keys has no state to show.
+// A computer button is never lit: pressing keys has no state to show. Nor is a button for one of the
+// screen's pages, which is always known: it needs nothing that can be away.
 func Lit(b config.DeckButton, st obsws.State, pcs map[string]ComputerState) (lit, known bool) {
 	if b.Action == config.DeckNone {
 		return false, false
+	}
+	if b.Action.OnScreen() {
+		return false, true
 	}
 	if b.Action.OnComputer() {
 		s, ok := pcs[b.Computer]
@@ -271,6 +303,20 @@ func Icon(b config.DeckButton, lit bool) string {
 		return "open-in-app"
 	case config.DeckPCRun:
 		return "script-text-play"
+	case config.DeckScreenLibrary:
+		return "music-box-multiple"
+	case config.DeckScreenDashboard:
+		return "view-dashboard"
+	case config.DeckScreenCalendar:
+		return "calendar-month"
+	case config.DeckScreenWeather:
+		return "weather-partly-cloudy"
+	case config.DeckScreenRadio:
+		return "radio"
+	case config.DeckScreenCameras:
+		return "cctv"
+	case config.DeckScreenNowPlaying:
+		return "play-circle"
 	}
 	return ""
 }
@@ -298,6 +344,9 @@ func Label(b config.DeckButton) string {
 		return "Type text"
 	case config.DeckPCOpen, config.DeckPCRun:
 		return b.Value
+	}
+	if b.Action.OnScreen() {
+		return b.Action.Label()
 	}
 	return ""
 }
