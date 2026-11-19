@@ -98,3 +98,35 @@ func TestDeckComputers(t *testing.T) {
 		t.Error("OnComputer")
 	}
 }
+
+// The screen's own pages are actions of their own: kept through a save with their dashboard path, told
+// apart from OBS's and the computers', and enough for a deck to count as set up.
+func TestDeckScreenActions(t *testing.T) {
+	for _, a := range []DeckAction{DeckScreenLibrary, DeckScreenDashboard, DeckScreenCalendar, DeckScreenWeather,
+		DeckScreenRadio, DeckScreenCameras, DeckScreenNowPlaying} {
+		if !a.OnScreen() || a.OnOBS() || a.OnComputer() || a.Label() == "Empty" {
+			t.Errorf("%s: on screen %v, OBS %v, computer %v, label %q", a, a.OnScreen(), a.OnOBS(), a.OnComputer(), a.Label())
+		}
+	}
+	for _, a := range []DeckAction{DeckNone, DeckOBSScene, DeckPCKeys} {
+		if a.OnScreen() {
+			t.Errorf("%q counted as one of the screen's pages", a)
+		}
+	}
+	st := testStore(t)
+	w := st.Set().Deck()
+	if err := w.Page(0, []DeckButton{{Action: DeckScreenDashboard, Path: "dashboard-energy/today", Label: "Energy"},
+		{Action: DeckScreenLibrary}}); err != nil {
+		t.Fatal(err)
+	}
+	d := st.Get().Deck
+	if b := d.Button(0, 0); b.Action != DeckScreenDashboard || b.Path != "dashboard-energy/today" {
+		t.Errorf("dashboard button %+v", b)
+	}
+	if b := d.Button(0, 1); b.Action != DeckScreenLibrary {
+		t.Errorf("library button %+v", b)
+	}
+	if !d.Set() {
+		t.Error("a deck of the screen's pages alone does not count as set up")
+	}
+}

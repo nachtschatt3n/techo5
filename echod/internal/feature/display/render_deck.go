@@ -19,6 +19,9 @@ type deckView struct {
 	connected bool
 	problem   string
 	obsSet    bool
+	// obs is whether the page has an OBS button: a page of computer buttons, or of the screen's own
+	// pages, says nothing about OBS, which it does not need.
+	obs bool
 	// away is a computer this page's buttons are for that is not answering, by name, and reason why
 	// the press just made failed: each a line at the foot too (footLine).
 	away   string
@@ -27,18 +30,19 @@ type deckView struct {
 
 // footLine is the line at the foot's left, and whether it is a failure's: why the press just made
 // failed, while its button is red; else why the buttons are gray, OBS before a computer; else that OBS
-// was never set up, which a deck of computer buttons with one of them away is not about.
+// was never set up, which a deck of computer buttons with one of them away is not about. The lines
+// about OBS are only for a page with an OBS button on it.
 func (v deckView) footLine() (line string, failure bool) {
 	switch {
 	case v.reason != "":
 		return v.reason, true
-	case v.obsSet && !v.connected && v.problem != "":
+	case v.obs && v.obsSet && !v.connected && v.problem != "":
 		return v.problem, false
-	case v.obsSet && !v.connected:
+	case v.obs && v.obsSet && !v.connected:
 		return tr("connecting_to_obs"), false
 	case v.away != "":
 		return fmt.Sprintf(tr("deck_pc_silent"), v.away), false
-	case !v.obsSet:
+	case v.obs && !v.obsSet:
 		return tr("obs_is_not_set_up"), false
 	}
 	return "", false
