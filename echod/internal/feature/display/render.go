@@ -178,6 +178,9 @@ type scene struct {
 	custom   customView // a custom screen, when custom.name is set (custom_screens.go)
 	deck     deckView
 
+	// showLibrary is the music library as a page of its own (library_alone.go), dashLibrary what it shows.
+	showLibrary bool
+
 	// alerts are the weather alerts at home and nearby (the clock's badge, the rain map's pills and
 	// outlines); showAlert is the alert page, on alertIdx of them, scrolled alertScroll lines (alerts.go).
 	alerts      home.AlertView
@@ -806,6 +809,13 @@ func (r *renderer) draw(s scene) {
 	}
 	if s.showDeck {
 		r.deckPage(s)
+		if s.showVolume {
+			r.volumeBar(s)
+		}
+		return
+	}
+	if s.showLibrary {
+		r.libraryPage(s)
 		if s.showVolume {
 			r.volumeBar(s)
 		}
