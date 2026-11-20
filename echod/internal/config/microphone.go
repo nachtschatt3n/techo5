@@ -24,6 +24,14 @@ type Microphone struct {
 	// process where the image has it.
 	CancelEngine CancelEngine `json:"cancel_engine,omitempty"`
 
+	// CancelOnMix runs the echo canceller on the mix of the microphones rather than on the center one
+	// alone. Unset is the board's own choice (hardware/mic DefaultCancelOnMix: on for the Echo Dot 2nd
+	// gen and the Echo 2nd gen, as measured on the Dot, and off elsewhere until it is measured there),
+	// which is why it is a pointer: a device nobody changed follows its board. A settings file brings it
+	// only to a device of the same model (Restored): one from a Dot never turns it on for a Show. Read it
+	// with CancelOnMixOr.
+	CancelOnMix *bool `json:"cancel_on_mix,omitempty"`
+
 	// CallCancelEngine is which canceller runs while a call is up; empty is CancelEngine's, as at any
 	// other time. WebRTC's takes out the echo the far end hears with the built-in filter, which is
 	// kept outside calls for the wake word.
@@ -156,6 +164,20 @@ func (w MicrophoneWriter) Mixing(v Mixing) error {
 
 func (w MicrophoneWriter) Cancel(v bool) error {
 	return w.st.Update(func(c *Config) { c.Microphone.Cancel = v })
+}
+
+// CancelOnMix is whether the echo canceller reads the mix rather than the center microphone. Once set,
+// either way, it no longer follows the board's default.
+func (w MicrophoneWriter) CancelOnMix(v bool) error {
+	return w.st.Update(func(c *Config) { c.Microphone.CancelOnMix = &v })
+}
+
+// CancelOnMixOr is CancelOnMix, or board where nobody has set it.
+func (m Microphone) CancelOnMixOr(board bool) bool {
+	if m.CancelOnMix == nil {
+		return board
+	}
+	return *m.CancelOnMix
 }
 
 func (w MicrophoneWriter) CancelEngine(v CancelEngine) error {

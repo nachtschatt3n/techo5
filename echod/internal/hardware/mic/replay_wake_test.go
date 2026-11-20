@@ -231,7 +231,8 @@ func scoreWake(t *testing.T, raw []byte, mixer Mixer, m wake.Model) []float64 {
 		block := raw[off : off+period]
 		mics := Decode(block)
 		frame := mixer.Mix(mics)
-		if canceled := c.apply(block, cancelInput(mixer, mics, frame)); canceled != nil {
+		input, _ := cancelInput(mixer, mics, frame, DefaultCancelOnMix)
+		if canceled := c.apply(block, input); canceled != nil {
 			frame = canceled
 		}
 		frame = append([]int16(nil), frame...)
