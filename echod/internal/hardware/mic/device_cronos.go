@@ -63,9 +63,11 @@ const (
 	// has no center microphone either; ch0 stands in until its array is mapped, as on the Spot.
 	CenterMic = 0
 
-	// CancelOnMix runs the echo canceller on the mix rather than the center microphone. Off here until
-	// it is measured on this device; the Dot's result is in techo5-dot docs/microphones.md.
-	CancelOnMix = false
+	// DefaultCancelOnMix is where the "Echo cancellation on all microphones" switch starts: whether the
+	// echo canceller runs on the mix rather than the center microphone (cancelInput). Off here until it
+	// is measured on this device; the Dot's result is in techo5-dot docs/microphones.md. The switch is
+	// how it gets measured, so a device can be tried both ways without a build of its own.
+	DefaultCancelOnMix = false
 )
 
 // boardKernel is nil: on this build athena's capture is chosen by the kernel it runs on

@@ -28,6 +28,7 @@ type Microphone struct {
 	gain        *esphome.Number
 	leveling    *esphome.Switch
 	cancel      *esphome.Switch
+	onMix       *esphome.Switch // the echo canceller on the mix rather than the center microphone
 	engine      *esphome.Select
 	denoise     *esphome.Switch
 	ends        *esphome.Switch
@@ -76,6 +77,14 @@ func build() *Microphone {
 			Base: esphome.Base{
 				ObjectID: "microphone_cancel_echo",
 				Name:     "Microphone echo cancellation",
+				Icon:     "mdi:waveform",
+				Category: esphome.CategoryConfig,
+			},
+		},
+		onMix: &esphome.Switch{
+			Base: esphome.Base{
+				ObjectID: "microphone_cancel_echo_all_mics",
+				Name:     "Echo cancellation on all microphones",
 				Icon:     "mdi:waveform",
 				Category: esphome.CategoryConfig,
 			},
@@ -146,7 +155,7 @@ func build() *Microphone {
 
 	for _, b := range []*esphome.Base{
 		&m.aspSelected.Base, &m.aspActive.Base,
-		&m.mixing.Base, &m.gain.Base, &m.leveling.Base, &m.cancel.Base, &m.engine.Base, &m.denoise.Base,
+		&m.mixing.Base, &m.gain.Base, &m.leveling.Base, &m.cancel.Base, &m.onMix.Base, &m.engine.Base, &m.denoise.Base,
 		&m.ends.Base, &m.preroll.Base, &m.pause.Base, &m.sensitivity.Base,
 	} {
 		b.DeviceID = component.DeviceMicrophone
@@ -186,6 +195,16 @@ func build() *Microphone {
 		source.SetCanceling(on)
 		if err := config.Set().Microphone().Cancel(on); err != nil {
 			slog.Error("saving the echo cancellation setting failed", "err", err)
+		}
+	}
+
+	// Applied on the next frame, like the echo cancellation switch: the canceller notices the change
+	// of path there and starts over (hardware/mic).
+	m.onMix.OnCommand = func(on bool) {
+		m.onMix.Set(on)
+		source.SetCancelOnMix(on)
+		if err := config.Set().Microphone().CancelOnMix(on); err != nil {
+			slog.Error("saving the echo cancellation on all microphones setting failed", "err", err)
 		}
 	}
 
@@ -242,7 +261,7 @@ func build() *Microphone {
 func (m *Microphone) Name() string { return "microphone settings" }
 
 func (m *Microphone) Entities() []esphome.Entity {
-	return append([]esphome.Entity{m.aspSelected, m.aspActive, m.mixing, m.gain, m.leveling, m.cancel, m.engine, m.denoise, m.ends, m.preroll,
+	return append([]esphome.Entity{m.aspSelected, m.aspActive, m.mixing, m.gain, m.leveling, m.cancel, m.onMix, m.engine, m.denoise, m.ends, m.preroll,
 		m.pause, m.sensitivity},
 		buildEntities()...)
 }
@@ -270,6 +289,13 @@ func (m *Microphone) Restore(c config.Config) {
 	m.cancel.Set(c.Microphone.Cancel)
 	source.SetCanceling(c.Microphone.Cancel)
 	slog.Info("restored", "what", m.cancel.ObjectID, "using", c.Microphone.Cancel)
+
+	// Nobody having set it is the board's own choice, which is the switch's state too, so Home
+	// Assistant shows what the device is doing rather than an unknown.
+	onMix := c.Microphone.CancelOnMixOr(mic.DefaultCancelOnMix)
+	m.onMix.Set(onMix)
+	source.SetCancelOnMix(onMix)
+	slog.Info("restored", "what", m.onMix.ObjectID, "using", onMix, "board_default", c.Microphone.CancelOnMix == nil)
 
 	component.Restore(m.engine, c.Microphone.CancelEngine, setEngine)
 

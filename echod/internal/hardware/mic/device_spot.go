@@ -28,9 +28,10 @@ const (
 	// microphone; ch0 stands in until the array is mapped.
 	CenterMic = 0
 
-	// CancelOnMix runs the echo canceller on the mix rather than one microphone. Off until measured
-	// on this device.
-	CancelOnMix = false
+	// DefaultCancelOnMix is where the "Echo cancellation on all microphones" switch starts: whether the
+	// echo canceller runs on the mix rather than one microphone (cancelInput). Off until measured on
+	// this device.
+	DefaultCancelOnMix = false
 )
 
 // adcs are the converters the microphones arrive on.

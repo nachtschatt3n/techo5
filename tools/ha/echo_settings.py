@@ -76,13 +76,16 @@ SECTIONS = [
         ('5/select/Thinking effect', 'Thinking effect', True),
         ('5/select/Replying effect', 'Replying effect', True),
     ]),
-    ('Microphone', 'mdi:microphone', 'Mute never copies to other devices.', [
+    ('Microphone', 'mdi:microphone', 'Mute and echo cancellation on all microphones never copy to other devices.', [
         ('2/switch/Microphone mute', 'Mute (this device only)', False),
         ('2/number/Microphone gain', 'Gain', True),
         ('2/number/Room sensitivity', 'Room sensitivity', True),
         ('2/number/Stop word sensitivity', 'Stop word sensitivity', True),
         ('2/switch/Microphone noise reduction', 'Noise reduction', True),
         ('2/switch/Microphone echo cancellation', 'Echo cancellation', True),
+        # Its default is the board's own (on for the Echo Dot 2nd gen and the Echo 2nd gen, off elsewhere
+        # until measured), so one device's choice is not copied to the others.
+        ('2/switch/Echo cancellation on all microphones', 'Echo cancellation on all microphones (this device only)', False),
         ('2/select/Microphone echo canceller', 'Echo canceller', True),
         ('2/switch/Microphone leveling', 'Leveling', True),
         ('2/select/Microphone mixing', 'Mixing', True),

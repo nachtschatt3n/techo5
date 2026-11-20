@@ -24,7 +24,9 @@ const (
 
 	CenterMic = 0
 
-	CancelOnMix = false
+	// DefaultCancelOnMix is off, and either way the same: with one microphone the mix is that
+	// microphone.
+	DefaultCancelOnMix = false
 )
 
 // adcs is empty: there is no codec to route or set the gain of, Android owns it.

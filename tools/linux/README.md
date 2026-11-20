@@ -212,7 +212,11 @@ compiles the helper for armv7 in WSL inside an Alpine root under QEMU
 (`~/alpine-armv7-sdk`, made on first run); `deploy-rootfs.sh` ships it when
 it is there and the rootfs carries the runtime library. Without the helper the
 select settles on the built-in filter. Measured on the bench: about a third
-of a core on worst-case noise, nothing while nothing plays.
+of a core on worst-case noise, nothing while nothing plays. Either engine
+cancels one channel: one microphone (the middle one on the Echo Dot 2nd gen
+and the Echo 2nd gen, the first one elsewhere), or the mix with the **Echo
+cancellation on all microphones** switch on (on by default on the Echo Dot
+2nd gen and the Echo 2nd gen, off elsewhere; docs/setup.md).
 
 ## Screen
 

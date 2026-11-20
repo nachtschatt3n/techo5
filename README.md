@@ -566,7 +566,8 @@ mics. There's echo cancellation too, so it can hear you over its own music.
 
 You can tune a lot of it from Home Assistant: **Microphone gain**, **Microphone mixing** (all
 averaged, center mic only, delay and sum, or beamformer), **Microphone noise reduction**,
-**Microphone echo cancellation** and the **Wake word threshold**. The defaults are what worked best
+**Microphone echo cancellation** (on one microphone or, with **Echo cancellation on all
+microphones**, on the mix) and the **Wake word threshold**. The defaults are what worked best
 in my testing, but every room is different.
 
 If the device's own models don't hear your voice well, Home Assistant's wake word engine
