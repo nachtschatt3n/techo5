@@ -55,3 +55,28 @@ func TestWhenTheMusicGoesInTheStrip(t *testing.T) {
 		t.Error("the strip did not come back after the tap's page ran out")
 	}
 }
+
+// Now Playing asked for - the deck's Now playing button, the library's, the Music Assistant tile -
+// shows the full page for as long as a tap on the strip's song does, then the strip comes back. A
+// track past the strip's time went straight back to the strip, and the button showed the clock.
+func TestNowPlayingAskedForHoldsTheFullPage(t *testing.T) {
+	config.Use(filepath.Join(t.TempDir(), "state.json"))
+	if err := config.Set().Screen().MusicStrip(10); err != nil {
+		t.Fatal(err)
+	}
+	d := &Display{}
+	song := home.Radio{Title: "Africa", Now: "Music Assistant"}
+	now := time.Now()
+	d.stripDue(now.Add(-time.Minute), song, true) // playing for a minute
+	if !d.stripDue(now, song, true) {
+		t.Fatal("the strip was not due a minute into the track")
+	}
+
+	d.showMusicPage()
+	if d.stripDue(time.Now(), song, true) {
+		t.Error("Now Playing asked for went back to the strip at once")
+	}
+	if !d.stripDue(time.Now().Add(stripFull+time.Second), song, true) {
+		t.Error("the strip did not come back after the full page's time")
+	}
+}

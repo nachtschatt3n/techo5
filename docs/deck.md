@@ -83,7 +83,9 @@ The **This screen** actions open the Show's own pages. They need neither OBS nor
 - A **Dashboard** button with a path makes that the dashboard shown from then on, as the
   `dashboard_path` action does: swiping in from the left edge later opens it there too. If you have
   more than one dashboard button, give each its path (`lovelace/0` for the default dashboard's first
-  view). A streamed dashboard connects again when the path changes, which takes a moment.
+  view). The button always opens that view, even after you tapped your way to another view on the
+  dashboard itself. A streamed dashboard connects again for each press, which takes a moment. For a
+  streamed one, update the dashcast server too: an older one shows the dashboard where you left it.
 - A button whose page isn't there says so at the foot of the deck: no weather entity, no calendar
   shown on this device, the dashboard off, or nothing playing.
 

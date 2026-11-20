@@ -73,13 +73,16 @@ func (d *Display) toggleMusic() {
 }
 
 // showMusicPage puts away what is over the idle page (the dashboard, the library over it) and brings
-// Now Playing back, even one put away for the track: what the library's Now Playing button and the
-// Music Assistant tile do while something plays.
+// Now Playing back, even one put away for the track or gone to the strip, for as long as a tap on the
+// strip's song brings it (stripFull): what the library's Now Playing button, the Music Assistant tile
+// and the deck's Now playing button do while something plays. Without the hold, a track playing for
+// longer than the strip's setting went straight back to the strip, and the button showed the clock.
 func (d *Display) showMusicPage() {
 	d.mu.Lock()
 	d.libGoneLocked()
 	d.dashMedia = nil
 	d.away, d.awayTrack, d.awayStation, d.awayPlaying = false, "", "", false
+	d.stripFullUntil = time.Now().Add(stripFull)
 	d.musicQuiet.reopened(time.Now())
 	d.mu.Unlock()
 	d.closeDashboard()

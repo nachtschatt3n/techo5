@@ -93,6 +93,10 @@ type hello struct {
 
 	// Kiosk is the page without Home Assistant's top bar (browser.go, kioskScript).
 	Kiosk bool `json:"kiosk,omitempty"`
+	// Go is a screen that wants Path itself, even from a parked tab picked up again: a button that names
+	// the view. Without it a parked tab comes back wherever it was left, which may be another view the
+	// page was taken to by hand. A device from before it does not send it, and gets the tab as it was.
+	Go bool `json:"go,omitempty"`
 
 	// Page is one of the web pages the server lists, by name (pages.go), in place of a dashboard.
 	Page string `json:"page,omitempty"`
@@ -256,6 +260,13 @@ func serve(ctx context.Context, b *browser, g *guard, cfg config, raw net.Conn) 
 		w = newWarmTab(tab, closeTab, key)
 	} else {
 		slog.Info("dashboard picked up where it was left", "name", h.Name)
+		if h.Go && web.name == "" {
+			if err := showPath(w.ctx, h.Path); err != nil {
+				slog.Warn("a parked dashboard would not go to its view", "name", h.Name, "path", h.Path, "err", err)
+			} else {
+				slog.Info("dashboard taken to the view asked for", "name", h.Name, "path", h.Path)
+			}
+		}
 	}
 	// Parked when this session ends, for the screen to come back to.
 	defer warm.park(w)
@@ -698,4 +709,35 @@ func keepOnDashboards(ctx context.Context, tab context.Context, home string, g *
 		slog.Warn("the page left the dashboards; taking it back", "name", name, "was", path)
 		_ = chromedp.Run(tab, chromedp.Navigate(home))
 	}
+}
+
+// showPath takes a tab picked up again to path, for a screen that asked for that view (hello.Go). It
+// goes there the way the frontend's own links do - the address changed in place and location-changed
+// said, which Home Assistant's router follows - so the dashboard is not loaded again, which is what
+// parking the tab saved. The address goes through the page's own guard (browser.go) like any other.
+// A tab already there is left as it is.
+func showPath(tab context.Context, path string) error {
+	to, err := json.Marshal(path)
+	if err != nil {
+		return err
+	}
+	ctx, cancel := context.WithTimeout(tab, tabAnswer)
+	defer cancel()
+	var there bool
+	if err := chromedp.Run(ctx, chromedp.Evaluate(fmt.Sprintf(`(() => {
+  const to = %s;
+  if (location.pathname !== to) {
+    history.pushState(null, "", to);
+    const ev = new Event("location-changed", {bubbles: true, composed: true});
+    ev.detail = {replace: false};
+    window.dispatchEvent(ev);
+  }
+  return location.pathname === to;
+})()`, to), &there)); err != nil {
+		return err
+	}
+	if !there {
+		return errors.New("the page stayed where it was")
+	}
+	return nil
 }
