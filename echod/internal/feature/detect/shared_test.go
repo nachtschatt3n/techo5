@@ -109,7 +109,9 @@ func TestUnloadDropsAnUnusedFrontEnd(t *testing.T) {
 	}
 }
 
-// A wake word and the stop word, the usual pair, over one 10 ms frame: shared, and each alone.
+// A wake word and the stop word over one 10 ms frame: on one front end ("shared", "shared-exact"), as
+// the daemon runs the usual pair, the image's wake word on the approximate one and the stop word on the
+// exact one ("wake-and-stop"), and each alone.
 func BenchmarkMicroFeed(b *testing.B) {
 	path, err := assets.Stop(b.TempDir())
 	if err != nil {
@@ -137,6 +139,19 @@ func BenchmarkMicroFeed(b *testing.B) {
 			if err := s.load(wake.Model{ID: id, Path: path, Config: cfg}); err != nil {
 				b.Fatal(err)
 			}
+		}
+		for i := range b.N {
+			at := (i % frames) * 160
+			s.feed(audio[at : at+160])
+		}
+	})
+	b.Run("wake-and-stop", func(b *testing.B) {
+		s := newMicroBackend(false)
+		if err := s.load(wake.Model{ID: "wake", Path: path, Config: cfg}); err != nil {
+			b.Fatal(err)
+		}
+		if err := s.load(stopModelAt(path)); err != nil {
+			b.Fatal(err)
 		}
 		for i := range b.N {
 			at := (i % frames) * 160
@@ -279,5 +294,169 @@ func TestAnUploadedModelRunsOnTheExactFrontEnd(t *testing.T) {
 	b.unload("own")
 	if _, ok := b.fronts[frontKey{10, true}]; ok || len(b.fronts) != 1 {
 		t.Errorf("fronts after unloading the uploaded model: %v", b.fronts)
+	}
+}
+
+// approximateByDefault pins the daemon's front end switch to its default, off, for one test.
+// TECHO5_WAKE_FRONTEND=exact in the environment would otherwise put every model on the exact front end
+// (the replay test in hardware/mic documents it for test runs), and a test that the stop word is the
+// one model there would pass or fail by the shell it ran in. The engine's backends read the switch when
+// they are built (newBackend, through build), so this covers them too.
+func approximateByDefault(t *testing.T) {
+	t.Helper()
+	was := ExactFrontEnd
+	ExactFrontEnd = false
+	t.Cleanup(func() { ExactFrontEnd = was })
+}
+
+// The stop word runs on the exact front end on the default backend, next to a wake word of the image's
+// on the approximate one, and each scores what its own front end fed directly gives. It shares the
+// exact one with a model sent from the setup page, and the front end goes with the last model on it.
+func TestTheStopWordRunsOnTheExactFrontEnd(t *testing.T) {
+	approximateByDefault(t)
+	path, err := assets.Stop(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	stop := stopModelAt(path)
+	if !stop.Exact || stop.Uploaded {
+		t.Fatalf("the stop word: Exact %v, Uploaded %v", stop.Exact, stop.Uploaded)
+	}
+	if stop.ID != "stop" || stop.Kind != wake.KindMicroWakeWord || stop.Config.FeaturesStepMs != assets.StopFeatureStep {
+		t.Fatalf("the stop word: %+v", stop)
+	}
+	if got := FrontEnd(stop); got != "exact (mwwfront)" {
+		t.Errorf("a tool would score the stop word on %s", got)
+	}
+
+	cfg := microwakeword.Config{ModelPath: path, SlidingWindowSize: 5, FeaturesStepMs: 10}
+	if got := FrontEnd(wake.Model{ID: "image", Path: path, Config: cfg}); got != "approximate (zserge audiofrontend)" {
+		t.Errorf("a tool would score the image's wake word on %s", got)
+	}
+	b := newMicroBackend(false)
+	if err := b.load(wake.Model{ID: "image", Path: path, Config: cfg}); err != nil {
+		t.Fatal(err)
+	}
+	if err := b.load(stop); err != nil {
+		t.Fatal(err)
+	}
+	if b.step["stop"] != (frontKey{10, true}) || b.step["image"] != (frontKey{10, false}) {
+		t.Fatalf("front ends: stop %+v, the image's word %+v", b.step["stop"], b.step["image"])
+	}
+	if _, ok := b.fronts[frontKey{10, true}].fe.(*mwwfront.Frontend); !ok {
+		t.Fatalf("the stop word's front end is %T", b.fronts[frontKey{10, true}].fe)
+	}
+	if _, ok := b.fronts[frontKey{10, false}].fe.(*audiofrontend.Frontend); !ok {
+		t.Fatalf("the image's word moved off the approximate front end: %T", b.fronts[frontKey{10, false}].fe)
+	}
+
+	cfg.ProbabilityCutoff = neverFires
+	exactRef, err := microwakeword.NewDetector(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	approxRef, err := microwakeword.NewDetector(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fe := mwwfront.New(10)
+	audio := speechish(6)
+	var pending []int16
+	for at := 0; at+160 <= len(audio); at += 160 {
+		frame := audio[at : at+160]
+		scores, _ := b.feed(frame)
+		approxRef.ProcessAudio(frame)
+		pending = append(pending, frame...)
+		for len(pending) >= fe.WindowSamples() {
+			exactRef.ProcessFeatures([][]int8{features(fe.ProcessFrame(pending[:fe.WindowSamples()]))})
+			pending = pending[fe.StepSamples():]
+		}
+		if scores["stop"] != exactRef.SlidingAverage() || scores["image"] != approxRef.SlidingAverage() {
+			t.Fatalf("at sample %d: stop %v (exact alone %v), image's %v (approximate alone %v)",
+				at, scores["stop"], exactRef.SlidingAverage(), scores["image"], approxRef.SlidingAverage())
+		}
+	}
+
+	// A model of one's own is on the same front end: three models, still two front ends.
+	if err := b.load(wake.Model{ID: "own", Path: path, Config: cfg, Uploaded: true}); err != nil {
+		t.Fatal(err)
+	}
+	if len(b.fronts) != 2 {
+		t.Errorf("%d front ends for the image's word, the stop word and an uploaded one", len(b.fronts))
+	}
+	b.unload("own")
+	if _, ok := b.fronts[frontKey{10, true}]; !ok {
+		t.Error("the exact front end went while the stop word still uses it")
+	}
+	b.unload("stop")
+	if _, ok := b.fronts[frontKey{10, true}]; ok || len(b.fronts) != 1 {
+		t.Errorf("fronts after unloading the stop word: %v", b.fronts)
+	}
+}
+
+// Through the engine, as the daemon loads them: the stop word's slot is on the exact front end and a
+// wake word's is not, while the microphones are cut too (what the stop word's log line says then), and
+// the stop word is back on it when they come back.
+func TestEngineScoresTheStopWordOnTheExactFrontEnd(t *testing.T) {
+	approximateByDefault(t)
+	path, err := assets.Stop(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg := microwakeword.Config{ModelPath: path, SlidingWindowSize: 5, FeaturesStepMs: 10}
+	e := New(StopSlot+1, nil)
+	if err := e.Use(0, wake.Model{ID: "image", Kind: wake.KindMicroWakeWord, Path: path, Config: cfg}); err != nil {
+		t.Fatal(err)
+	}
+	if err := e.Use(StopSlot, stopModelAt(path)); err != nil {
+		t.Fatal(err)
+	}
+	check := func(when string) {
+		t.Helper()
+		if got := e.FrontOf(StopSlot); got != "tflm" {
+			t.Errorf("%s: the stop word is on %q, want tflm", when, got)
+		}
+		if got := e.FrontOf(0); got != "zserge" {
+			t.Errorf("%s: the wake word is on %q, want zserge", when, got)
+		}
+	}
+	check("loaded")
+	e.Quiet(true)
+	check("muted")
+	e.Quiet(false)
+	check("after a mute")
+	if got := e.FrontOf(1); got != "" {
+		t.Errorf("an empty slot is on %q", got)
+	}
+}
+
+// A wake word chosen under the stop word's ID is the same detector, so the model loaded last decides the
+// front end for both slots (exactFor): this is the documented behavior, not a goal, and a change to it
+// should be a change to the comment too.
+func TestAWakeWordUnderTheStopWordsIDSharesItsFrontEnd(t *testing.T) {
+	approximateByDefault(t)
+	path, err := assets.Stop(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg := microwakeword.Config{ModelPath: path, SlidingWindowSize: 5, FeaturesStepMs: 10}
+	e := New(StopSlot+1, nil)
+	if err := e.Use(StopSlot, stopModelAt(path)); err != nil {
+		t.Fatal(err)
+	}
+	if err := e.Use(0, wake.Model{ID: "stop", Kind: wake.KindMicroWakeWord, Path: path, Config: cfg}); err != nil {
+		t.Fatal(err)
+	}
+	if a, b := e.FrontOf(0), e.FrontOf(StopSlot); a != "zserge" || b != "zserge" {
+		t.Errorf("loaded after the stop word: the wake word is on %q, the stop word on %q", a, b)
+	}
+	e.Quiet(true)
+	// Muted, the answer is where both come back: Quiet(false) loads the stop word's slot last.
+	if a, b := e.FrontOf(0), e.FrontOf(StopSlot); a != "tflm" || b != "tflm" {
+		t.Errorf("muted: the wake word is on %q, the stop word on %q", a, b)
+	}
+	e.Quiet(false)
+	if a, b := e.FrontOf(0), e.FrontOf(StopSlot); a != "tflm" || b != "tflm" {
+		t.Errorf("after a mute: the wake word is on %q, the stop word on %q", a, b)
 	}
 }

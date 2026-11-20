@@ -1434,8 +1434,33 @@ ordinary turn.
 ringing alarm or timer, an answer, an announcement or the music. After an alarm it also lets go of a
 wake light held on. While the device waits on an answer, it calls the request off, so the answer isn't
 spoken. Otherwise, with nothing playing, it does nothing, so "stop the timer" said to Home Assistant
-isn't cut off. **Stop word threshold** (on the device's microphone in Home Assistant, 0.70 to start
-with) sets how sure it has to be. At the top of its range, the stop word is off.
+isn't cut off. **Stop word threshold** (on the device's microphone in Home Assistant, 0.70 until set;
+where to start is below) sets how sure it has to be. At the top of its range, the stop word is off.
+
+The stop word is scored on exactly the features its model was trained on, which the wake words that
+came with the device aren't (see [A wake word of your own](#a-wake-word-of-your-own)). It used to run
+on the same approximation as those, so a threshold set before means something else now: "stop" scores
+higher than it did, over an answer or the music too, and so do words that sound like it ("top",
+"shop", "drop"). Even a higher threshold takes those for it more often than before. The device's own
+answer can be taken for it too, at the 0.70 it starts with as well: while something plays, the word
+is heard at 0.10 under the threshold (never under 0.50), and a passage of an answer can score that
+much.
+
+Where to start: on a Show, 0.80, and if you had lowered the threshold to have "stop" heard, raise it
+again. On a Dot or a Spot it hasn't been tried yet: keep 0.70, or what you had, and raise it if
+something stops by itself. Go lower a step at a time only while "stop" over an answer still isn't
+heard, watching it on the setup page's [wake word scores](#watching-the-wake-word-scores), and higher
+if something stops by itself.
+
+A stop by mistake cuts an answer, an announcement or the music short. While the device waits on an
+answer, it calls the request off. Said over the music, a request with a word like it in it pauses the
+music and isn't asked. With **Stop** as the [hang-up word](phone.md#a-hang-up-word), it can end a
+call. Something that comes close to "stop" without being taken for it is a near miss, and those come
+more often too. With **Duck after a near miss** on (on a Dot until turned off), each one over the
+music turns it down for a few seconds. During a ringing alarm or timer, each one holds the ring back
+for a moment, whatever that setting says, so a second try is heard. The device's log says which
+features the word is on, in the line `stop word listening` with `front=tflm` (`tflm` is the exact
+one, `zserge` the approximation).
 
 **What was said, in Home Assistant.** The **Last wake word**, **Last heard** and **Last reply**
 sensors say which wake word started the last request, what the device heard and what it answered,
@@ -1605,10 +1630,10 @@ The quickest way is the device's setup page:
 4. Say it a few times from where you'll use it, and watch it on the setup page's
    [wake word scores](#watching-the-wake-word-scores) to pick its **Wake word threshold**.
 
-A wake word sent from the page is scored on exactly the features its model was trained on. The words
-that came with the device, and ones added through Home Assistant, run on an approximation that
-their thresholds are set for, and some models of your own score next to nothing on it
-([#352](https://github.com/HuskerMinion/techo5/issues/352)). If one added through Home Assistant
+A wake word sent from the page is scored on exactly the features its model was trained on, as the
+stop word is. The wake words that came with the device, and ones added through Home Assistant, run on
+an approximation that their thresholds are set for, and some models of your own score next to nothing
+on it ([#352](https://github.com/HuskerMinion/techo5/issues/352)). If one added through Home Assistant
 hardly ever wakes, send it from the setup page instead.
 
 Only microWakeWord models are taken (`"type": "micro"` in the `.json`), with a `.tflite` of at most

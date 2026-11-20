@@ -27,25 +27,41 @@ func stopModel() (wake.Model, error) {
 	if err != nil {
 		return wake.Model{}, err
 	}
+	return stopModelAt(path), nil
+}
 
+// stopModelAt is the word with its file at path: stopModel without writing the file, which a test
+// cannot do where the state directory is fixed.
+//
+// It is scored on the exact feature front end, whatever the wake words are on (exactFor). Its model's
+// own cutoff, the 0.50 its threshold cannot go under, was set on those features, and the word is mostly
+// said over the device's own sound, where what the echo canceller leaves of the voice is all it has to
+// go on. Unlike a wake word it has no second threshold for while the speaker plays, to tune around the
+// approximation with. The model is marked rather than its ID matched because the backend sees models,
+// not slots; a wake word chosen under the same ID shares its detector all the same (exactFor).
+func stopModelAt(path string) wake.Model {
 	m := wake.Model{
 		ID:     "stop",
 		Phrase: assets.StopPhrase,
 		Kind:   wake.KindMicroWakeWord,
 		Path:   path,
+		Exact:  true,
 	}
 	m.Config.ModelPath = path
 	m.Config.SlidingWindowSize = assets.StopWindowSize
 	m.Config.FeaturesStepMs = assets.StopFeatureStep
-	return m, nil
+	return m
 }
 
 // loadStop puts the stop word in, or takes it out when it is switched off.
 //
-// Off means unloaded rather than ignored. A microWakeWord model carries its own feature front end, so
-// one costs a front end per frame however loud the room is — unlike a second openWakeWord word, which
-// is only another classifier over a front end already running. Leaving it loaded and never acting on it
-// would be paying for the feature while it is turned off.
+// Off means unloaded rather than ignored. The stop word is on the exact feature front end, which the
+// image's wake words are not unless the daemon's switch puts them there (ExactFrontEnd), so it costs
+// that front end per frame as well as its inference, however loud the room is. Leaving it loaded and
+// never acting on it would be paying for the feature while it is turned off.
+//
+// The log line says which front end it is on ("tflm" is the exact one), so a device's log shows which
+// meaning its threshold has.
 func (d *Detect) loadStop() {
 	if !config.Get().Wake.Stop.Listening() {
 		d.engine.Clear(StopSlot)
@@ -64,7 +80,7 @@ func (d *Detect) loadStop() {
 		d.engine.Clear(StopSlot)
 		return
 	}
-	slog.Info("stop word listening", "threshold", config.Get().Wake.Stop.Threshold)
+	slog.Info("stop word listening", "threshold", config.Get().Wake.Stop.Threshold, "front", d.engine.FrontOf(StopSlot))
 }
 
 // newStopEntity is the one control the stop word has. There is no switch beside it: the top of the range
