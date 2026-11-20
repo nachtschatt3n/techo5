@@ -3,6 +3,7 @@ package mic
 import (
 	"log/slog"
 	"math"
+	"strconv"
 	"sync/atomic"
 
 	"github.com/HuskerMinion/techo5/echod/internal/lib/aec"
@@ -86,6 +87,10 @@ type canceller struct {
 	ext    *external
 	engine string
 
+	// delayMs is how far the helper holds the microphone back behind the loopback (helperArgs). Set,
+	// like engine, under Source.mu, which the capture loop holds too.
+	delayMs int
+
 	// ref and mono are reused every frame; decoding into them keeps the audio path free of allocation.
 	ref  []int16
 	mono []int16
@@ -146,13 +151,60 @@ func (c *canceller) setEngine(name string) string {
 	if name != "webrtc" {
 		return c.engine
 	}
-	e, err := startExternal("--ns", "low")
+	e, err := startExternal(helperArgs(c.delayMs)...)
 	if err != nil {
 		slog.Warn("webrtc echo cancellation unavailable, using the built-in filter", "err", err)
 		return c.engine
 	}
 	c.ext, c.engine = e, "webrtc"
 	return c.engine
+}
+
+// helperArgs is how the helper is started: low noise suppression, and the microphone held back by
+// delayMs behind the loopback.
+//
+// The loopback is sample aligned with the microphones, but the echo of what it carries reaches them
+// only after the amplifier, the speaker and a few centimeters of air, which may be very little later.
+// Offline, WebRTC's linear filter did not converge with the echo less than about 2 ms behind the
+// reference, leaving the reply to the suppressor, which takes a voice talking over it along with the
+// echo. Holding the microphone back gives the reference that lead; how short the lag really is on a
+// device has not been measured, so 0 stays the default and the delay is a setting (Microphone echo
+// canceller delay).
+//
+// The helper still answers each block with one block, so nothing here or downstream waits any
+// longer; what it answers is only delayMs older. Everything that listens hears a voice over playback
+// that much later, and the edges of a run, where the frame switches between the mix and the canceled
+// path, show it: as a run starts, the first delayMs out of the helper is silence (it is only fed while
+// something plays, and empties its line after a pause rather than hand over the end of the run
+// before), and as a run ends, the last delayMs it held is never heard. At most 20 ms either way, a
+// fraction of a syllable, and the half second the ERLE estimate in external.Process averages over
+// does not notice the offset between what went in and what came out.
+//
+// At 0 the flag is left off, so the arguments are the ones the helper has always had, and a helper
+// older than the setting still starts. An older helper given a delay refuses the flag and exits; the
+// canceller then falls back to the built-in filter, and the log says the helper refused its delay
+// (startExternal).
+func helperArgs(delayMs int) []string {
+	args := []string{"--ns", "low"}
+	if delayMs > 0 {
+		args = append(args, "--delay-ms", strconv.Itoa(delayMs))
+	}
+	return args
+}
+
+// setDelay changes how far the helper holds the microphone back. The helper takes it as it starts,
+// so a running one is started again with it, and comes back having forgotten the room, to learn it
+// again from the next thing that plays. The built-in filter has no use for it (see helperArgs).
+func (c *canceller) setDelay(ms int) {
+	ms = max(ms, 0)
+	if ms == c.delayMs {
+		return
+	}
+	c.delayMs = ms
+	if c.ext != nil {
+		slog.Info("echo cancellation helper restarting for its delay", "delay_ms", ms)
+		c.setEngine("webrtc")
+	}
 }
 
 // process runs one block through whichever engine is on. A helper that has died is dropped for
@@ -211,6 +263,8 @@ func (c *canceller) apply(raw []byte, mic []int16) []int16 {
 		attrs := []any{"engine", c.engine, "ref_dbfs", blockDBFS(c.ref), "mic_dbfs", blockDBFS(mic)}
 		if c.engine == "builtin" {
 			attrs = append(attrs, "taps", c.filter.Load().Taps()) // WebRTC's canceller has its own
+		} else if c.delayMs > 0 {
+			attrs = append(attrs, "delay_ms", c.delayMs)
 		}
 		slog.Info("echo cancellation running", attrs...)
 	}
@@ -310,6 +364,28 @@ func (s *Source) SetCancelEngine(name string) string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.cancel.setEngine(name)
+}
+
+// SetCancelDelay sets how far WebRTC's canceller holds the microphone back behind the loopback, in
+// milliseconds, starting the helper again when it is running. Serialized with the capture loop, as
+// SetCancelEngine is. The built-in filter does not read it.
+func (s *Source) SetCancelDelay(ms int) {
+	if s.cancel == nil {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.cancel.setDelay(ms)
+}
+
+// CancelDelay is how far WebRTC's canceller holds the microphone back, in milliseconds, as last set.
+func (s *Source) CancelDelay() int {
+	if s.cancel == nil {
+		return 0
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.cancel.delayMs
 }
 
 // CancelEngine is which canceller is running.

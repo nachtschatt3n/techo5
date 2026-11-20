@@ -29,6 +29,7 @@ type Microphone struct {
 	leveling    *esphome.Switch
 	cancel      *esphome.Switch
 	engine      *esphome.Select
+	delay       *esphome.Number // how far WebRTC's canceller holds the microphones back
 	denoise     *esphome.Switch
 	ends        *esphome.Switch
 	preroll     *esphome.Switch // the 250 ms before the wake word, with a wake sound too
@@ -88,6 +89,16 @@ func build() *Microphone {
 				Category: esphome.CategoryConfig,
 			},
 		},
+		delay: &esphome.Number{
+			Base: esphome.Base{
+				ObjectID: "microphone_echo_canceller_delay",
+				Name:     "Microphone echo canceller delay",
+				Icon:     "mdi:timer-outline",
+				Category: esphome.CategoryConfig,
+			},
+			Min: 0, Max: config.MaxCancelDelay, Step: 1, Unit: "ms",
+			Mode: esphome.NumberBox,
+		},
 		denoise: &esphome.Switch{
 			Base: esphome.Base{
 				ObjectID: "microphone_noise_reduction",
@@ -146,7 +157,7 @@ func build() *Microphone {
 
 	for _, b := range []*esphome.Base{
 		&m.aspSelected.Base, &m.aspActive.Base,
-		&m.mixing.Base, &m.gain.Base, &m.leveling.Base, &m.cancel.Base, &m.engine.Base, &m.denoise.Base,
+		&m.mixing.Base, &m.gain.Base, &m.leveling.Base, &m.cancel.Base, &m.engine.Base, &m.delay.Base, &m.denoise.Base,
 		&m.ends.Base, &m.preroll.Base, &m.pause.Base, &m.sensitivity.Base,
 	} {
 		b.DeviceID = component.DeviceMicrophone
@@ -186,6 +197,17 @@ func build() *Microphone {
 		source.SetCanceling(on)
 		if err := config.Set().Microphone().Cancel(on); err != nil {
 			slog.Error("saving the echo cancellation setting failed", "err", err)
+		}
+	}
+
+	// Only WebRTC's canceller reads it, and takes it as its helper starts, so a running helper is
+	// started again with it (mic.Source.SetCancelDelay); chosen later, the helper starts with it.
+	m.delay.OnCommand = func(v float32) {
+		ms := config.Microphone{CancelDelay: int(math.Round(float64(v)))}.CancelDelayMs()
+		m.delay.Set(float32(ms))
+		source.SetCancelDelay(ms)
+		if err := config.Set().Microphone().CancelDelay(ms); err != nil {
+			slog.Error("saving the echo canceller delay failed", "err", err)
 		}
 	}
 
@@ -242,7 +264,7 @@ func build() *Microphone {
 func (m *Microphone) Name() string { return "microphone settings" }
 
 func (m *Microphone) Entities() []esphome.Entity {
-	return append([]esphome.Entity{m.aspSelected, m.aspActive, m.mixing, m.gain, m.leveling, m.cancel, m.engine, m.denoise, m.ends, m.preroll,
+	return append([]esphome.Entity{m.aspSelected, m.aspActive, m.mixing, m.gain, m.leveling, m.cancel, m.engine, m.delay, m.denoise, m.ends, m.preroll,
 		m.pause, m.sensitivity},
 		buildEntities()...)
 }
@@ -270,6 +292,12 @@ func (m *Microphone) Restore(c config.Config) {
 	m.cancel.Set(c.Microphone.Cancel)
 	source.SetCanceling(c.Microphone.Cancel)
 	slog.Info("restored", "what", m.cancel.ObjectID, "using", c.Microphone.Cancel)
+
+	// The delay before the engine, so a WebRTC helper started here as the device comes up starts with
+	// it rather than being started twice.
+	m.delay.Set(float32(c.Microphone.CancelDelayMs()))
+	source.SetCancelDelay(c.Microphone.CancelDelayMs())
+	slog.Info("restored", "what", m.delay.ObjectID, "using", c.Microphone.CancelDelayMs())
 
 	component.Restore(m.engine, c.Microphone.CancelEngine, setEngine)
 

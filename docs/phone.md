@@ -113,7 +113,8 @@ built-in one leaves, and goes back to the one chosen in **Microphone echo cancel
 built-in one stays the default the rest of the time because the wake word is heard better with it;
 during a call, with WebRTC's, the hang-up word and **Wake word during calls** may be caught less
 reliably. It is **Same as outside calls** until chosen, and offered only where the device's image has
-the WebRTC helper.
+the WebRTC helper. **Microphone echo canceller delay** applies in calls too, and holds back what the
+other party hears from you by as much.
 
 ### The phone book
 

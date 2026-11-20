@@ -44,3 +44,6 @@ jobs:
 
       - name: Boot layer tests (bootctl, slotctl, under busybox in Docker)
         run: python3 tools/test_boot_layer.py
+
+      - name: Echo canceller helper tests (its arguments and timing, against a stand-in for WebRTC)
+        run: python3 tools/test_aec_helper.py
