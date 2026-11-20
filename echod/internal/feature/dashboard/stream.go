@@ -104,6 +104,10 @@ type stream struct {
 	frame   *image.RGBA // painted in place as pictures arrive, under mu
 	stopped bool
 	enc     *json.Encoder
+	// goTo has the hello ask dashcast for the path itself (GoTo), until a hello has gone with it: a
+	// connection that failed before that tries again with it, and one lost after it comes back to
+	// wherever the page was.
+	goTo bool
 }
 
 // DrawStream draws the streamed dashboard into dst, and reports whether there was one to draw.
@@ -132,8 +136,8 @@ func (f *Feature) Stream(w, h int) View {
 		if s != nil {
 			safe.Go("dashboard stream close", s.close)
 		}
-		s = &stream{f: f, w: w, h: h}
-		f.stream = s
+		s = &stream{f: f, w: w, h: h, goTo: f.goTo}
+		f.stream, f.goTo = s, false
 		safe.Go("dashboard stream", s.run)
 	}
 	f.streamUsed = time.Now()
@@ -328,13 +332,21 @@ func (s *stream) once() error {
 		// By name alone. A dashcast from before it knew web pages takes the path, which is no
 		// dashboard, and says so on the screen.
 		hello["page"] = page
-	} else if cfg.Dashboard.Kiosk {
-		hello["kiosk"] = true // a dashcast from before it knew kiosk ignores it and shows the header
+	} else {
+		if cfg.Dashboard.Kiosk {
+			hello["kiosk"] = true // a dashcast from before it knew kiosk ignores it and shows the header
+		}
+		s.mu.Lock()
+		if s.goTo {
+			hello["go"] = true // a dashcast from before it knew go ignores it and gives the tab back as it was
+		}
+		s.mu.Unlock()
 	}
 	if err := enc.Encode(hello); err != nil {
 		return err
 	}
 	s.mu.Lock()
+	s.goTo = false
 	if s.stopped {
 		s.mu.Unlock()
 		return nil

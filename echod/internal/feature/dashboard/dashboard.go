@@ -81,6 +81,8 @@ type Feature struct {
 	// navTo is the path a tap on the page is going to, until the page is asked for it there: the one
 	// change of path that holds the page it left (session.hold).
 	navTo string
+	// goTo is a streamed page asked for at its path by GoTo, until the next stream takes it (stream.goTo).
+	goTo bool
 	// recent is the last few pictures the drawn page showed, kept between its views.
 	recent recent
 
@@ -548,13 +550,40 @@ func (f *Feature) SetPath(path string) error {
 	return nil
 }
 
-// GoTo is SetPath for a page that only wants the dashboard to be at path when it opens (a deck button):
-// a path it is already at is left alone, so a streamed page is not connected again for nothing.
+// GoTo is SetPath for a page that wants the dashboard to be at path when it opens (a deck button).
+//
+// Drawn, the kept path is where the page is, since every view it goes to goes through Tap: a path it is
+// already at is left alone. Streamed, it is only where the page started. A tap on the page goes to the
+// browser, which can take it to another view or dashboard without the device knowing, and the stream
+// outlives the page for a while (unused), and dashcast's tab the stream after that (its warm.go): a
+// button for the same path found the page wherever it had been taken. So a streamed page connects
+// again whatever the path, and the connection asks dashcast to go to the path even on a tab it picks
+// up again (stream.goTo). A dashcast from before that gives the tab back as it was. A web page is
+// left alone as drawn is: dashcast keeps it on its own site, and the hello names it rather than a view.
 func (f *Feature) GoTo(path string) error {
-	if navPath(path) == navPath(config.Get().Dashboard.Path) {
-		return nil
+	same := navPath(path) == navPath(config.Get().Dashboard.Path)
+	if _, web := WebPage(navPath(path)); f.Mode() != config.DashboardStreamed || web {
+		if same {
+			return nil
+		}
+		return f.SetPath(path)
 	}
-	return f.SetPath(path)
+	if !same {
+		if err := f.SetPath(path); err != nil {
+			return err
+		}
+	}
+	// The stream there now, if any, is closed and the next one told in one step, so a page asking for
+	// the stream in between cannot get a connection without it.
+	f.mu.Lock()
+	s := f.stream
+	f.stream, f.goTo = nil, true
+	f.mu.Unlock()
+	if s != nil {
+		s.close()
+	}
+	f.Changed.Emit(struct{}{})
+	return nil
 }
 
 // Idle is whether the dashboard stands in for the clock.
