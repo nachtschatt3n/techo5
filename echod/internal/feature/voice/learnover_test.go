@@ -159,19 +159,17 @@ func TestTalkedOverIsPostedOnlyOverAnAnswer(t *testing.T) {
 	}
 }
 
-// A near miss is told NearMissSettle after its peak, so one that peaked in the request can arrive once
-// the turn is thinking. Said before the turn stopped listening, it is the request, not a word over the
-// reply; one said after is.
+// A near miss is told a little more than NearMissSettle after its peak, with when it peaked, so one that
+// peaked in the request can arrive once the turn is thinking. Said before the turn stopped listening,
+// even just before, it is the request, not a word over the reply; one said after is.
 func TestAWordSaidInTheRequestAndToldLateDoesNotCount(t *testing.T) {
 	c, _ := heldTurn(t, false)
 	c.enter(phaseListening)
-	said := time.Now()
-	time.Sleep(10 * time.Millisecond)
 	c.think()
 
-	c.handle(event{kind: evTalkedOver, at: said})
+	c.handle(event{kind: evTalkedOver, at: c.listenedTo.Add(-10 * time.Millisecond)})
 	if c.talkedOver {
-		t.Fatal("a near miss said in the request was taken for one over the reply")
+		t.Fatal("a near miss said just before the turn stopped listening was taken for one over the reply")
 	}
 	c.handle(event{kind: evTalkedOver, at: time.Now()})
 	if !c.talkedOver {

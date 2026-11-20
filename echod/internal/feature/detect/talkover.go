@@ -24,9 +24,11 @@ func talkingOver(slot int) bool { return slot == StopSlot || isWakeSlot(slot) }
 // A detection and a candidate are told first, before the hook routes them: a wake word may wait on
 // the other devices for a moment before its turn opens (feature/nearest), and whoever said it goes on
 // talking meanwhile. A near miss is told after whatever already listened for near misses (the ducker,
-// the clips), which still hears every one of them, the command words' included. It arrives
-// NearMissSettle after its peak, which is when it was said: the turn tells a word said in the request
-// itself, told late, from one said over the reply by that.
+// the clips), which still hears every one of them, the command words' included. It arrives a little
+// more than NearMissSettle after its peak, by up to a score and however long its goroutine waited, so
+// it is told with when it peaked, which is when it was said: the turn tells a word said in the request
+// itself, told late, from one said over the reply by that, and a peak just before the turn stopped
+// listening is still the request.
 func watchTalkingOver(e *Engine, told func(at time.Time)) {
 	detected := e.OnDetect
 	e.OnDetect = func(slot int) {
@@ -47,12 +49,12 @@ func watchTalkingOver(e *Engine, told func(at time.Time)) {
 		}
 	}
 	near := e.OnNearMiss
-	e.OnNearMiss = func(slot int, peak float64) {
+	e.OnNearMiss = func(slot int, peak float64, at time.Time) {
 		if near != nil {
-			near(slot, peak)
+			near(slot, peak, at)
 		}
 		if talkingOver(slot) {
-			told(time.Now().Add(-NearMissSettle))
+			told(at)
 		}
 	}
 }

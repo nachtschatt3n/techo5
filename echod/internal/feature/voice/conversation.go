@@ -858,10 +858,10 @@ func (c *conversation) turnEvent(e event) {
 		// Somebody may be talking over the answer, whether or not the word goes on to stop it: from here
 		// to the end of the turn the canceller learns nothing more, so a second try is canceled by what it
 		// knew before the first. Not while listening, where somebody talking is the point and a near
-		// miss says nothing about the reply to come. A near miss is told NearMissSettle after its peak
-		// (feature/detect), so one that peaked in the request itself can arrive once the turn is already
-		// thinking: e.at is when the word was said, and a word said before the turn stopped listening is
-		// still the request.
+		// miss says nothing about the reply to come. A near miss is told some time after its peak, a
+		// little more than NearMissSettle (feature/detect), so one that peaked in the request itself can
+		// arrive once the turn is already thinking: e.at is when the word was said, its peak for a near
+		// miss, and a word said before the turn stopped listening is still the request.
 		if c.phase != phaseThinking && c.phase != phaseReplying {
 			return
 		}

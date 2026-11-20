@@ -78,13 +78,15 @@ type Engine struct {
 	OnDetect func(slot int)
 
 	// OnNearMiss runs when an utterance peaked over NearMiss and fell away without firing, with the peak
-	// it reached, off the audio path. A near miss is the only sign the device gets that somebody tried
-	// and was not heard, which is the one moment when getting out of their way is worth something.
+	// it reached and when it reached it, off the audio path. A near miss is the only sign the device gets
+	// that somebody tried and was not heard, which is the one moment when getting out of their way is
+	// worth something. It runs some time after the peak, on the first score more than NearMissSettle on
+	// and then on a goroutine of its own, so at is the one thing that says when the word was said.
 	//
 	// It is NearMiss, whatever NearMissFloor says: a peak under it that the floor lets through is
 	// logged and listed for the setup page, and nothing else. What acts on a near miss (the ducker, the
 	// ring's hush, the wake clips) was tuned for NearMiss and keeps it.
-	OnNearMiss func(slot int, peak float64)
+	OnNearMiss func(slot int, peak float64, at time.Time)
 
 	// NearMissFloor is the lowest peak worth a near miss line for a slot, asked when the utterance peaks,
 	// with the cutoff then in force; nil, or a slot it has no opinion on, is NearMiss. It only ever
@@ -674,8 +676,8 @@ func (e *Engine) judge(n int, s *slot, score float64, now time.Time, source *mic
 			e.board.event(wakeword.ScoreEvent{At: now, Slot: n + 1, What: "near miss", ID: s.model.ID, Peak: s.peak,
 				Cutoff: against})
 			if e.OnNearMiss != nil && s.peak >= NearMiss {
-				i, peak := n, s.peak
-				safe.Go("wake near miss", func() { e.OnNearMiss(i, peak) })
+				i, peak, at := n, s.peak, s.peakAt
+				safe.Go("wake near miss", func() { e.OnNearMiss(i, peak, at) })
 			}
 		}
 		// A peak that settled under its floor is let go of as well. With the one floor every slot used to

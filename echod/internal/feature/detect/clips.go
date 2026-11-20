@@ -200,9 +200,9 @@ func startClips(e *Engine, publish func(total int, kinds string)) *clips {
 		}
 		c.scored(slot, peak, cutoff)
 	}
-	e.OnNearMiss = func(slot int, peak float64) {
+	e.OnNearMiss = func(slot int, peak float64, at time.Time) {
 		if prevNear != nil {
-			prevNear(slot, peak)
+			prevNear(slot, peak, at)
 		}
 		c.nearMiss(slot, peak)
 	}
