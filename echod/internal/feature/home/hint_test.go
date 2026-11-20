@@ -52,11 +52,19 @@ func (r *hintRig) ask(t *testing.T, station string) {
 }
 
 // askWatched is ask, with watch as callFavorite takes it: false for a station the device puts back on.
+//
+// The call reaches the rig from inside Emit, before callFavorite's goroutine has gone on to start the
+// watch for it. A test that asks for a second station at once could have the second's watch start
+// first, and the first's then counts as the newer one: the second station's note never comes, and the
+// first's is not for the station chosen either. A busy machine runs into that now and then. So a watched
+// ask also waits for what callFavorite does after the call: the watch started, or the station given up
+// on at once (no Home Assistant connected), which starts none.
 func (r *hintRig) askWatched(t *testing.T, station string, watch bool) {
 	t.Helper()
 	r.f.mu.Lock()
 	r.f.askStation(station)
 	r.f.chosen = station
+	seq := r.f.startSeq
 	r.f.mu.Unlock()
 	r.f.callFavorite(r.h, station, watch)
 	select {
@@ -66,6 +74,20 @@ func (r *hintRig) askWatched(t *testing.T, station string, watch bool) {
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("the script was not called")
+	}
+	if !watch {
+		return
+	}
+	for deadline := time.Now().Add(2 * time.Second); ; time.Sleep(time.Millisecond) {
+		r.f.mu.Lock()
+		done := r.f.startSeq != seq || r.f.chosen != station
+		r.f.mu.Unlock()
+		if done {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("the watch for the station did not start")
+		}
 	}
 }
 
