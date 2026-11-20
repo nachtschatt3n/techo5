@@ -328,12 +328,15 @@ func capital(s string) string {
 }
 
 // wrapLines breaks text into at most n lines no wider than w, on spaces, the last cut short with an
-// ellipsis when there is more; with n 0, into as many as it takes.
+// ellipsis when there is more; with n 0, into as many as it takes. The last line is cut from itself and
+// the word that did not fit on it, not from all the rest: what is past that word would be cut off all
+// the same, and clipLine measures again for every character it takes off, which on an answer of a few
+// thousand characters would take seconds.
 func wrapLines(face font.Face, text string, w, n int) []string {
 	var out []string
 	line := ""
 	words := strings.Fields(text)
-	for i, word := range words {
+	for _, word := range words {
 		try := word
 		if line != "" {
 			try = line + " " + word
@@ -341,7 +344,7 @@ func wrapLines(face font.Face, text string, w, n int) []string {
 		if line != "" && fonts.MeasureString(face, try).Ceil() > w {
 			out = append(out, line)
 			if len(out) == n {
-				out[n-1] = clipLine(face, out[n-1]+" "+strings.Join(words[i:], " "), w)
+				out[n-1] = clipLine(face, try, w)
 				return out
 			}
 			line = word
