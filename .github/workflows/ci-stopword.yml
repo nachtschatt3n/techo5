@@ -17,14 +17,12 @@ jobs:
       fail-fast: false
       matrix:
         branch:
-          - detect-stop-peak-per-reply
-          - detect-stop-near-miss-floor
-          - detect-stop-exact-front-end
           - mic-builtin-learns-over-reply
-          - mic-cancel-on-mix-setting
           - aec-capture-delay
-          - aec-linear-for-wake
+          - library-without-drawn-dashboard-v2
+          - deck-screen-pages-launcher-v2
           - house-build-v3
+          - rainbow-cap-long-answers-fix
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -102,9 +100,6 @@ jobs:
           - name: aec-capture-delay
             ref: aec-capture-delay
             cases: ";--delay-ms 10"
-          - name: aec-linear-for-wake
-            ref: aec-linear-for-wake
-            cases: ";--linear"
           - name: house-build-v3
             ref: house-build-v3
             cases: ";--delay-ms 10;--linear;--delay-ms 10 --linear"
