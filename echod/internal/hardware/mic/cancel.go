@@ -101,6 +101,14 @@ type canceller struct {
 
 	// hold counts down the samples still to filter after the loopback went quiet. Reader-only.
 	hold int
+
+	// learned counts the samples of the current run that the built-in filter learned from: playback in
+	// the loopback while it was adapting. It goes into the idle line, to tell how much the filter learned
+	// over a run. A run is everything played until a second of quiet, so music before the wake word is
+	// in the same run as the reply after it, and was learned from outside the turn as it always is: only
+	// with nothing playing before the turn does the count say the reply alone was learned over or not
+	// (the turn logs that itself, feature/voice learnOverReply). Reader-only, like hold.
+	learned int
 }
 
 func newCanceller() *canceller {
@@ -188,8 +196,9 @@ func (c *canceller) apply(raw []byte, mic []int16) []int16 {
 	c.ref = c.ref[:n]
 	referenceInto(raw, c.ref)
 
+	live := playing(c.ref)
 	switch {
-	case playing(c.ref):
+	case live:
 		c.hold = refHold
 	case c.hold > 0:
 		// Still inside the tail of what just played.
@@ -198,10 +207,15 @@ func (c *canceller) apply(raw []byte, mic []int16) []int16 {
 		// Nothing to cancel. The filter keeps what it learned: the room has not changed just because
 		// the reply ended, so the next one starts converged rather than from nothing.
 		if c.active.Swap(false) {
-			slog.Info("echo cancellation idle",
-				"best_db", float64(c.best.Load())/1000, "last_db", float64(c.erle.Load())/1000)
+			attrs := []any{"best_db", float64(c.best.Load()) / 1000, "last_db", float64(c.erle.Load()) / 1000}
+			if c.engine == "builtin" {
+				// WebRTC's canceller decides for itself when to learn, whatever SetAdapting says.
+				attrs = append(attrs, "learned_s", math.Round(float64(c.learned)/Rate*10)/10)
+			}
+			slog.Info("echo cancellation idle", attrs...)
 			c.erle.Store(0)
 			c.best.Store(0)
+			c.learned = 0
 		}
 		return nil
 	}
@@ -224,6 +238,13 @@ func (c *canceller) apply(raw []byte, mic []int16) []int16 {
 	c.erle.Store(erle)
 	if erle > c.best.Load() {
 		c.best.Store(erle)
+	}
+	// Only the blocks with playback in them: in the tail after it the reference is silent, and the filter
+	// learns nothing there whatever it was told. Counted by the block against refQuiet, which sits under
+	// the filter's own idea of silence, so very quiet playback counts a little the filter skipped: close
+	// enough to tell a run learned over from one sat through frozen.
+	if live && c.engine == "builtin" && c.adapting.Load() {
+		c.learned += n
 	}
 
 	// The engines hand back a buffer of their own that the next block overwrites, and the caller runs
@@ -328,6 +349,9 @@ func (s *Source) CancelEngine() string {
 // reference for from an echo it predicted badly, so it treats the voice as its own error and fits itself
 // to it — at exactly the moment canceling matters. What it already learned stays correct: the room did
 // not change because somebody spoke.
+//
+// Only the built-in filter is told. WebRTC's canceller decides for itself when to learn, and its helper
+// is never asked to stop.
 func (s *Source) SetAdapting(on bool) {
 	if s.cancel != nil {
 		s.cancel.adapting.Store(on)

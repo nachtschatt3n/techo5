@@ -179,6 +179,7 @@ func (c *conversation) watchEvent(e event) bool {
 		if config.Get().Wake.OnHA.Confirm && c.micBusy() {
 			c.busyAt = c.now()
 		}
+		c.stopLearningIfBusy()
 		return true
 
 	case evRunStart:
