@@ -83,9 +83,11 @@ type canceller struct {
 	adapting atomic.Bool
 
 	// ext is WebRTC's canceller in a helper process (webrtc.go), used instead of filter while it is
-	// set and healthy. engine names which one the user asked for.
+	// set and healthy. engine names the one running, want the one last asked for: they differ when the
+	// helper could not start or died, and process dropped it for the built-in filter.
 	ext    *external
 	engine string
+	want   string
 
 	// delayMs is how far the helper holds the microphone back behind the loopback (helperArgs). Set,
 	// like engine, under Source.mu, which the capture loop holds too.
@@ -160,7 +162,7 @@ func newCanceller() *canceller {
 		slog.Error("echo cancellation unavailable", "err", err)
 		return nil
 	}
-	c := &canceller{engine: "builtin"}
+	c := &canceller{engine: "builtin", want: "builtin"}
 	c.filter.Store(f)
 	c.adapting.Store(f.Adapting())
 	return c
@@ -188,6 +190,7 @@ func (c *canceller) fitTaps(taps int) {
 // setEngine picks the canceller: "builtin" is the LMS filter above, "webrtc" the helper process.
 // It reports what it settled on: webrtc falls back to builtin when the helper cannot start.
 func (c *canceller) setEngine(name string) string {
+	c.want = name
 	if c.ext != nil {
 		c.ext.Close()
 		c.ext = nil
@@ -244,13 +247,19 @@ func helperArgs(delayMs int) []string {
 // setDelay changes how far the helper holds the microphone back. The helper takes it as it starts,
 // so a running one is started again with it, and comes back having forgotten the room, to learn it
 // again from the next thing that plays. The built-in filter has no use for it (see helperArgs).
+//
+// What decides is the engine asked for, not the one running: a helper too old for the flag exits on
+// a delay, and process puts the built-in filter in its place, while the engine select still shows
+// WebRTC. Setting the delay back to 0 then starts the helper again without the flag, as the log line
+// about the refusal tells the user to, instead of leaving the built-in filter on until the engine is
+// chosen again or the daemon restarts.
 func (c *canceller) setDelay(ms int) {
 	ms = max(ms, 0)
 	if ms == c.delayMs {
 		return
 	}
 	c.delayMs = ms
-	if c.ext != nil {
+	if c.want == "webrtc" {
 		slog.Info("echo cancellation helper restarting for its delay", "delay_ms", ms)
 		c.setEngine("webrtc")
 	}
@@ -285,7 +294,8 @@ func (c *canceller) setLinear(on bool) bool {
 func (c *canceller) linearRunning() bool { return c.ext != nil && c.ext.linear }
 
 // process runs one block through whichever engine is on. A helper that has died is dropped for
-// the built-in filter, once, with a log line.
+// the built-in filter, once, with a log line. want stays WebRTC, so a new delay tries the helper again
+// (setDelay).
 //
 // One that died giving the linear output is first started once more without it. The linear output
 // comes from building AEC3 from a header the library does not install (techo5-aec.cpp), so a helper

@@ -1348,7 +1348,8 @@ too, when **Microphone echo canceller in calls** is **WebRTC**. While something 
 and speech-to-text hear you that many milliseconds later. The built-in canceller doesn't use it. A
 device whose echo canceller helper is older than the setting can't take a delay: it runs the built-in
 canceller instead while **Microphone echo canceller** still shows **WebRTC**, and the log says
-`echo cancellation helper refused its delay`. Set the delay back to 0 on it, or update its image.
+`echo cancellation helper refused its delay`. Set the delay back to 0 on it, which starts WebRTC's
+canceller again, or update its image.
 
 **Wake words hear the canceller before suppression** is a switch in Home Assistant (the device's
 microphone settings), off by default, for a stop word that is hard to catch over the device's own
