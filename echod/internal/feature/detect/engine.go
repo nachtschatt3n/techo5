@@ -76,9 +76,11 @@ type Engine struct {
 	OnDetect func(slot int)
 
 	// OnNearMiss runs when an utterance peaked over NearMiss and fell away without firing, with the peak
-	// it reached, off the audio path. A near miss is the only sign the device gets that somebody tried
-	// and was not heard, which is the one moment when getting out of their way is worth something.
-	OnNearMiss func(slot int, peak float64)
+	// it reached and when it reached it, off the audio path. A near miss is the only sign the device gets
+	// that somebody tried and was not heard, which is the one moment when getting out of their way is
+	// worth something. It runs some time after the peak, on the first score more than NearMissSettle on
+	// and then on a goroutine of its own, so at is the one thing that says when the word was said.
+	OnNearMiss func(slot int, peak float64, at time.Time)
 
 	// OnScored runs once the hold after a detection ends, with the peak the utterance reached and the
 	// cutoff it was judged against, off the audio path. A false wake's score is what says how far the
@@ -624,8 +626,8 @@ func (e *Engine) judge(n int, s *slot, score float64, now time.Time, source *mic
 			e.board.event(wakeword.ScoreEvent{At: now, Slot: n + 1, What: "near miss", ID: s.model.ID, Peak: s.peak,
 				Cutoff: cutoff})
 			if e.OnNearMiss != nil {
-				i, peak := n, s.peak
-				safe.Go("wake near miss", func() { e.OnNearMiss(i, peak) })
+				i, peak, at := n, s.peak, s.peakAt
+				safe.Go("wake near miss", func() { e.OnNearMiss(i, peak, at) })
 			}
 			s.peak = 0
 		}
