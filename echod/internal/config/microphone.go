@@ -37,6 +37,11 @@ type Microphone struct {
 	// kept outside calls for the wake word.
 	CallCancelEngine CallCancelEngine `json:"call_cancel_engine,omitempty"`
 
+	// CancelDelay is how far WebRTC's canceller holds the microphones back behind what the speaker
+	// played, in milliseconds, so the reference reaches it ahead of the echo; 0, the default, is no
+	// delay, as before there was a setting. Only WebRTC's canceller reads it.
+	CancelDelay int `json:"cancel_delay,omitempty"`
+
 	// Sensitivity is how far over the room's own floor, in dB, counts as something happening. Lower
 	// notices a chair being moved; higher waits for someone to speak.
 	Sensitivity int `json:"sensitivity"`
@@ -94,6 +99,14 @@ const (
 	// WebRTC stays a choice for when a clean recording matters more than the wake word.
 	DefaultCancelEngine = CancelBuiltin
 
+	// No delay, which is how WebRTC's canceller has always run. Offline, AEC3's linear filter did not
+	// converge with the echo less than about 2 ms behind the reference, and a few milliseconds of
+	// delay brought it back; how far behind it is on a device has not been measured, so the delay is a
+	// setting to try rather than a new default. 20 ms is far more than the lag it is for, and still
+	// short enough that nothing listening hears the voice as late.
+	DefaultCancelDelay = 0
+	MaxCancelDelay     = 20
+
 	// Measured on a quiet room: 0.8 dB at the 99th percentile of frames, so this is well clear of the
 	// room itself and is really about brief small sounds — a chair, a keyboard.
 	DefaultSensitivity = 8
@@ -116,6 +129,7 @@ func defaultMicrophone() Microphone {
 		Mixing:       DefaultMixing,
 		Cancel:       DefaultCancel,
 		CancelEngine: DefaultCancelEngine,
+		CancelDelay:  DefaultCancelDelay,
 		Sensitivity:  DefaultSensitivity,
 		Denoise:      DefaultDenoise,
 	}
@@ -186,6 +200,17 @@ func (w MicrophoneWriter) CancelEngine(v CancelEngine) error {
 
 func (w MicrophoneWriter) CallCancelEngine(v CallCancelEngine) error {
 	return w.st.Update(func(c *Config) { c.Microphone.CallCancelEngine = v })
+}
+
+// CancelDelay is how far WebRTC's canceller holds the microphones back, in milliseconds.
+func (w MicrophoneWriter) CancelDelay(ms int) error {
+	return w.st.Update(func(c *Config) { c.Microphone.CancelDelay = ms })
+}
+
+// CancelDelayMs is CancelDelay within the range a number can be set to: a file edited by hand, or
+// one from a later version, never asks the helper for more than the setting offers.
+func (m Microphone) CancelDelayMs() int {
+	return min(max(m.CancelDelay, 0), MaxCancelDelay)
 }
 
 // CancelEngine is which echo canceller runs.

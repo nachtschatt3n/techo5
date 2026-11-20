@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -84,9 +85,23 @@ func startExternal(args ...string) (*external, error) {
 		err := cmd.Wait()
 		e.broken.Store(true)
 		slog.Warn("echo cancellation helper exited", "err", err)
+		if refusedDelay(args, err) {
+			slog.Warn("echo cancellation helper refused its delay: it is older than the Microphone echo "+
+				"canceller delay setting, so the built-in filter runs; set the delay to 0 or update the image",
+				"args", args)
+		}
 	}()
 	slog.Info("echo cancellation helper started", "path", path, "args", args)
 	return e, nil
+}
+
+// refusedDelay is whether a helper started with a delay exited the way a helper too old to know the
+// flag does: at once, with the code it gives an unknown argument. The daemon only passes delays the
+// helper's own range takes, so a current helper never exits so for one. Without this the only trace
+// is the exit, while the engine select still shows WebRTC.
+func refusedDelay(args []string, err error) bool {
+	var exit *exec.ExitError
+	return errors.As(err, &exit) && exit.ExitCode() == 2 && slices.Contains(args, "--delay-ms")
 }
 
 // Process runs one block through the helper. len(mic) must equal len(ref).

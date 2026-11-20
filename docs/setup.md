@@ -1335,6 +1335,21 @@ switch changes nothing, since the mix is then the one microphone it would read a
 is not shared with the other devices. A settings file carries it only once it has been switched, and
 only to a device of the same model: restoring one made on a Dot leaves a Show as it was.
 
+**Microphone echo canceller delay** (0 to 20 ms, 0 by default; the device's microphone settings in Home
+Assistant, beside **Microphone echo canceller**) only matters with the echo canceller set to
+**WebRTC**. It holds the microphones back by that many milliseconds before WebRTC's canceller hears
+them, so what the speaker played always reaches the canceller ahead of its echo. Tested offline,
+WebRTC's echo filter failed to settle when the echo came less than about 2 ms after the sound it
+echoes, and its suppressor then took a voice talking over a reply out along with the reply. How short
+that lag is on each device hasn't been measured, so the default stays at 0. If a wake word or the stop
+word over a reply is rarely caught with WebRTC, try 5 to 10 ms and compare. A change starts WebRTC's
+canceller again, which then learns the room again from the next thing that plays. It applies in calls
+too, when **Microphone echo canceller in calls** is **WebRTC**. While something plays, the wake word
+and speech-to-text hear you that many milliseconds later. The built-in canceller doesn't use it. A
+device whose echo canceller helper is older than the setting can't take a delay: it runs the built-in
+canceller instead while **Microphone echo canceller** still shows **WebRTC**, and the log says
+`echo cancellation helper refused its delay`. Set the delay back to 0 on it, or update its image.
+
 On the setup page (Sound) or in Home Assistant, **Night volume** turns the device down to that
 level as quiet hours start, if it is louder, and back to where it was as they end. Turned up or down
 during the night, it stays where it was put. Changing Night volume during the night moves the device to
