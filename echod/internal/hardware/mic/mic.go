@@ -89,6 +89,10 @@ type Source struct {
 	cancel    *canceller
 	canceling bool
 
+	// wakeLinearHeld counts what has asked for the wake words to stay on the one channel even with the
+	// canceller's linear output there (HoldWakeLinear): a call, while one carries audio. Under mu.
+	wakeLinearHeld int
+
 	// leveler and wasLeveling belong to the reader alone; leveling is the switch, which anything may
 	// set.
 	leveler     *leveler
@@ -282,6 +286,10 @@ type listener struct {
 	ch      chan []int16
 	dropped uint64
 	told    uint64
+
+	// wake marks the wake word engine, which may be handed the canceller's linear output in place of
+	// the frame everything else gets (broadcastSelected).
+	wake bool
 }
 
 // Listen returns a channel of mono frames and a function that stops the subscription. The name is
@@ -289,12 +297,58 @@ type listener struct {
 func (s *Source) Listen(name string) (<-chan []int16, func()) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.listenLocked(name)
+	return s.listenLocked(name, false)
+}
+
+// ListenWake is Listen for the wake word engine. It gets the same frames as any other listener, except
+// that while WebRTC's canceller runs with Wake words hear the canceller before suppression on, and
+// nothing holds it back (HoldWakeLinear), it gets the canceller's linear output instead (see
+// broadcastSelected).
+func (s *Source) ListenWake(name string) (<-chan []int16, func()) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.listenLocked(name, true)
+}
+
+// ListensWake reports whether a listener by that name is subscribed with ListenWake, and so would be
+// handed the linear output. It is for a check that the wake word engine still is.
+func (s *Source) ListensWake(name string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, l := range s.listeners {
+		if l.name == name && l.wake {
+			return true
+		}
+	}
+	return false
+}
+
+// HoldWakeLinear keeps the wake words on the one channel, the linear output or not, until the function
+// it returns is called; holds from several callers add up. A call holds it while it carries audio: the
+// hang-up word judges whether the far end could have said it from ERLE, which is measured after the
+// suppressor (feature/detect hangUp), so the word has to hear what that number describes: the linear
+// filter alone leaves more of the far end's voice than it says. Nothing is restarted: the helper goes on
+// giving the linear output, and it is simply not handed on.
+func (s *Source) HoldWakeLinear() (release func()) {
+	if s == nil {
+		return func() {}
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.wakeLinearHeld++
+	var once sync.Once
+	return func() {
+		once.Do(func() {
+			s.mu.Lock()
+			defer s.mu.Unlock()
+			s.wakeLinearHeld--
+		})
+	}
 }
 
 // listenLocked registers a listener with mu held, including while history is copied.
-func (s *Source) listenLocked(name string) (<-chan []int16, func()) {
-	l := &listener{name: name, ch: make(chan []int16, 8)}
+func (s *Source) listenLocked(name string, wake bool) (<-chan []int16, func()) {
+	l := &listener{name: name, ch: make(chan []int16, 8), wake: wake}
 	id := s.next
 	s.next++
 	s.listeners[id] = l
@@ -471,6 +525,31 @@ func (s *Source) broadcastSelected(raw []byte, cut bool, external *aspResponse) 
 	// Everything downstream reads the same single channel, whichever way it was made: wake detection
 	// and what Home Assistant transcribes should never disagree about what was heard.
 	//
+	// There is one exception, and it is a setting, off unless somebody turns it on: with Wake words
+	// hear the canceller before suppression, while WebRTC's canceller runs, the wake word engine
+	// (ListenWake) gets the canceller's linear output in place of this channel. WebRTC's canceller is
+	// a linear filter, then a suppressor that takes out what the filter left, then noise suppression.
+	// While the device talks, the suppressor takes the upper part of a voice talking over it along
+	// with the echo, and that is where much of what tells "stop" from other words is. The linear
+	// output keeps the voice whole, and more of the echo with it. It is the Home Assistant Voice PE's
+	// arrangement: its chip has no suppressor in front of its wake words.
+	//
+	// Everything else stays on the one channel: what is transcribed, kept as history, sent into a call,
+	// streamed or measured, and what Home Assistant's own wake word engine hears and confirms a wake
+	// against (feature/voice). So a wake word can be heard in audio that speech-to-text gets with less
+	// of the voice in it, the disagreement this rule is there to prevent, accepted for the stop word
+	// over the device's own voice, and only while the canceller runs, which is only while something
+	// plays. What the wake engine hears is also what a wake clip keeps (feature/detect), so a clip taken
+	// then has the linear output in it.
+	//
+	// The wake engine is one listener for every word it holds, so the linear output reaches all of
+	// them, not only the wake words and the stop word: the command words too (feature/detect,
+	// command.go), which listen only while music plays and so hear nothing else for as long as they
+	// listen. They are the words that must not take the music for themselves, and the linear output
+	// has more of the music in it. Giving them the processed channel would take a second feature front
+	// end for the same models, so they share it, and the docs ask for their thresholds to go up with
+	// the switch on. During a call the wake engine stays on the one channel (HoldWakeLinear).
+	//
 	// The recent history is kept whether or not anyone is listening: a wake word is only recognized
 	// once it has been said, so by the time a turn starts, the words after it are already past.
 	mics := Decode(raw)
@@ -481,9 +560,15 @@ func (s *Source) broadcastSelected(raw []byte, cut bool, external *aspResponse) 
 	// which during playback is the speaker being canceled. It runs whichever output is playing: the jack
 	// is as often a powered speaker in the same room (AUX) as headphones, and where nothing in the room
 	// hears the playback the filter finds no echo and passes the microphone through.
+	//
+	// linear is the same block before WebRTC's suppressor, for the wake words, when there is one.
+	var linear []int16
 	if s.canceling && s.cancel != nil {
 		if canceled := s.cancel.apply(raw, cancelInput(s.mixer, mics, frame)); canceled != nil {
 			frame = canceled
+			if s.wakeLinearHeld == 0 {
+				linear = s.cancel.linearBlock()
+			}
 		}
 	}
 
@@ -499,6 +584,9 @@ func (s *Source) broadcastSelected(raw []byte, cut bool, external *aspResponse) 
 	// a pool or a ring would save nothing worth measuring — and a ring would have to be sized against
 	// how far behind a listener may fall, which is the thing this is fixing.
 	frame = append([]int16(nil), frame...)
+	if linear != nil {
+		linear = append([]int16(nil), linear...)
+	}
 
 	// Before the noise reduction and the leveling, which would take the room out and put gain back on.
 	s.noise.add(raw, frame)
@@ -519,10 +607,18 @@ func (s *Source) broadcastSelected(raw []byte, cut bool, external *aspResponse) 
 
 	// Turning leveling off throws away what it learned, so a room it has adapted badly to is
 	// recovered by switching it off and on rather than by restarting anything.
+	//
+	// The linear output gets the gain the frame just got, and learns nothing: the leveler follows the
+	// one channel, and the two have to arrive at the same level, or the wake words would hear a jump
+	// each time the canceller starts and stops. It skips the noise reduction above, as it skips
+	// WebRTC's own: the wake models are trained with a room's noise mixed in, not taken out.
 	on := s.leveling.Load()
 	switch {
 	case on:
 		s.leveler.apply(frame)
+		if linear != nil {
+			s.leveler.applyLast(linear)
+		}
 	default:
 		// Measured even with the gain switched off, because how loud the room is has watchers of its
 		// own: the ring can be set to react to it, and that should not depend on a setting about what
@@ -537,13 +633,22 @@ func (s *Source) broadcastSelected(raw []byte, cut bool, external *aspResponse) 
 	s.wasLeveling = on
 	// Stock DSP and sensors above always process stock data; one final
 	// synchronized selection governs all history, wake, STT and mono listeners.
-	frame = s.aspFrameLocked(external, frame)
+	selected := s.aspFrameLocked(external, frame)
+	if !sameBuffer(selected, frame) {
+		// An external processor's output governs every listener, the wake words included.
+		linear = nil
+	}
+	frame = selected
 	s.remember(frame)
 	spectrum.Mic.Push(frame)
 
 	for _, l := range s.listeners {
+		give := frame
+		if l.wake && linear != nil {
+			give = linear
+		}
 		select {
-		case l.ch <- frame:
+		case l.ch <- give:
 		default:
 			l.dropped++
 			s.dropped.Add(1)
@@ -563,6 +668,12 @@ func (s *Source) broadcastSelected(raw []byte, cut bool, external *aspResponse) 
 		default:
 		}
 	}
+}
+
+// sameBuffer reports whether two frames are one buffer, which is how aspFrameLocked says it kept the
+// frame it was given.
+func sameBuffer(a, b []int16) bool {
+	return len(a) == len(b) && (len(a) == 0 || &a[0] == &b[0])
 }
 
 // Dropped is how many frames a listener has missed.

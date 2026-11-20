@@ -86,15 +86,25 @@ type canceller struct {
 	ext    *external
 	engine string
 
+	// linear is whether the helper is asked for its linear output as well, for the wake words
+	// (SetWakeBeforeSuppression). Read when the helper starts.
+	linear bool
+
 	// ref and mono are reused every frame; decoding into them keeps the audio path free of allocation.
+	// lin is the same for the linear output, and holds it only when the last apply had one: see
+	// linearBlock.
 	ref  []int16
 	mono []int16
+	lin  []int16
 
 	// erle is published for diagnostics, as thousandths of a dB so it fits an integer. best is the most
 	// it reached during the current run: ERLE is averaged over the last half second, so reading it as
 	// playback ends catches the reference fading out and says the filter did worse than it did.
 	erle atomic.Int64
 	best atomic.Int64
+
+	// linBest is best for the linear output, while there is one. Reader-only.
+	linBest float64
 
 	// active says whether the last frame had playback in it, which is when any of this happened.
 	active atomic.Bool
@@ -135,6 +145,9 @@ func (c *canceller) fitTaps(taps int) {
 	slog.Info("echo cancellation filter length", "from", old.Taps(), "to", taps)
 }
 
+// webrtcArgs is what the helper is started with, beside linearArg when the wake words want it.
+var webrtcArgs = []string{"--ns", "low"}
+
 // setEngine picks the canceller: "builtin" is the LMS filter above, "webrtc" the helper process.
 // It reports what it settled on: webrtc falls back to builtin when the helper cannot start.
 func (c *canceller) setEngine(name string) string {
@@ -144,19 +157,56 @@ func (c *canceller) setEngine(name string) string {
 	}
 	c.engine = "builtin"
 	if name != "webrtc" {
+		c.logLinear()
 		return c.engine
 	}
-	e, err := startExternal("--ns", "low")
+	e, err := startWebRTC(c.linear, webrtcArgs...)
 	if err != nil {
 		slog.Warn("webrtc echo cancellation unavailable, using the built-in filter", "err", err)
+		c.logLinear()
 		return c.engine
 	}
 	c.ext, c.engine = e, "webrtc"
+	c.logLinear()
 	return c.engine
 }
 
+// logLinear says what the wake words hear, when the switch asks for the linear output. It is said
+// wherever a helper is started or given up, because that is where it is settled: the switch is put
+// back before the canceller as the device starts, and calls change the canceller on their own, so the
+// line from the switch alone would describe a canceller that is about to change.
+func (c *canceller) logLinear() {
+	if !c.linear {
+		return
+	}
+	slog.Info("wake words before the suppressor", "on", true, "hearing", c.linearRunning(), "engine", c.engine)
+}
+
+// setLinear asks for the helper's linear output, or stops asking, and restarts a running helper so the
+// change takes: the flag is one of its arguments. It reports whether the helper now gives it, which
+// needs the WebRTC canceller and a helper that has it.
+func (c *canceller) setLinear(on bool) bool {
+	if c.linear == on {
+		return c.linearRunning()
+	}
+	c.linear = on
+	if c.engine == "webrtc" {
+		c.setEngine("webrtc")
+	}
+	return c.linearRunning()
+}
+
+// linearRunning is whether the running helper gives the linear output.
+func (c *canceller) linearRunning() bool { return c.ext != nil && c.ext.linear }
+
 // process runs one block through whichever engine is on. A helper that has died is dropped for
 // the built-in filter, once, with a log line.
+//
+// One that died giving the linear output is first started once more without it. The linear output
+// comes from building AEC3 from a header the library does not install (techo5-aec.cpp), so a helper
+// that runs well without it and falls over with it is the failure this setting brings, and it should
+// cost the wake words their extra rather than the device its canceller. The switch stays on, so the
+// next time the canceller is chosen or the switch turned, the linear output is tried again.
 func (c *canceller) process(mic, ref []int16) ([]int16, float64, error) {
 	if c.ext != nil {
 		if c.ext.Healthy() {
@@ -164,11 +214,19 @@ func (c *canceller) process(mic, ref []int16) ([]int16, float64, error) {
 			if err == nil {
 				return out, c.ext.ERLE(), nil
 			}
-			slog.Warn("webrtc echo cancellation failed, using the built-in filter", "err", err)
+			slog.Warn("webrtc echo cancellation failed", "err", err, "linear", c.ext.linear)
 		}
+		wasLinear := c.ext.linear
 		c.ext.Close()
 		c.ext = nil
 		c.engine = "builtin"
+		if wasLinear {
+			if out, erle, ok := c.restartPlain(mic, ref); ok {
+				return out, erle, nil
+			}
+		}
+		slog.Warn("webrtc echo cancellation dropped, using the built-in filter")
+		c.logLinear()
 	}
 	f := c.filter.Load()
 	out, err := f.Process(mic, ref)
@@ -178,9 +236,31 @@ func (c *canceller) process(mic, ref []int16) ([]int16, float64, error) {
 	return out, f.ERLE(), nil
 }
 
+// restartPlain starts the helper without the linear output, after one with it failed, and runs the block
+// through it. ok is false when that fails too; nothing is left running then.
+func (c *canceller) restartPlain(mic, ref []int16) (out []int16, erle float64, ok bool) {
+	e, err := startExternal(webrtcArgs...)
+	if err != nil {
+		slog.Warn("webrtc echo cancellation could not be started again without the linear output", "err", err)
+		return nil, 0, false
+	}
+	out, err = e.Process(mic, ref)
+	if err != nil {
+		e.Close()
+		slog.Warn("webrtc echo cancellation failed without the linear output too", "err", err)
+		return nil, 0, false
+	}
+	c.ext, c.engine = e, "webrtc"
+	slog.Warn("webrtc echo cancellation started again without the linear output; the wake words hear what everything else hears")
+	c.logLinear()
+	return out, e.ERLE(), true
+}
+
 // apply returns mic, one fixed path (see cancelInput), with the echo removed, or nil when there is
 // nothing playing and the caller should use the mix it already has.
 func (c *canceller) apply(raw []byte, mic []int16) []int16 {
+	// No linear output from this block until the helper has given one for it.
+	c.lin = c.lin[:0]
 	n := len(mic)
 	if cap(c.ref) < n {
 		c.ref = make([]int16, n)
@@ -198,10 +278,16 @@ func (c *canceller) apply(raw []byte, mic []int16) []int16 {
 		// Nothing to cancel. The filter keeps what it learned: the room has not changed just because
 		// the reply ended, so the next one starts converged rather than from nothing.
 		if c.active.Swap(false) {
-			slog.Info("echo cancellation idle",
-				"best_db", float64(c.best.Load())/1000, "last_db", float64(c.erle.Load())/1000)
+			attrs := []any{"best_db", float64(c.best.Load()) / 1000, "last_db", float64(c.erle.Load()) / 1000}
+			if c.linearRunning() {
+				// What the linear filter alone took off: low here, with best_db high, is the suppressor
+				// doing the work, which is the case the linear output for the wake words is about.
+				attrs = append(attrs, "linear_best_db", c.linBest, "linear_last_db", c.ext.LinearERLE())
+			}
+			slog.Info("echo cancellation idle", attrs...)
 			c.erle.Store(0)
 			c.best.Store(0)
+			c.linBest = 0
 		}
 		return nil
 	}
@@ -235,7 +321,25 @@ func (c *canceller) apply(raw []byte, mic []int16) []int16 {
 	}
 	c.mono = c.mono[:len(out)]
 	copy(c.mono, out)
+
+	// The helper's linear output for the same block, when it gives one and this block came from it
+	// rather than from the built-in filter it falls back to. Copied for the same reason.
+	if c.ext != nil && c.engine == "webrtc" {
+		if lin := c.ext.Linear(); len(lin) == len(out) {
+			c.lin = append(c.lin[:0], lin...)
+			c.linBest = max(c.linBest, c.ext.LinearERLE())
+		}
+	}
 	return c.mono
+}
+
+// linearBlock is the linear canceller's output for the block apply last returned, or nil when it had
+// none: nothing playing, the built-in filter, or a helper not asked for it. Good until the next apply.
+func (c *canceller) linearBlock() []int16 {
+	if len(c.lin) == 0 {
+		return nil
+	}
+	return c.lin
 }
 
 // blockDBFS is the RMS of a block in dBFS, rounded, for the log.
@@ -310,6 +414,30 @@ func (s *Source) SetCancelEngine(name string) string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.cancel.setEngine(name)
+}
+
+// SetWakeBeforeSuppression has the wake words hear WebRTC's canceller before its suppressor, or not,
+// and reports whether they now do: only with the WebRTC canceller chosen and a helper that gives its
+// linear output (broadcastSelected says what they hear and why). A running helper is restarted for it,
+// which costs the canceller what it had learned of the room; the built-in filter is not touched.
+func (s *Source) SetWakeBeforeSuppression(on bool) bool {
+	if s.cancel == nil {
+		return false
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	was := s.cancel.engine
+	got := s.cancel.setLinear(on)
+	switch {
+	case !on:
+		slog.Info("wake words before the suppressor", "on", false, "hearing", got, "engine", s.cancel.engine)
+	case was != "webrtc":
+		// Nothing started, so setEngine said nothing: this is the switch put back as the device starts,
+		// before the canceller is, or turned on with the built-in one chosen. The line saying what the
+		// wake words hear comes when a WebRTC helper starts.
+		slog.Info("wake words before the suppressor, once WebRTC's canceller runs", "on", true, "engine", s.cancel.engine)
+	}
+	return got
 }
 
 // CancelEngine is which canceller is running.

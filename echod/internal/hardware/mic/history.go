@@ -80,7 +80,7 @@ func (s *Source) Recent(d time.Duration) []int16 { return s.history.recent(d) }
 func (s *Source) ListenHistory(name string, d time.Duration) (<-chan []int16, []int16, func()) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	frames, unlisten := s.listenLocked(name)
+	frames, unlisten := s.listenLocked(name, false)
 	var pre []int16
 	if d > 0 {
 		pre = s.Recent(d)

@@ -29,6 +29,13 @@ type Microphone struct {
 	// kept outside calls for the wake word.
 	CallCancelEngine CallCancelEngine `json:"call_cancel_engine,omitempty"`
 
+	// WakeBeforeSuppression has the wake words, the stop word among them, hear WebRTC's canceller
+	// before its suppressor and noise suppression (the linear filter's own output) while it runs, and
+	// everything else what it hears now. Off by default: it is a trade, more of a voice talking over
+	// the device against more of the device's own voice, which can then set the stop word off. Does
+	// nothing with the built-in canceller, which has no suppressor.
+	WakeBeforeSuppression bool `json:"wake_before_suppression,omitempty"`
+
 	// Sensitivity is how far over the room's own floor, in dB, counts as something happening. Lower
 	// notices a chair being moved; higher waits for someone to speak.
 	Sensitivity int `json:"sensitivity"`
@@ -164,6 +171,11 @@ func (w MicrophoneWriter) CancelEngine(v CancelEngine) error {
 
 func (w MicrophoneWriter) CallCancelEngine(v CallCancelEngine) error {
 	return w.st.Update(func(c *Config) { c.Microphone.CallCancelEngine = v })
+}
+
+// WakeBeforeSuppression is whether the wake words hear WebRTC's canceller before its suppressor.
+func (w MicrophoneWriter) WakeBeforeSuppression(v bool) error {
+	return w.st.Update(func(c *Config) { c.Microphone.WakeBeforeSuppression = v })
 }
 
 // CancelEngine is which echo canceller runs.
