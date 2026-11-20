@@ -28,9 +28,22 @@ func TestHelperArgs(t *testing.T) {
 // then takes blocks and never answers. It returns where the notes go.
 func fakeHelper(t *testing.T) string {
 	t.Helper()
+	return fakeHelperScript(t, "#!/bin/sh\necho \"$*\" >> \"$TECHO5_AEC_TEST_STARTS\"\nexec cat > /dev/null\n")
+}
+
+// fakeOldHelper is fakeHelper for a helper older than the delay setting: it exits with 2, as on any
+// unknown argument, when started with --delay-ms.
+func fakeOldHelper(t *testing.T) string {
+	t.Helper()
+	return fakeHelperScript(t, "#!/bin/sh\necho \"$*\" >> \"$TECHO5_AEC_TEST_STARTS\"\n"+
+		"case \"$*\" in *--delay-ms*) exit 2;; esac\nexec cat > /dev/null\n")
+}
+
+// fakeHelperScript puts script on PATH as techo5-aec and returns where it notes its starts.
+func fakeHelperScript(t *testing.T, script string) string {
+	t.Helper()
 	dir := t.TempDir()
 	notes := filepath.Join(dir, "starts")
-	script := "#!/bin/sh\necho \"$*\" >> \"$TECHO5_AEC_TEST_STARTS\"\nexec cat > /dev/null\n"
 	if err := os.WriteFile(filepath.Join(dir, WebRTCHelper), []byte(script), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -106,6 +119,54 @@ func TestCancelDelayRestartsTheHelper(t *testing.T) {
 	}
 
 	c.setDelay(0)
+	if got := starts(t, notes, 3); len(got) != 3 || got[2] != "--ns low" {
+		t.Fatalf("helper restarted with %q, want no delay flag at 0", got)
+	}
+}
+
+// A helper too old for the flag exits on a delay and the built-in filter takes over; setting the delay
+// back to 0, as the log line about it says to, brings WebRTC back rather than leaving the built-in
+// filter running while the engine select shows WebRTC.
+func TestCancelDelayRetriesWebRTCAfterARefusal(t *testing.T) {
+	notes := fakeOldHelper(t)
+	c := newCanceller()
+	t.Cleanup(func() {
+		if c.ext != nil {
+			c.ext.Close()
+		}
+	})
+
+	if got := c.setEngine("webrtc"); got != "webrtc" {
+		t.Fatalf("engine %q with a helper on PATH", got)
+	}
+	// Noted before the delay kills it, or the start would go unrecorded.
+	if got := starts(t, notes, 1); len(got) != 1 || got[0] != "--ns low" {
+		t.Fatalf("helper started with %q, want no delay flag", got)
+	}
+	c.setDelay(5)
+	if got := starts(t, notes, 2); len(got) != 2 || got[1] != "--ns low --delay-ms 5" {
+		t.Fatalf("helper started with %q, want the delay", got)
+	}
+	refused := c.ext
+	for deadline := time.Now().Add(helperWait); refused.Healthy() && time.Now().Before(deadline); {
+		time.Sleep(10 * time.Millisecond)
+	}
+	if refused.Healthy() {
+		t.Fatal("the helper given a delay it does not know is still running")
+	}
+
+	// The next block with playback drops the helper for the built-in filter.
+	if _, _, err := c.process(make([]int16, FrameSamples), make([]int16, FrameSamples)); err != nil {
+		t.Fatal(err)
+	}
+	if c.ext != nil || c.engine != "builtin" {
+		t.Fatalf("the refused helper was kept (engine %q)", c.engine)
+	}
+
+	c.setDelay(0)
+	if c.ext == nil || c.engine != "webrtc" {
+		t.Fatalf("a delay of 0 after the refusal left engine %q, want webrtc", c.engine)
+	}
 	if got := starts(t, notes, 3); len(got) != 3 || got[2] != "--ns low" {
 		t.Fatalf("helper restarted with %q, want no delay flag at 0", got)
 	}

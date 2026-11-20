@@ -1321,7 +1321,8 @@ too, when **Microphone echo canceller in calls** is **WebRTC**. While something 
 and speech-to-text hear you that many milliseconds later. The built-in canceller doesn't use it. A
 device whose echo canceller helper is older than the setting can't take a delay: it runs the built-in
 canceller instead while **Microphone echo canceller** still shows **WebRTC**, and the log says
-`echo cancellation helper refused its delay`. Set the delay back to 0 on it, or update its image.
+`echo cancellation helper refused its delay`. Set the delay back to 0 on it, which starts WebRTC's
+canceller again, or update its image.
 
 On the setup page (Sound) or in Home Assistant, **Night volume** turns the device down to that
 level as quiet hours start, if it is louder, and back to where it was as they end. Turned up or down
