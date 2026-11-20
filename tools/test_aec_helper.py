@@ -149,6 +149,16 @@ class Arguments(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertIn('unknown argument', err)
 
+    def test_linear_without_aec3_is_refused_whatever_the_delay(self):
+        # The stand-in has no AEC3 header, like the library's -dev package alone: the helper refuses
+        # --linear the way an older one does, with or without a delay, and the daemon carries on
+        # without it (hardware/mic webrtc.go).
+        for args in (['--linear'], ['--ns', 'low', '--delay-ms', '8', '--linear']):
+            out, code, err = run(args, ramp(1))
+            self.assertEqual(code, 2, args)
+            self.assertEqual(out, [], args)
+            self.assertIn('--linear needs', err, args)
+
     def test_the_daemons_arguments_are_taken(self):
         # What hardware/mic/cancel.go's helperArgs passes.
         out, code, err = run(['--ns', 'low', '--delay-ms', '8'], ramp(2))

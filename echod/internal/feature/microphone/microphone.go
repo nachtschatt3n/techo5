@@ -31,6 +31,7 @@ type Microphone struct {
 	onMix       *esphome.Switch // the echo canceller on the mix rather than the center microphone
 	engine      *esphome.Select
 	delay       *esphome.Number // how far WebRTC's canceller holds the microphones back
+	linear      *esphome.Switch // the wake words before WebRTC's suppressor
 	denoise     *esphome.Switch
 	ends        *esphome.Switch
 	preroll     *esphome.Switch // the 250 ms before the wake word, with a wake sound too
@@ -108,6 +109,14 @@ func build() *Microphone {
 			Min: 0, Max: config.MaxCancelDelay, Step: 1, Unit: "ms",
 			Mode: esphome.NumberBox,
 		},
+		linear: &esphome.Switch{
+			Base: esphome.Base{
+				ObjectID: "microphone_wake_before_suppression",
+				Name:     "Wake words hear the canceller before suppression",
+				Icon:     "mdi:waveform",
+				Category: esphome.CategoryConfig,
+			},
+		},
 		denoise: &esphome.Switch{
 			Base: esphome.Base{
 				ObjectID: "microphone_noise_reduction",
@@ -166,7 +175,7 @@ func build() *Microphone {
 
 	for _, b := range []*esphome.Base{
 		&m.aspSelected.Base, &m.aspActive.Base,
-		&m.mixing.Base, &m.gain.Base, &m.leveling.Base, &m.cancel.Base, &m.onMix.Base, &m.engine.Base, &m.delay.Base, &m.denoise.Base,
+		&m.mixing.Base, &m.gain.Base, &m.leveling.Base, &m.cancel.Base, &m.onMix.Base, &m.engine.Base, &m.delay.Base, &m.linear.Base, &m.denoise.Base,
 		&m.ends.Base, &m.preroll.Base, &m.pause.Base, &m.sensitivity.Base,
 	} {
 		b.DeviceID = component.DeviceMicrophone
@@ -230,6 +239,24 @@ func build() *Microphone {
 		}
 	}
 
+	// Applied at once: a running WebRTC helper is restarted with or without its linear output. The
+	// switch shows what was asked for, as the canceller select does, even where it cannot take effect
+	// (the built-in canceller, or a helper without the linear output; the log says which). The restart
+	// can fail outright, which leaves the built-in filter running, so the canceller select then says so,
+	// as it does when WebRTC is chosen and cannot start. Only then: during a call the canceller running
+	// can be the one for calls, which the select is not about (feature/phone).
+	m.linear.OnCommand = func(on bool) {
+		m.linear.Set(on)
+		was := source.CancelEngine()
+		source.SetWakeBeforeSuppression(on)
+		if now := source.CancelEngine(); now != was {
+			m.engine.Set(config.CancelEngine(now).Label())
+		}
+		if err := config.Set().Microphone().WakeBeforeSuppression(on); err != nil {
+			slog.Error("saving the wake words before suppression setting failed", "err", err)
+		}
+	}
+
 	m.denoise.OnCommand = func(on bool) {
 		m.denoise.Set(on)
 		source.SetDenoising(on)
@@ -283,9 +310,14 @@ func build() *Microphone {
 func (m *Microphone) Name() string { return "microphone settings" }
 
 func (m *Microphone) Entities() []esphome.Entity {
-	return append([]esphome.Entity{m.aspSelected, m.aspActive, m.mixing, m.gain, m.leveling, m.cancel, m.onMix, m.engine, m.delay, m.denoise, m.ends, m.preroll,
-		m.pause, m.sensitivity},
-		buildEntities()...)
+	list := []esphome.Entity{m.aspSelected, m.aspActive, m.mixing, m.gain, m.leveling, m.cancel, m.onMix, m.engine, m.delay}
+	// Only where WebRTC's canceller can run, as the canceller in calls (feature/phone): on an image
+	// without its helper (the Dot's) the switch could never do anything.
+	if mic.HaveWebRTC() {
+		list = append(list, m.linear)
+	}
+	list = append(list, m.denoise, m.ends, m.preroll, m.pause, m.sensitivity)
+	return append(list, buildEntities()...)
 }
 
 // setEngine applies a canceller choice and reports what the source settled on, which is the
@@ -324,6 +356,12 @@ func (m *Microphone) Restore(c config.Config) {
 	m.delay.Set(float32(c.Microphone.CancelDelayMs()))
 	source.SetCancelDelay(c.Microphone.CancelDelayMs())
 	slog.Info("restored", "what", m.delay.ObjectID, "using", c.Microphone.CancelDelayMs())
+
+	// Before the engine, so a WebRTC helper restored with it starts the way it is wanted rather than
+	// being started twice.
+	m.linear.Set(c.Microphone.WakeBeforeSuppression)
+	source.SetWakeBeforeSuppression(c.Microphone.WakeBeforeSuppression)
+	slog.Info("restored", "what", m.linear.ObjectID, "using", c.Microphone.WakeBeforeSuppression)
 
 	component.Restore(m.engine, c.Microphone.CancelEngine, setEngine)
 

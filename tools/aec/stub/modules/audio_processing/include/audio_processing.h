@@ -4,12 +4,34 @@
 // which signal the delay holds back, one block out for every block in) be tested on any machine with
 // a C++ compiler, without the library. What the real canceller does to the sound is the library's, and
 // is not tested here.
+//
+// It has the library's half of the linear output too (export_linear_aec_output, GetLinearAecOutput),
+// so the helper builds against it, but not AEC3's own header, which --linear needs: a helper built on it
+// refuses --linear, as one built against the library's -dev package alone does.
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+
+namespace rtc {
+
+// Just enough of rtc::ArrayView for GetLinearAecOutput's argument.
+template <typename T>
+class ArrayView {
+public:
+	ArrayView(T* data, size_t size) : data_(data), size_(size) {}
+	T* data() const { return data_; }
+	size_t size() const { return size_; }
+
+private:
+	T* data_;
+	size_t size_;
+};
+
+}  // namespace rtc
 
 namespace webrtc {
 
@@ -30,6 +52,7 @@ public:
 		struct {
 			bool enabled = false;
 			bool mobile_mode = false;
+			bool export_linear_aec_output = false;
 		} echo_canceller;
 		struct {
 			bool enabled = false;
@@ -48,6 +71,9 @@ public:
 	};
 
 	void ApplyConfig(const Config&) {}
+
+	// There is no linear output without AEC3 built to keep it, which the stand-in never is.
+	bool GetLinearAecOutput(rtc::ArrayView<std::array<float, 160>>) const { return false; }
 	int set_stream_delay_ms(int) { return 0; }
 
 	int ProcessReverseStream(const int16_t* src, const StreamConfig& in, const StreamConfig&, int16_t* dest) {

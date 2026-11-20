@@ -28,7 +28,10 @@ import (
 // microWakeWord models; TECHO5_WAKE picks one (default okay_nabu). When the directory's session.log has
 // prompts for a take, each prompt is scored on its own: the window from the prompt to promptWindow after
 // it holds one utterance, and a crossing anywhere else is a false accept. TECHO5_WAKE_FRONTEND=exact
-// scores with the exact feature front end (mwwfront) in place of the detector's own. Reports only.
+// scores with the exact feature front end (mwwfront) in place of the detector's own.
+// TECHO5_WAKE_LINEAR=1, with TECHO5_AEC=webrtc and --linear in TECHO5_AEC_ARGS, scores the helper's
+// linear output where it has one, leveled with the frame's gain, as the daemon hands it to the wake
+// words with Wake words hear the canceller before suppression on. Reports only.
 func TestReplayWakeScores(t *testing.T) {
 	dir, models := os.Getenv("TECHO5_MICBENCH"), os.Getenv("TECHO5_MODELS")
 	if dir == "" || models == "" {
@@ -199,6 +202,9 @@ var replayGain = func() float64 {
 	return g
 }()
 
+// replayLinear is TECHO5_WAKE_LINEAR: the wake word scored on the canceller's linear output.
+var replayLinear = os.Getenv("TECHO5_WAKE_LINEAR") == "1"
+
 var replayPostGain = func() float64 {
 	var g float64
 	if _, err := fmt.Sscan(os.Getenv("TECHO5_POSTGAIN"), &g); err != nil || g <= 0 {
@@ -231,14 +237,21 @@ func scoreWake(t *testing.T, raw []byte, mixer Mixer, m wake.Model) []float64 {
 		block := raw[off : off+period]
 		mics := Decode(block)
 		frame := mixer.Mix(mics)
+		var linear []int16
 		input, _ := cancelInput(mixer, mics, frame, DefaultCancelOnMix)
 		if canceled := c.apply(block, input); canceled != nil {
 			frame = canceled
+			if replayLinear {
+				linear = append([]int16(nil), c.linearBlock()...)
+			}
 		}
 		frame = append([]int16(nil), frame...)
 		if replayGain != 1 {
 			for i, v := range frame {
 				frame[i] = int16(max(-32768, min(32767, float64(v)*replayGain)))
+			}
+			for i, v := range linear {
+				linear[i] = int16(max(-32768, min(32767, float64(v)*replayGain)))
 			}
 		}
 		// TECHO5_LEVEL=off skips the leveler; TECHO5_POSTGAIN is gain in front of the detector, after
@@ -246,6 +259,12 @@ func scoreWake(t *testing.T, raw []byte, mixer Mixer, m wake.Model) []float64 {
 		// and over music the residual is what it adapts to.
 		if os.Getenv("TECHO5_LEVEL") != "off" {
 			l.apply(frame)
+			if len(linear) > 0 {
+				l.applyLast(linear)
+			}
+		}
+		if len(linear) > 0 {
+			frame = linear
 		}
 		if replayPostGain != 1 {
 			for i, v := range frame {

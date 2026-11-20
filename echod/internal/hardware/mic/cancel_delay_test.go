@@ -127,4 +127,9 @@ func TestRefusedDelay(t *testing.T) {
 	if refusedDelay(helperArgs(8), nil) {
 		t.Error("a clean end was taken for a refused delay")
 	}
+	// With --linear too, the exit may be the linear output refused by a helper that has the delay;
+	// startWebRTC tries again without it, and that start says whether the delay was refused.
+	if refusedDelay(append(helperArgs(8), linearArg), exit("2")) {
+		t.Error("an exit 2 with --linear among the arguments was taken for a refused delay")
+	}
 }

@@ -1350,6 +1350,54 @@ device whose echo canceller helper is older than the setting can't take a delay:
 canceller instead while **Microphone echo canceller** still shows **WebRTC**, and the log says
 `echo cancellation helper refused its delay`. Set the delay back to 0 on it, or update its image.
 
+**Wake words hear the canceller before suppression** is a switch in Home Assistant (the device's
+microphone settings), off by default, for a stop word that is hard to catch over the device's own
+replies. It is there only on a device whose image has the WebRTC helper (not the Dot), and it only
+does something while the WebRTC echo canceller runs: with **Microphone echo canceller** set to
+**WebRTC**. That canceller works in two steps: a filter that takes off the echo of what the speaker
+plays, then a suppressor that removes what the filter left. While the device talks, the suppressor
+also takes away much of a voice talking over it, and the stop word is said over the device's voice
+more than any other word. With the switch on, the device's own word detectors hear the audio after
+the first step only, while something plays: the wake words, the stop word, and the volume and next
+song words. **Microphone noise reduction** doesn't apply to what they hear in that time. A
+**Microphone echo canceller delay** holds what they hear back by as much as everything else. The Home
+Assistant Voice PE has no suppressor in front of its wake words either.
+
+Everything else keeps the full processing: speech-to-text, the baby monitor, what the device sends
+into a call, and [Wake word on Home Assistant](#wake-word-on-home-assistant). So with **Confirm wake
+with Home Assistant** on, a wake the device heard in the first step's audio is checked by Home
+Assistant against the fully processed audio. With nothing playing nothing changes. During a call the
+word detectors hear the full processing too, whichever canceller the call runs: the hang-up word's
+check that the far end didn't say it goes by how much the whole canceller takes off.
+
+The cost is that the word detectors now also hear more of what the device plays. A reply can stop
+itself, or wake the device, when its words sound enough like the stop word or a wake word; owners of
+the Voice PE report the same. So when you turn it on, raise **Stop word threshold** to about 0.80
+(it is then judged against 0.70 while the device plays) and the **Wake word threshold (playing)** a
+step, then watch the scores while the device answers with nobody talking ([Watching the wake word
+scores](#watching-the-wake-word-scores)). If the stop word's bar reaches its line during a reply,
+raise its threshold again. The volume and next song words listen only while music plays, so with the
+switch on they hear the first step's audio the whole time they listen, with more of the music in it,
+and they act at once: music that scores high enough for one of them turns itself down or up, or
+skips. If you use them, raise their thresholds to about 0.95 and watch their bars (`slot=103` to
+`slot=105`) through a few songs before you lower them again. A wake word that nearly fires over
+music also turns the music down for a moment, so the next try is heard; with the switch on that can
+happen more often, with nobody talking.
+
+The switch takes effect at once: a running WebRTC canceller restarts with it and spends the first
+moments of the next sound learning the room again. Each time a WebRTC canceller starts with the
+switch on, the device's log says what the word detectors hear: `wake words before the suppressor
+on=true hearing=true engine=webrtc` when they hear the first step. As the device starts, a line
+`wake words before the suppressor, once WebRTC's canceller runs` comes first, because the switch is
+put back before the canceller; the line with `hearing=` follows when the canceller starts. After
+each sound, `echo cancellation idle` gives `linear_best_db` and `linear_last_db`, how much the
+filter alone took off, beside `best_db` and `last_db` for both steps. An image whose WebRTC helper
+can't give the first step on its own (one from before the switch) logs `echo cancellation helper has
+no linear output`, then `hearing=false`, and the detectors hear what they heard before. If the
+helper fails while it gives the first step, it is started again without it, so the canceller stays
+WebRTC: the log says so, and the switch takes effect again the next time it or the canceller is
+changed.
+
 On the setup page (Sound) or in Home Assistant, **Night volume** turns the device down to that
 level as quiet hours start, if it is louder, and back to where it was as they end. Turned up or down
 during the night, it stays where it was put. Changing Night volume during the night moves the device to
@@ -1483,7 +1531,9 @@ How close a "stop" said over an answer came is in the device's log, one line an 
 heard also leaves a `wake near miss` line with `slot=101` in the device's log, and shows in the setup
 page's [scores](#watching-the-wake-word-scores). Said over an answer or music with echo cancellation
 active, it counts as close from further under the threshold than other words do: how close it came
-there is what says whether to lower the threshold.
+there is what says whether to lower the threshold. If it is hard to catch over the device's own
+answers with the WebRTC echo canceller, see **Wake words hear the canceller before suppression**
+under [Voice](#7-voice).
 
 The stop word is scored on exactly the features its model was trained on, which the wake words that
 came with the device aren't (see [A wake word of your own](#a-wake-word-of-your-own)). It used to run
@@ -1743,7 +1793,8 @@ word before it, and with the music down the wake word is heard again.
   below). At the top of its range, it is off. Its scores don't show in **Last wake score**, and **Keep
   wake clips** keeps none of it: the device's log has each one (`wake detected` and `wake near miss`,
   with `slot=103`), and so does the setup page's
-  [scores](#watching-the-wake-word-scores).
+  [scores](#watching-the-wake-word-scores). With **Wake words hear the canceller before suppression**
+  on, it hears more of the music: see that switch under [Voice](#7-voice) before you set this.
 
 Each time it acts, it fires a [command word event](actions.md#command-word-events). Train it the
 way [Training a wake word of your own](training-wake-word.md) describes, with the device's own music
@@ -1796,7 +1847,9 @@ While it is on, the device keeps the four seconds of audio up to each of these, 
   heard, or a sound like the word; listen to each before using it.
 
 Each clip comes with its score, the threshold it was judged against, the wake word model and the time
-in UTC. The device keeps the newest 100 of each kind (about 51 MB at most) and deletes the oldest as
+in UTC. A clip holds what the wake word heard, so with **Wake words hear the canceller before
+suppression** on, the part of it while the device played has more of the device's own sound in it.
+The device keeps the newest 100 of each kind (about 51 MB at most) and deletes the oldest as
 new ones come in. Nothing is kept during a call, the intercom or a talk through a camera, for a few
 seconds after one starts or ends, or for a few seconds after the stop word. A clip of less than a second
 of audio (just after a mute, for example) isn't kept either. **Wake clips** and **Wake clips by kind** show how many there are.
@@ -2350,7 +2403,7 @@ baby's. They change only the baby monitor's light: the camera's dot and every ot
 are. The **Baby monitor listening now** sensor works the same whatever you pick. Like the switch, the
 remote API can read it but not change it, and a settings file or settings sharing never carries it.
 
-**The sound.** It is what the wake word hears, after echo cancellation and leveling, at 16 kHz mono,
+**The sound.** It is what speech-to-text hears, after echo cancellation and leveling, at 16 kHz mono,
 a fraction of a second behind the room (the page keeps about a fifth of a second in hand). On an
 iPhone, turn the ringer switch on and the volume up, or the browser plays nothing. The remote API cannot see or change the switch, and a saved settings file,
 settings sharing and the diagnostics download neither carry it nor change it. After a restart it comes
