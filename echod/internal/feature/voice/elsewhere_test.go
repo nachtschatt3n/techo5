@@ -130,3 +130,29 @@ func TestRepliesStayHereWithoutAPlayerOrUrl(t *testing.T) {
 		t.Fatalf("sent %v", *got)
 	}
 }
+
+// A reply another player says is not heard in this device's loopback: the reference holds at most the
+// ducked music, while the microphones hear a voice in the room it does not contain. The canceller stays
+// frozen through it, as it does for any turn.
+func TestAReplyOnAnotherPlayerIsNotLearnedOver(t *testing.T) {
+	got := fakePlayer(t, nil)
+	c, learns := heldTurn(t, false)
+	config.Set().Brain().SetReplyPlayer("media_player.dot")
+	url, release := heldSpeech(t)
+	close(release)
+
+	c.handle(event{kind: evReplyText, text: "It's noon."})
+	c.handle(event{kind: evReplyURL, url: url})
+	e := next(t, c, evPlaying)
+	if !e.elsewhere {
+		t.Fatal("the reply's audio was not said to be elsewhere")
+	}
+	c.handle(e)
+	if *learns || c.learning {
+		t.Error("the canceller learns over a reply this device's speaker does not play")
+	}
+	c.handle(next(t, c, evPlayed))
+	if len(*got) != 1 {
+		t.Fatalf("sent %v", *got)
+	}
+}
