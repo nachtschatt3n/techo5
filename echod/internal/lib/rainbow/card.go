@@ -58,8 +58,9 @@ var (
 //
 // An answer longer than cardLines is all in img, and the card shows a window of it: where the window is
 // in img and how tall, in pixels, how much of the answer is below it before it scrolls, a line's height,
-// and each line's length in characters, the way the voice gets through them. scroll is how many lines
-// down the window is, and scrollTo where it is going.
+// and each line's length in characters, the way the voice gets through them. Those are the lines on the
+// card; whole is the characters of the whole answer the voice says, more than theirs when it was cut at
+// cardMost. scroll is how many lines down the window is, and scrollTo where it is going.
 type cardWords struct {
 	key    string
 	reply  bool
@@ -68,7 +69,22 @@ type cardWords struct {
 
 	winTop, winH, more, lineH float64
 	chars                     []int
+	whole                     int
 	scroll, scrollTo          float64
+}
+
+// through is how far the voice is through the lines on the card once said of the whole answer has been
+// said: the same for an answer laid out whole; for one cut at cardMost, past 1 once the voice is past
+// its last line, so the window rests there while it says the rest.
+func (w *cardWords) through(said float64) float64 {
+	kept := 0
+	for _, c := range w.chars {
+		kept += c
+	}
+	if kept == 0 || w.whole <= kept {
+		return said
+	}
+	return said * float64(w.whole) / float64(kept)
 }
 
 // scrolls is whether the words are more than the card shows at once.
@@ -130,7 +146,7 @@ type card struct {
 	look   cardLook // what img was painted for
 	img    []uint32 // the card's picture, premultiplied, a word to a pixel, the size of at on the screen
 	offset int      // the answer's scroll img was painted at, in pixels
-	said   float64  // how much of the answer has been said, for the frame in hand
+	said   float64  // how much of the answer's lines on the card have been said, for the frame in hand
 
 	// The rows of an answer's window as img has them without the words, the glass and its light, so
 	// a scroll lays the words on them again and nothing else: kept by the last whole painting when the
@@ -196,7 +212,8 @@ func (c *card) update(g *geometry, now time.Time, dt float64, t Turn, want bool,
 		// The window follows the voice, a little behind it so a jump in the reckoning is no jump on the
 		// screen, and only ever down: the reckoning can go back a little as the audio comes in. New
 		// words start where the voice already is.
-		to := scrollFor(w.chars, cardLines, t.Said)
+		c.said = w.through(t.Said)
+		to := scrollFor(w.chars, cardLines, c.said)
 		if w != was {
 			w.scroll, w.scrollTo = to, to
 		}
@@ -258,6 +275,7 @@ func newCardWords(g *geometry, f Faces, heard, reply string, isReply bool, key s
 	heard = capital(heard) // what speech recognition hears comes in lower case
 	var lines []line
 	title := 0 // the title's lines, over an answer
+	whole := 0 // the whole answer's characters, as many as its lines have
 	if !isReply {
 		for _, l := range wrapLines(f.Heard, heard, int(float64(w)-2*pad-cardDots*k), cardHeard) {
 			lines = append(lines, line{f.Heard, l, heardInk})
@@ -269,7 +287,16 @@ func newCardWords(g *geometry, f Faces, heard, reply string, isReply bool, key s
 			}
 			title = len(lines)
 		}
-		for _, l := range wrapLines(f.Reply, reply, int(float64(w)-2*pad), cardMost) {
+		// The voice says the whole answer, so how far it is through the lines on the card goes by the
+		// whole answer's characters: wrapped whole, which only measures, and cut only when it is long.
+		all := wrapLines(f.Reply, reply, int(float64(w)-2*pad), 0)
+		for _, l := range all {
+			whole += len([]rune(l))
+		}
+		if len(all) > cardMost {
+			all = wrapLines(f.Reply, reply, int(float64(w)-2*pad), cardMost)
+		}
+		for _, l := range all {
 			lines = append(lines, line{f.Reply, l, replyInk})
 		}
 	}
@@ -291,7 +318,7 @@ func newCardWords(g *geometry, f Faces, heard, reply string, isReply bool, key s
 	}
 	hgt := max(cardMin*k, 2*edge+text+gap)
 	img := image.NewRGBA(image.Rect(0, 0, w, int(math.Ceil(hgt))))
-	cw := &cardWords{key: key, reply: isReply, img: img, height: max(cardMin*k, 2*edge+text+gap-hidden) / k}
+	cw := &cardWords{key: key, reply: isReply, img: img, height: max(cardMin*k, 2*edge+text+gap-hidden) / k, whole: whole}
 	y := edge
 	for i, l := range lines {
 		if over > 0 && i >= title {
@@ -328,12 +355,15 @@ func capital(s string) string {
 }
 
 // wrapLines breaks text into at most n lines no wider than w, on spaces, the last cut short with an
-// ellipsis when there is more; with n 0, into as many as it takes.
+// ellipsis when there is more; with n 0, into as many as it takes. The last line is cut from itself and
+// the word that did not fit on it, not from all the rest: what is past that word would be cut off all
+// the same, and clipLine measures again for every character it takes off, which on an answer of a few
+// thousand characters would take seconds.
 func wrapLines(face font.Face, text string, w, n int) []string {
 	var out []string
 	line := ""
 	words := strings.Fields(text)
-	for i, word := range words {
+	for _, word := range words {
 		try := word
 		if line != "" {
 			try = line + " " + word
@@ -341,7 +371,7 @@ func wrapLines(face font.Face, text string, w, n int) []string {
 		if line != "" && fonts.MeasureString(face, try).Ceil() > w {
 			out = append(out, line)
 			if len(out) == n {
-				out[n-1] = clipLine(face, out[n-1]+" "+strings.Join(words[i:], " "), w)
+				out[n-1] = clipLine(face, try, w)
 				return out
 			}
 			line = word
