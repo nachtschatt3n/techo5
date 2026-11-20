@@ -209,8 +209,11 @@ func (d *Display) dashScene(s *scene, sheetOrDrawer bool) {
 	// Not while the keyboard is over the streamed page: a key pressed with a finger that slid a little
 	// is still a tap on it.
 	// The music library up on its own (library_alone.go) is followed and held the same way as over the
-	// drawn page: it is the same library.
-	follow := want && !d.dashKbd.up && !s.showDrawer || s.showLibrary
+	// drawn page: it is the same library. Not while a timer or an alarm rings or a call's page is drawn
+	// over it, as the page is not then wanted: those take only a tap, and a slow press on Stop or
+	// Answer would otherwise be a hold and a release, which they do not answer.
+	lib := s.showLibrary && !sheetOrDrawer
+	follow := want && !d.dashKbd.up && !s.showDrawer || lib
 	changed := follow != d.dashFollow
 	d.dashFollow = follow
 	// Drawn, a finger held still on a light is a long press for its colors (color_sheet.go), which
@@ -219,7 +222,7 @@ func (d *Display) dashScene(s *scene, sheetOrDrawer bool) {
 	// and a release, which it does not answer, and which the page under it would.
 	// The Tessera page's long press opens the same sheets.
 	sheeted := want && (mode == config.DashboardDrawn || mode == config.DashboardTessera)
-	holds := sheeted && !over && !s.showDrawer || s.showLibrary && !over
+	holds := sheeted && !over && !s.showDrawer || lib && !over
 	holdsChanged := holds != d.dashHolds
 	d.dashHolds = holds
 	if !sheeted {

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/HuskerMinion/techo5/echod/internal/config"
+	"github.com/HuskerMinion/techo5/echod/internal/feature/phone"
 	"github.com/HuskerMinion/techo5/echod/internal/hardware/touch"
 )
 
@@ -64,6 +65,44 @@ func TestTheLibraryOnItsOwnWithAStreamedDashboard(t *testing.T) {
 	d.libraryAloneGesture(touch.Gesture{Kind: touch.Tap, X: x, Y: y})
 	if libUp(d) != nil || d.libAlone {
 		t.Errorf("after Done: library %v, on its own %v", libUp(d) != nil, d.libAlone)
+	}
+}
+
+// A timer ringing or a call's page over the library on its own takes only taps: the library's fingers
+// are neither followed nor held under it, or a slow press on Stop or Answer would be a hold and a
+// release, which the ringing and call pages do not answer. Once it is gone they are the library's again.
+func TestTheLibraryOnItsOwnTakesNoHoldsUnderARingOrACall(t *testing.T) {
+	noLibrary(t)
+	config.Use(filepath.Join(t.TempDir(), "state.json"))
+	_ = config.Set().Dashboard().Mode(config.DashboardStreamed)
+	t.Cleanup(func() { libLast.Store(nil) })
+	libLast.Store(nil)
+	libFakeMA(t)
+	d := &Display{r: newRenderer(image.NewRGBA(image.Rect(0, 0, showWide, showHigh))), poke: make(chan struct{}, 1)}
+	d.reopenLibrary(false)
+	if !d.libAlone || libUp(d) == nil {
+		t.Fatal("the library did not come up on its own")
+	}
+	frame := func(s scene) (follow, holds bool) {
+		d.libraryScene(&s)
+		d.dashScene(&s, s.showSheet || s.ring.any() || s.callPageUp())
+		d.mu.Lock()
+		defer d.mu.Unlock()
+		return d.dashFollow, d.dashHolds
+	}
+	for _, c := range []struct {
+		name string
+		s    scene
+	}{
+		{"a timer ringing", scene{phase: "idle", now: time.Now(), ring: ringState{timer: "Pasta"}}},
+		{"a call's page", scene{phase: "idle", now: time.Now(), call: phone.State{Phase: phone.Ringing}}},
+	} {
+		if follow, holds := frame(c.s); follow || holds {
+			t.Errorf("under %s the library's fingers are followed (%v) or held (%v)", c.name, follow, holds)
+		}
+		if follow, holds := frame(scene{phase: "idle", now: time.Now()}); !follow || !holds {
+			t.Errorf("after %s the library's fingers are not followed (%v) or held (%v)", c.name, follow, holds)
+		}
 	}
 }
 
