@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -666,5 +667,30 @@ func TestMealsShoppingScrolls(t *testing.T) {
 	}
 	if mealsShopping.scroll != 0 {
 		t.Errorf("scrolled back to %d, want 0", mealsShopping.scroll)
+	}
+}
+
+// The lists the Shopping view reads at each load are the choices of the select in Home Assistant, without
+// the setup card having asked.
+func TestMealsShoppingFetchOffersTheLists(t *testing.T) {
+	d, f := shopPage(t, 960, 480, shopThree()...)
+	d.buildMealsEntities()
+	setMealsListsHook(d.mealsNoteLists)
+	t.Cleanup(func() { setMealsListsHook(nil) })
+	if got := d.meals.list.Options; !slices.Equal(got, []string{mealsFirstList}) {
+		t.Fatalf("before a load: %q", got)
+	}
+	meals.reload("shopping")
+	meals.wg.Wait()
+	if got, want := d.meals.list.Options, []string{mealsFirstList, "Weekly"}; !slices.Equal(got, want) {
+		t.Fatalf("after a load: %q, want %q", got, want)
+	}
+	f.mu.Lock()
+	f.more = []string{"Party"}
+	f.mu.Unlock()
+	meals.reload("shopping")
+	meals.wg.Wait()
+	if got, want := d.meals.list.Options, []string{mealsFirstList, "Weekly", "Party"}; !slices.Equal(got, want) {
+		t.Fatalf("after another list was made: %q, want %q", got, want)
 	}
 }

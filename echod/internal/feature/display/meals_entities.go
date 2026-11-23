@@ -5,6 +5,7 @@ package display
 import (
 	"fmt"
 	"log/slog"
+	"slices"
 	"sync"
 
 	esphome "github.com/ygelfand/go-esphome-device"
@@ -85,9 +86,35 @@ func (d *Display) buildMealsEntities() {
 	d.mealsChanged()
 }
 
+// mealsListsHook is who is told the shopping lists the Shopping view has just read. It is the display's
+// entities; the view is a function with no display of its own, so it is handed over here.
+var mealsListsHook struct {
+	mu sync.Mutex
+	f  func([]mealie.ListSummary)
+}
+
+// setMealsListsHook sets who is told the lists the Shopping view reads; nil for no one.
+func setMealsListsHook(f func([]mealie.ListSummary)) {
+	mealsListsHook.mu.Lock()
+	mealsListsHook.f = f
+	mealsListsHook.mu.Unlock()
+}
+
+// mealsListsRead tells the entities what the Shopping view's last read of the lists said. It is called
+// from the view's fetch, with no lock of the display or the page held.
+func mealsListsRead(lists []mealie.ListSummary) {
+	mealsListsHook.mu.Lock()
+	f := mealsListsHook.f
+	mealsListsHook.mu.Unlock()
+	if f != nil {
+		f(lists)
+	}
+}
+
 // listenMeals follows the setup page: a save changes what the entities say, and an answer from Mealie
 // changes the names the select offers.
 func (d *Display) listenMeals() {
+	setMealsListsHook(d.mealsNoteLists)
 	setup.MealieNoted.Listen(func(n setup.MealieNote) {
 		if n.Listed {
 			d.mealsNoteLists(n.Lists)
@@ -100,9 +127,14 @@ func (d *Display) listenMeals() {
 // mealsNoteLists is Mealie's answer to which shopping lists it has, from the setup card or the Meals page.
 func (d *Display) mealsNoteLists(lists []mealie.ListSummary) {
 	d.meals.mu.Lock()
+	// The page reads the lists at every refresh: Home Assistant is told only when they are not the ones
+	// it has been told.
+	same := slices.EqualFunc(d.meals.lists, lists, func(a, b mealie.ListSummary) bool { return a.ID == b.ID && a.Name == b.Name })
 	d.meals.lists = append([]mealie.ListSummary(nil), lists...)
 	d.meals.mu.Unlock()
-	d.mealsChanged()
+	if !same {
+		d.mealsChanged()
+	}
 }
 
 // mealsOptions are the labels the select offers for the lists known and the id saved, and the id behind

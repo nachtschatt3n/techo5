@@ -144,6 +144,8 @@ func shopFetch(ctx context.Context, c mealie.Client) (any, error) {
 	if err != nil {
 		return nil, err
 	}
+	// The select in Home Assistant offers the names the page has just read.
+	mealsListsRead(lists)
 	id := s.current(lists)
 	if id == "" {
 		s.forget(was)
