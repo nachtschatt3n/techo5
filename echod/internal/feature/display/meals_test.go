@@ -295,6 +295,7 @@ func TestMealsBackoff(t *testing.T) {
 	// While one is due a frame starts it, and not before.
 	meals.mu.Lock()
 	meals.seen = time.Now() // the page is open: a frame is not a reopening
+	meals.server = mealsServer(config.Get().Mealie)
 	meals.feed("shopping").nextAt = time.Now().Add(time.Hour)
 	meals.mu.Unlock()
 	if f := mealsFrameOf(t); f.pane.Loading {
