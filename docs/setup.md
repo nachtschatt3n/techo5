@@ -1221,6 +1221,12 @@ puts it away for two minutes.
 - When Mealie cannot be reached, the page keeps showing what it last had, marked **Offline, as of** the
   time it is from, with a **Retry** pill.
 
+**From Home Assistant.** Two actions, `meals_show` and `meals_step`, put the page up at a view or a
+recipe and move the recipe along, so a voice command, a dashboard button or an automation can do what a
+touch does: see [Show the Meals page](actions.md#show-the-meals-page) and
+[Meals by voice and from automations](actions.md#meals-by-voice-and-from-automations). The
+[Meals by voice](../blueprints/README.md#voice) blueprint has the sentences ready.
+
 **Troubleshooting Meals.** "Refused the token": Mealie did not accept it, or it was made for another
 user; make a new one and save it. "Use the https address": put the `https` address in. Not the lists
 you expected: the token's household is the one shown, so make the token while signed in to the other
