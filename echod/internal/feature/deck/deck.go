@@ -317,6 +317,8 @@ func Icon(b config.DeckButton, lit bool) string {
 		return "cctv"
 	case config.DeckScreenNowPlaying:
 		return "play-circle"
+	case config.DeckScreenMeals:
+		return "silverware-fork-knife"
 	}
 	return ""
 }
