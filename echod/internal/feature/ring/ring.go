@@ -17,6 +17,19 @@ import (
 // decides to hush has to rate-limit itself against it.
 const HushFor = 3 * time.Second
 
+// Onset is the first moment of a ring, in which what the stop and wake words score may be the chime
+// itself coming on, or a sound from just before it, and nobody can have reacted to the ring yet. A
+// near miss or a stop detection then does not hush or end the ring.
+//
+// Half a second of chime, and the roughly 0.1 s the first chime takes to reach the speaker: the
+// echo canceller sees its reference 80 to 100 ms after a ring starts. A near miss is reported only
+// after its peak has been followed by a stretch of lower scores, so one reported just after a ring
+// starts peaked before it, and InOnset counts those too.
+//
+// It is measured from when the first ring began. A second reason to ring while one sounds
+// (Again) does not move it.
+const Onset = 600 * time.Millisecond
+
 // OfferFor is how long a silenced ring waits to be told what to do with itself.
 //
 // Silencing and deciding are two acts, and only the first is urgent: what somebody wants at 6am is
@@ -34,6 +47,10 @@ var state struct {
 	// sounding counts the rings in progress rather than flagging one, so an alarm and a timer going
 	// off together do not have the first to finish report silence.
 	sounding int
+
+	// began is when the rings sounding now began, and zero when none are. ended is when the last ring
+	// stopped sounding, and zero before any did.
+	began, ended time.Time
 
 	// until is when the current hush ends. A deadline rather than a flag: a hush that is never
 	// lifted expires by itself, and an alarm that cannot be silenced by a bug is worth more than
@@ -65,6 +82,9 @@ func init() { state.now = time.Now }
 // loop with defer.
 func Sounding() (done func()) {
 	state.mu.Lock()
+	if state.sounding == 0 {
+		state.began = state.now()
+	}
 	state.sounding++
 	state.mu.Unlock()
 
@@ -77,6 +97,7 @@ func Sounding() (done func()) {
 				// Nothing is ringing, so a hush or an offer left over from the last one must not
 				// apply to the next.
 				state.until, state.offer = time.Time{}, time.Time{}
+				state.began, state.ended = time.Time{}, state.now()
 			}
 			state.mu.Unlock()
 		})
@@ -88,6 +109,21 @@ func IsSounding() bool {
 	state.mu.Lock()
 	defer state.mu.Unlock()
 	return state.sounding > 0
+}
+
+// Began is when the rings sounding now began, and the zero time when nothing sounds.
+func Began() time.Time {
+	state.mu.Lock()
+	defer state.mu.Unlock()
+	return state.began
+}
+
+// InOnset reports whether a ring is sounding and at falls within its Onset. An at from before the
+// ring began counts, deliberately: it is a sound the ring cannot have been answered by.
+func InOnset(at time.Time) bool {
+	state.mu.Lock()
+	defer state.mu.Unlock()
+	return state.sounding > 0 && at.Before(state.began.Add(Onset))
 }
 
 // Hush holds the chime back for a moment, so a word said into the gap reaches the microphones
