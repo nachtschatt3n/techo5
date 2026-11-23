@@ -105,8 +105,13 @@ func mealsRun(t *testing.T, d *Display, name string, args map[string]any) (any, 
 
 // cooked puts a recipe on the page the way the Cooking view does.
 func cooked(d *Display, r mealie.Recipe) *mealsCook {
+	slug := r.Slug
+	if slug == "" {
+		slug = r.ID
+	}
 	meals.mu.Lock()
 	meals.view = "cooking"
+	meals.recipe.slug, meals.recipe.scale, meals.recipe.at = slug, 1, time.Now()
 	meals.mu.Unlock()
 	d.mu.Lock()
 	d.customs.up, d.customs.shown = mealsID, mealsID
@@ -439,5 +444,36 @@ func TestMealsActionsNotSetUp(t *testing.T) {
 	d.mu.Unlock()
 	if up != "" {
 		t.Errorf("the page was put up (%q)", up)
+	}
+}
+
+// While another recipe is being loaded the one kept is still the one from before, and a step asked for
+// does not move it, nor start its timer.
+func TestMealsStepNotWhileAnotherRecipeLoads(t *testing.T) {
+	_, d := mealsFake(t)
+	timers := 0
+	was := mealsTimerStart
+	mealsTimerStart = func(string, time.Duration) string { timers++; return "t1" }
+	t.Cleanup(func() { mealsTimerStart = was })
+	c := cooked(d, cookRecipe())
+	c.Go(1)
+	// Another recipe is opened; its fetch has not landed.
+	meals.mu.Lock()
+	meals.recipe.slug = "pancakes"
+	meals.mu.Unlock()
+	for _, step := range []string{"next", "timer", "overview", "3"} {
+		if _, err := mealsRun(t, d, "meals_step", map[string]any{"step": step}); err == nil {
+			t.Errorf("step %q moved a recipe that is not the open one", step)
+		}
+	}
+	if c.Step() != 1 || timers != 0 {
+		t.Fatalf("the recipe from before was moved to %d, %d timers started", c.Step(), timers)
+	}
+	// It is the open one again: it moves.
+	meals.mu.Lock()
+	meals.recipe.slug = "tomato-soup"
+	meals.mu.Unlock()
+	if _, err := mealsRun(t, d, "meals_step", map[string]any{"step": "next"}); err != nil || c.Step() != 2 {
+		t.Fatalf("the open recipe: step %d, %v", c.Step(), err)
 	}
 }

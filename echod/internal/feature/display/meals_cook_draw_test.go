@@ -865,3 +865,33 @@ func TestPictureRequestsCarryNoToken(t *testing.T) {
 		t.Fatalf("%d picture requests, %d of them with an Authorization header", seen.Load(), bad.Load())
 	}
 }
+
+// A fetch that was on its way when another recipe was opened does not take the place of the recipe being
+// cooked: it lands with no model, and the page fetches again.
+func TestCookFetchOfAnotherRecipeOpensNothing(t *testing.T) {
+	cookSetUp(t, 960, 480)
+	meals.mu.Lock()
+	meals.recipe.slug, meals.recipe.scale, meals.recipe.at = "tomato-soup", 1, time.Now()
+	meals.mu.Unlock()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		// While the server is answering, the cook opens another recipe.
+		meals.mu.Lock()
+		meals.recipe.slug = "pancakes"
+		meals.mu.Unlock()
+		_, _ = w.Write([]byte(`{"id":"id-soup","slug":"tomato-soup","name":"Tomato soup","recipeInstructions":[{"text":"Fry."}]}`))
+	}))
+	t.Cleanup(srv.Close)
+	mealsCookClose()
+	pancakes := mealsCookOpen(mealie.Recipe{RecipeSummary: mealie.RecipeSummary{ID: "id-pan", Slug: "pancakes", Name: "Pancakes"}}, 1)
+	pancakes.Go(0)
+	got, err := cookFetch(context.Background(), mealie.Client{URL: srv.URL, Token: "t"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if data := got.(mealsCookData); data.Cook != nil || data.Slug != "tomato-soup" {
+		t.Fatalf("the fetch of the recipe that is not open opened %+v", data)
+	}
+	if mealsCooking() != pancakes {
+		t.Fatal("the recipe being cooked was replaced by a fetch of another")
+	}
+}

@@ -139,8 +139,10 @@ func cookFetch(ctx context.Context, c mealie.Client) (any, error) {
 	if err != nil {
 		return nil, err
 	}
+	// A recipe that is not the open one by now is not opened: the fetch's answer is dropped on landing, and
+	// the recipe being cooked is not replaced by it.
 	return mealsCookData{
-		Slug: slug, Cook: mealsCookOpen(r, scale),
+		Slug: slug, Cook: mealsCookOpenIf(slug, r, scale),
 		Min:  c.ImageURL(r.ID, r.Image, mealie.Min),
 		Full: c.ImageURL(r.ID, r.Image, mealie.Original),
 	}, nil

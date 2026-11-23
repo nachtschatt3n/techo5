@@ -284,5 +284,5 @@ func (d *Display) mealsCooked() *mealsCook {
 	if !ok || v.id != "cooking" {
 		return nil
 	}
-	return mealsCookKept()
+	return mealsCookedOpen()
 }
