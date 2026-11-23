@@ -1140,6 +1140,36 @@ var uiEnglish = map[string]string{
 	"meals_undo": "Undo",
 
 	// meals (T3d): the Plan view.
+	// the Plan view's card for what is planned for the whole week.
+	"meals_this_week": "This week",
+	// the Plan view's card for today.
+	"meals_today": "Today",
+	// the Plan view's card for tomorrow.
+	"meals_tomorrow": "Tomorrow",
+	// a Plan entry's meal type.
+	"meals_breakfast": "Breakfast",
+	// a Plan entry's meal type.
+	"meals_lunch": "Lunch",
+	// a Plan entry's meal type.
+	"meals_dinner": "Dinner",
+	// a Plan entry's meal type: a side dish.
+	"meals_side": "Side",
+	// a Plan entry's meal type.
+	"meals_snack": "Snack",
+	// a Plan entry's meal type.
+	"meals_drink": "Drink",
+	// a Plan entry's meal type.
+	"meals_dessert": "Dessert",
+	// a day's card in the Plan view when nothing is planned for it.
+	"meals_nothing_planned": "Nothing planned",
+	// the Plan view when nothing is planned for the next 7 days.
+	"meals_nothing_week": "Nothing planned for the next 7 days",
+	// how long a recipe takes, under an hour: %d is the minutes.
+	"meals_minutes": "%d min",
+	// how long a recipe takes, in whole hours: %d is the hours.
+	"meals_hours": "%d h",
+	// how long a recipe takes, an hour or more: the hours, then the minutes.
+	"meals_hours_minutes": "%d h %d min",
 
 	// meals (T4b): the Cooking view.
 
@@ -2249,6 +2279,36 @@ var uiTranslations = map[string]map[string]string{
 		"meals_undo": "Desfés",
 
 		// meals (T3d): the Plan view.
+		// the Plan view's card for what is planned for the whole week.
+		"meals_this_week": "Esta setmana",
+		// the Plan view's card for today.
+		"meals_today": "Hui",
+		// the Plan view's card for tomorrow.
+		"meals_tomorrow": "Demà",
+		// a Plan entry's meal type.
+		"meals_breakfast": "Esmorzar",
+		// a Plan entry's meal type.
+		"meals_lunch": "Dinar",
+		// a Plan entry's meal type.
+		"meals_dinner": "Sopar",
+		// a Plan entry's meal type: a side dish.
+		"meals_side": "Acompanyament",
+		// a Plan entry's meal type.
+		"meals_snack": "Berenar",
+		// a Plan entry's meal type.
+		"meals_drink": "Beguda",
+		// a Plan entry's meal type.
+		"meals_dessert": "Postres",
+		// a day's card in the Plan view when nothing is planned for it.
+		"meals_nothing_planned": "Res planificat",
+		// the Plan view when nothing is planned for the next 7 days.
+		"meals_nothing_week": "Res planificat els pròxims 7 dies",
+		// how long a recipe takes, under an hour: %d is the minutes.
+		"meals_minutes": "%d min",
+		// how long a recipe takes, in whole hours: %d is the hours.
+		"meals_hours": "%d h",
+		// how long a recipe takes, an hour or more: the hours, then the minutes.
+		"meals_hours_minutes": "%d h %d min",
 
 		// meals (T4b): the Cooking view.
 
@@ -3375,6 +3435,36 @@ var uiTranslations = map[string]map[string]string{
 		"meals_undo": "Deshacer",
 
 		// meals (T3d): the Plan view.
+		// the Plan view's card for what is planned for the whole week.
+		"meals_this_week": "Esta semana",
+		// the Plan view's card for today.
+		"meals_today": "Hoy",
+		// the Plan view's card for tomorrow.
+		"meals_tomorrow": "Mañana",
+		// a Plan entry's meal type.
+		"meals_breakfast": "Desayuno",
+		// a Plan entry's meal type.
+		"meals_lunch": "Almuerzo",
+		// a Plan entry's meal type.
+		"meals_dinner": "Cena",
+		// a Plan entry's meal type: a side dish.
+		"meals_side": "Guarnición",
+		// a Plan entry's meal type.
+		"meals_snack": "Tentempié",
+		// a Plan entry's meal type.
+		"meals_drink": "Bebida",
+		// a Plan entry's meal type.
+		"meals_dessert": "Postre",
+		// a day's card in the Plan view when nothing is planned for it.
+		"meals_nothing_planned": "Nada planeado",
+		// the Plan view when nothing is planned for the next 7 days.
+		"meals_nothing_week": "Nada planeado para los próximos 7 días",
+		// how long a recipe takes, under an hour: %d is the minutes.
+		"meals_minutes": "%d min",
+		// how long a recipe takes, in whole hours: %d is the hours.
+		"meals_hours": "%d h",
+		// how long a recipe takes, an hour or more: the hours, then the minutes.
+		"meals_hours_minutes": "%d h %d min",
 
 		// meals (T4b): the Cooking view.
 
@@ -4496,6 +4586,36 @@ var uiTranslations = map[string]map[string]string{
 		"meals_undo": "Annuler",
 
 		// meals (T3d): the Plan view.
+		// the Plan view's card for what is planned for the whole week.
+		"meals_this_week": "Cette semaine",
+		// the Plan view's card for today.
+		"meals_today": "Aujourd'hui",
+		// the Plan view's card for tomorrow.
+		"meals_tomorrow": "Demain",
+		// a Plan entry's meal type.
+		"meals_breakfast": "Petit-déjeuner",
+		// a Plan entry's meal type.
+		"meals_lunch": "Déjeuner",
+		// a Plan entry's meal type.
+		"meals_dinner": "Dîner",
+		// a Plan entry's meal type: a side dish.
+		"meals_side": "Accompagnement",
+		// a Plan entry's meal type.
+		"meals_snack": "En-cas",
+		// a Plan entry's meal type.
+		"meals_drink": "Boisson",
+		// a Plan entry's meal type.
+		"meals_dessert": "Dessert",
+		// a day's card in the Plan view when nothing is planned for it.
+		"meals_nothing_planned": "Rien de prévu",
+		// the Plan view when nothing is planned for the next 7 days.
+		"meals_nothing_week": "Rien de prévu pour les 7 prochains jours",
+		// how long a recipe takes, under an hour: %d is the minutes.
+		"meals_minutes": "%d min",
+		// how long a recipe takes, in whole hours: %d is the hours.
+		"meals_hours": "%d h",
+		// how long a recipe takes, an hour or more: the hours, then the minutes.
+		"meals_hours_minutes": "%d h %d min",
 
 		// meals (T4b): the Cooking view.
 
@@ -5613,6 +5733,36 @@ var uiTranslations = map[string]map[string]string{
 		"meals_undo": "Desfacer",
 
 		// meals (T3d): the Plan view.
+		// the Plan view's card for what is planned for the whole week.
+		"meals_this_week": "Esta semana",
+		// the Plan view's card for today.
+		"meals_today": "Hoxe",
+		// the Plan view's card for tomorrow.
+		"meals_tomorrow": "Mañá",
+		// a Plan entry's meal type.
+		"meals_breakfast": "Almorzo",
+		// a Plan entry's meal type.
+		"meals_lunch": "Xantar",
+		// a Plan entry's meal type.
+		"meals_dinner": "Cea",
+		// a Plan entry's meal type: a side dish.
+		"meals_side": "Acompañamento",
+		// a Plan entry's meal type.
+		"meals_snack": "Merenda",
+		// a Plan entry's meal type.
+		"meals_drink": "Bebida",
+		// a Plan entry's meal type.
+		"meals_dessert": "Sobremesa",
+		// a day's card in the Plan view when nothing is planned for it.
+		"meals_nothing_planned": "Nada planeado",
+		// the Plan view when nothing is planned for the next 7 days.
+		"meals_nothing_week": "Nada planeado para os próximos 7 días",
+		// how long a recipe takes, under an hour: %d is the minutes.
+		"meals_minutes": "%d min",
+		// how long a recipe takes, in whole hours: %d is the hours.
+		"meals_hours": "%d h",
+		// how long a recipe takes, an hour or more: the hours, then the minutes.
+		"meals_hours_minutes": "%d h %d min",
 
 		// meals (T4b): the Cooking view.
 
@@ -6734,6 +6884,36 @@ var uiTranslations = map[string]map[string]string{
 		"meals_undo": "Annulla",
 
 		// meals (T3d): the Plan view.
+		// the Plan view's card for what is planned for the whole week.
+		"meals_this_week": "Questa settimana",
+		// the Plan view's card for today.
+		"meals_today": "Oggi",
+		// the Plan view's card for tomorrow.
+		"meals_tomorrow": "Domani",
+		// a Plan entry's meal type.
+		"meals_breakfast": "Colazione",
+		// a Plan entry's meal type.
+		"meals_lunch": "Pranzo",
+		// a Plan entry's meal type.
+		"meals_dinner": "Cena",
+		// a Plan entry's meal type: a side dish.
+		"meals_side": "Contorno",
+		// a Plan entry's meal type.
+		"meals_snack": "Spuntino",
+		// a Plan entry's meal type.
+		"meals_drink": "Bevanda",
+		// a Plan entry's meal type.
+		"meals_dessert": "Dolce",
+		// a day's card in the Plan view when nothing is planned for it.
+		"meals_nothing_planned": "Niente in programma",
+		// the Plan view when nothing is planned for the next 7 days.
+		"meals_nothing_week": "Niente in programma per i prossimi 7 giorni",
+		// how long a recipe takes, under an hour: %d is the minutes.
+		"meals_minutes": "%d min",
+		// how long a recipe takes, in whole hours: %d is the hours.
+		"meals_hours": "%d h",
+		// how long a recipe takes, an hour or more: the hours, then the minutes.
+		"meals_hours_minutes": "%d h %d min",
 
 		// meals (T4b): the Cooking view.
 
@@ -9679,6 +9859,36 @@ var uiTranslations = map[string]map[string]string{
 		"meals_undo": "元に戻す",
 
 		// meals (T3d): the Plan view.
+		// the Plan view's card for what is planned for the whole week.
+		"meals_this_week": "今週",
+		// the Plan view's card for today.
+		"meals_today": "今日",
+		// the Plan view's card for tomorrow.
+		"meals_tomorrow": "明日",
+		// a Plan entry's meal type.
+		"meals_breakfast": "朝食",
+		// a Plan entry's meal type.
+		"meals_lunch": "昼食",
+		// a Plan entry's meal type.
+		"meals_dinner": "夕食",
+		// a Plan entry's meal type: a side dish.
+		"meals_side": "副菜",
+		// a Plan entry's meal type.
+		"meals_snack": "軽食",
+		// a Plan entry's meal type.
+		"meals_drink": "飲み物",
+		// a Plan entry's meal type.
+		"meals_dessert": "デザート",
+		// a day's card in the Plan view when nothing is planned for it.
+		"meals_nothing_planned": "予定なし",
+		// the Plan view when nothing is planned for the next 7 days.
+		"meals_nothing_week": "今後7日間の予定はありません",
+		// how long a recipe takes, under an hour: %d is the minutes.
+		"meals_minutes": "%d分",
+		// how long a recipe takes, in whole hours: %d is the hours.
+		"meals_hours": "%d時間",
+		// how long a recipe takes, an hour or more: the hours, then the minutes.
+		"meals_hours_minutes": "%d時間%d分",
 
 		// meals (T4b): the Cooking view.
 
@@ -11427,6 +11637,36 @@ var uiTranslations = map[string]map[string]string{
 		"meals_undo": "Rückgängig",
 
 		// meals (T3d): the Plan view.
+		// the Plan view's card for what is planned for the whole week.
+		"meals_this_week": "Diese Woche",
+		// the Plan view's card for today.
+		"meals_today": "Heute",
+		// the Plan view's card for tomorrow.
+		"meals_tomorrow": "Morgen",
+		// a Plan entry's meal type.
+		"meals_breakfast": "Frühstück",
+		// a Plan entry's meal type.
+		"meals_lunch": "Mittagessen",
+		// a Plan entry's meal type.
+		"meals_dinner": "Abendessen",
+		// a Plan entry's meal type: a side dish.
+		"meals_side": "Beilage",
+		// a Plan entry's meal type.
+		"meals_snack": "Snack",
+		// a Plan entry's meal type.
+		"meals_drink": "Getränk",
+		// a Plan entry's meal type.
+		"meals_dessert": "Dessert",
+		// a day's card in the Plan view when nothing is planned for it.
+		"meals_nothing_planned": "Nichts geplant",
+		// the Plan view when nothing is planned for the next 7 days.
+		"meals_nothing_week": "Nichts geplant für die nächsten 7 Tage",
+		// how long a recipe takes, under an hour: %d is the minutes.
+		"meals_minutes": "%d Min.",
+		// how long a recipe takes, in whole hours: %d is the hours.
+		"meals_hours": "%d Std.",
+		// how long a recipe takes, an hour or more: the hours, then the minutes.
+		"meals_hours_minutes": "%d Std. %d Min.",
 
 		// meals (T4b): the Cooking view.
 
@@ -12534,6 +12774,36 @@ var uiTranslations = map[string]map[string]string{
 		"meals_undo": "Anulează",
 
 		// meals (T3d): the Plan view.
+		// the Plan view's card for what is planned for the whole week.
+		"meals_this_week": "Săptămâna aceasta",
+		// the Plan view's card for today.
+		"meals_today": "Azi",
+		// the Plan view's card for tomorrow.
+		"meals_tomorrow": "Mâine",
+		// a Plan entry's meal type.
+		"meals_breakfast": "Mic dejun",
+		// a Plan entry's meal type.
+		"meals_lunch": "Prânz",
+		// a Plan entry's meal type.
+		"meals_dinner": "Cină",
+		// a Plan entry's meal type: a side dish.
+		"meals_side": "Garnitură",
+		// a Plan entry's meal type.
+		"meals_snack": "Gustare",
+		// a Plan entry's meal type.
+		"meals_drink": "Băutură",
+		// a Plan entry's meal type.
+		"meals_dessert": "Desert",
+		// a day's card in the Plan view when nothing is planned for it.
+		"meals_nothing_planned": "Nimic planificat",
+		// the Plan view when nothing is planned for the next 7 days.
+		"meals_nothing_week": "Nimic planificat pentru următoarele 7 zile",
+		// how long a recipe takes, under an hour: %d is the minutes.
+		"meals_minutes": "%d min",
+		// how long a recipe takes, in whole hours: %d is the hours.
+		"meals_hours": "%d h",
+		// how long a recipe takes, an hour or more: the hours, then the minutes.
+		"meals_hours_minutes": "%d h %d min",
 
 		// meals (T4b): the Cooking view.
 
@@ -13656,6 +13926,36 @@ var uiTranslations = map[string]map[string]string{
 		"meals_undo": "Geri al",
 
 		// meals (T3d): the Plan view.
+		// the Plan view's card for what is planned for the whole week.
+		"meals_this_week": "Bu hafta",
+		// the Plan view's card for today.
+		"meals_today": "Bugün",
+		// the Plan view's card for tomorrow.
+		"meals_tomorrow": "Yarın",
+		// a Plan entry's meal type.
+		"meals_breakfast": "Kahvaltı",
+		// a Plan entry's meal type.
+		"meals_lunch": "Öğle yemeği",
+		// a Plan entry's meal type.
+		"meals_dinner": "Akşam yemeği",
+		// a Plan entry's meal type: a side dish.
+		"meals_side": "Garnitür",
+		// a Plan entry's meal type.
+		"meals_snack": "Atıştırmalık",
+		// a Plan entry's meal type.
+		"meals_drink": "İçecek",
+		// a Plan entry's meal type.
+		"meals_dessert": "Tatlı",
+		// a day's card in the Plan view when nothing is planned for it.
+		"meals_nothing_planned": "Planlanmış bir şey yok",
+		// the Plan view when nothing is planned for the next 7 days.
+		"meals_nothing_week": "Önümüzdeki 7 gün için plan yok",
+		// how long a recipe takes, under an hour: %d is the minutes.
+		"meals_minutes": "%d dk",
+		// how long a recipe takes, in whole hours: %d is the hours.
+		"meals_hours": "%d sa",
+		// how long a recipe takes, an hour or more: the hours, then the minutes.
+		"meals_hours_minutes": "%d sa %d dk",
 
 		// meals (T4b): the Cooking view.
 
