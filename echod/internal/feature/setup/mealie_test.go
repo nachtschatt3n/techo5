@@ -61,7 +61,7 @@ func TestSaveMealieValidates(t *testing.T) {
 		t.Skip("no Meals page on this build")
 	}
 	config.Use(filepath.Join(t.TempDir(), "state.json"))
-	if p := postMealie(url.Values{"url": {"HTTP://Mealie.Example:9925/"}, "mealietoken": {"mealie-secret"}, "list": {"3f2b-aa"}, "mealiesleeps": {"1"}}); p != "" {
+	if p := postMealie(url.Values{"url": {"HTTP://Mealie.Example:9925/"}, "mealietoken": {"mealie-secret"}, "list": {"3f2b-aa"}, "mealiesleeps": {"1"}, "awake": {"yes"}}); p != "" {
 		t.Fatal(p)
 	}
 	m := config.Get().Mealie
