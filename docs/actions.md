@@ -2312,6 +2312,89 @@ screen somebody turned off stays off. Fails on a device that has no list chosen 
 action: esphome.kitchen_todo_show
 ```
 
+## Show the Meals page
+
+In YAML, refer to this action as `esphome.<node>_meals_show`.
+
+Opens the Meals page on a Show, Skylight or Panel app, at the view named: the shopping list, the meal
+plan, or a recipe ready to cook. The page is there only once Mealie is set up on the setup page
+([Meals](setup.md#meals-mealie)). Until then the action fails with `meals: Mealie is not set up on this
+device`, and it asks nothing of Mealie. At night it lights a screen the night has put out, at the
+night light's level, as the to-do action does. It answers with the view it put up (`page`: `shopping`,
+`plan` or `cooking`) and its `title`, the list's name or the recipe's, so call it with a
+`response_variable` to read the answer.
+
+### page (Required)
+
+*string*
+
+One of these:
+
+- `shopping` and `plan` open those views.
+- `today` cooks today's dinner. With nothing planned for dinner it cooks the first recipe planned for
+  today, and with no recipe planned today it opens the plan at today.
+- `recipe` cooks the recipe named in `recipe`, at the scale it is written for.
+- `cooking` returns to the recipe cooked last, and otherwise does what `today` does.
+
+Any other word fails with `meals: unknown page "x"`.
+
+### recipe (Can be empty)
+
+*string*
+
+The recipe's slug or id, as its address in Mealie shows it. It is read only when `page` is `recipe`,
+so send `""` for the other pages. With `page` set to `recipe` and no recipe the action fails with
+`meals: page=recipe needs a recipe`.
+
+```yaml
+# Today's dinner, or what is planned for today.
+action: esphome.echo_show_kitchen_meals_show
+data:
+  page: today
+  recipe: ""
+```
+
+```yaml
+# Cook one recipe, from the kitchen Show.
+action: esphome.echo_show_kitchen_meals_show
+data:
+  page: recipe
+  recipe: tomato-soup
+```
+
+## Step through the recipe being cooked
+
+In YAML, refer to this action as `esphome.<node>_meals_step`.
+
+Moves the recipe on the Meals page's Cooking view: to its next or previous step, to its first step, back
+to the overview, to a step by its number, or to start that step's timer. It counts as use of the
+screen, so a screen that dimmed while nobody touched it comes back up, and at night it lights a screen
+the night has put out, as `meals_show` does, so a voice assistant can say the next step to a cook whose
+hands are full. It fails
+with `meals: nothing is being cooked on this device` unless the Cooking view is the one on the screen, so
+a recipe the cook has walked away from is never moved from another room. It answers with the step now on
+the screen: `step` (0 for the overview), `of` (how many steps there are) and `text`, the step's words
+without the markup, which a voice assistant can read out.
+
+### step (Required)
+
+*string*
+
+`next`, `back`, `first`, `overview`, a step's number from 1 up, or `timer`, which starts the step's first
+timer that is not running yet. A number past the last step, `timer` on a step without a timer, and
+`timer` when its timers are all running each fail with a short message saying so.
+
+```yaml
+action: esphome.echo_show_kitchen_meals_step
+data:
+  step: next
+```
+
+The Meals page's two choices are entities, not actions: the **Meals shopping list** select
+(`select.<node>_meals_shopping_list`) and the **Meals keep the screen on** switch
+(`switch.<node>_meals_keep_awake`). The setup page has both as well. Set the page's address and token
+only on the setup page, as with Music Assistant.
+
 ## Show the forecast or the rain map
 
 In YAML, refer to these actions as `esphome.<node>_weather_show` and `esphome.<node>_radar_show`.
