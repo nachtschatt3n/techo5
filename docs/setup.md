@@ -999,8 +999,8 @@ other Shows don't have the switches.
   theme it is wearing. The night clock keeps its own look.
 - **Tap on the clock** (Show and Spot): *Assist*, as it always was, *Dashboard* to open the
   dashboard, *Deck* to open TECHO5 Deck (Show only; until a deck has buttons of its own, a page of
-  the screen's own pages: the music library, the dashboard, the calendar, the weather, the radio and
-  the cameras), or *Nothing*, for a panel you only talk to. On a TECHO5 Panel tablet there is also
+  the screen's own pages: the music library, the dashboard, the calendar, the weather, the radio, the
+  cameras and Meals, once Mealie is set up), or *Nothing*, for a panel you only talk to. On a TECHO5 Panel tablet there is also
   *Apps*, which opens the list of the tablet's other apps over the clock (behind the settings lock
   when it's on). On a Show, *Meals* opens the [Meals page](#meals-mealie); until Mealie is set up,
   a tap on the clock does what *Assist* does, and nothing is asked of a server.
