@@ -2484,12 +2484,289 @@ data:
   step: next
 ```
 
+To say these by voice, or to call them from a dashboard or at a time of day, see
+[Meals by voice and from automations](#meals-by-voice-and-from-automations).
+
 The Meals page's two choices are entities, not actions: the **Meals shopping list** select
 (`select.<node>_meals_shopping_list`) and the **Meals keep the screen on** switch
 (`switch.<node>_meals_keep_awake`). The setup page has both as well. Set the page's address and token
 only on the setup page, as with Music Assistant. The two entities are there only once Mealie is set up:
 saving the address and the token, or taking either away, restarts the device's software, and they
 appear or go away as Home Assistant connects again. The two actions are there either way.
+
+## Meals by voice and from automations
+
+Home Assistant knows nothing of Mealie's meal plan, so "show the meal plan" or "next step" said to a
+TECHO5 device reaches Home Assistant with nothing there to act on. The automations below hand those
+sentences to the device that heard them, which puts the page up or moves the recipe, and Home
+Assistant says the answer on that device. The [Meals by voice](../blueprints/README.md#voice)
+blueprint is all of them in one, with the sentences as inputs; paste the YAML here instead if you
+would rather see and change every line. Do one or the other: with both, both answer. Add each
+automation in Settings > Automations & scenes > Create automation > Edit in YAML.
+
+They share two lines, and both matter.
+
+- **The device that heard it.** `device_attr(trigger.device_id, 'name') | slugify` is the device's
+  name as the action names it (`Kitchen` is `esphome.kitchen_meals_show`), so one automation covers
+  every TECHO5 device in the house and each answers on its own. A device whose name has letters
+  outside a to z needs its action name put in by hand.
+- **The check for Meals before the call.** The condition looks for the Meals page's own entity on that
+  device. Only a Show, the Skylight and the Panel app have the page, so a Dot or a Spot has neither the
+  entity nor the actions, and a call to an action that does not exist is an error that
+  `continue_on_error` does not catch: it stops the automation with "Action not found" in the log.
+  With the check, such a device is left alone. `continue_on_error` is for what the action
+  itself refuses: Mealie not set up, nothing being cooked, a step the recipe does not have. The
+  automation then carries on with the answer variable left undefined, which is why each one asks
+  `is defined` before it reads it.
+
+Show the shopping list, the meal plan, and today's dinner. Today's dinner opens the recipe ready to
+cook, or the plan when nothing is planned for the day (`page: today`, above):
+
+```yaml
+alias: TECHO5 - Meals pages by voice
+triggers:
+  - trigger: conversation
+    id: shopping
+    command:
+      - "show [me] [the] mealie shopping list"
+      - "open [the] mealie shopping list"
+  - trigger: conversation
+    id: plan
+    command:
+      - "show [me] [the] meal plan"
+      - "what is on the meal plan"
+      - "what is planned for [this] week"
+  - trigger: conversation
+    id: today
+    command:
+      - "what are we cooking [today|tonight]"
+      - "what is for dinner [today|tonight]"
+      - "cook today's dinner"
+conditions:
+  - "{{ device_entities(trigger.device_id) | select('search', 'meals_keep_awake') | list | count > 0 }}"
+actions:
+  - action: "esphome.{{ device_attr(trigger.device_id, 'name') | slugify }}_meals_show"
+    data:
+      page: "{{ trigger.id }}"
+      recipe: ""
+    response_variable: shown
+    continue_on_error: true
+  - choose:
+      - conditions: "{{ shown is not defined }}"
+        sequence:
+          - set_conversation_response: "I could not open Meals. Is Mealie set up on this device?"
+      - conditions: "{{ shown.page == 'cooking' }}"
+        sequence:
+          - set_conversation_response: "Cooking {{ shown.title }}."
+      - conditions: "{{ trigger.id == 'today' }}"
+        sequence:
+          - set_conversation_response: "Nothing is planned for today."
+    default:
+      - set_conversation_response: "Here is the {{ 'meal plan' if shown.page == 'plan' else 'shopping list' }}."
+mode: queued
+```
+
+The answer says what the page is showing, not what was asked for: asked for today's dinner with
+nothing planned, the action answers `plan`, and the automation says so.
+
+Step through the recipe: next, previous, a step by its number, the ingredients, the step again, and
+the step's timer. The step's words come back in the answer's `text` (without the markup), so Home
+Assistant can read the step out on the device while the cook's hands are in the dough:
+
+```yaml
+alias: TECHO5 - Meals steps by voice
+triggers:
+  - trigger: conversation
+    id: next
+    command:
+      - "next step"
+      - "go to the next step"
+  - trigger: conversation
+    id: back
+    command:
+      - "previous step"
+      - "go back a step"
+  - trigger: conversation
+    id: step
+    command:
+      - "[go to] step {n}"
+  - trigger: conversation
+    id: ingredients
+    command:
+      - "show [me] [the] ingredients"
+      - "what are the ingredients"
+  - trigger: conversation
+    id: repeat
+    command:
+      - "repeat [the] step"
+      - "read [the] step [again]"
+  - trigger: conversation
+    id: timer
+    command:
+      - "start the step timer"
+      - "start the timer for this step"
+conditions:
+  - "{{ device_entities(trigger.device_id) | select('search', 'meals_keep_awake') | list | count > 0 }}"
+variables:
+  node: "{{ device_attr(trigger.device_id, 'name') | slugify }}"
+  step: >-
+    {%- if trigger.id == 'step' -%}
+      {%- set words = {'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6, 'seven': 7,
+                       'eight': 8, 'nine': 9, 'ten': 10, 'eleven': 11, 'twelve': 12, 'thirteen': 13,
+                       'fourteen': 14, 'fifteen': 15, 'sixteen': 16, 'seventeen': 17, 'eighteen': 18,
+                       'nineteen': 19, 'twenty': 20, 'first': 1, 'back': 'back', 'next': 'next'} -%}
+      {%- set word = ((trigger.slots.n | default('')) | lower | regex_replace('[^a-z0-9 ]', ' ')).split() + [''] -%}
+      {%- if word[0] is match('^[0-9]+$') -%}{{ word[0] | int }}
+      {%- elif word[0] in words -%}{{ words[word[0]] }}
+      {%- endif -%}
+    {%- else -%}
+      {{ {'next': 'next', 'back': 'back', 'ingredients': 'overview', 'timer': 'timer', 'repeat': 'back'}[trigger.id] }}
+    {%- endif -%}
+actions:
+  - if: "{{ step == '' }}"
+    then:
+      - set_conversation_response: "Which step?"
+      - stop: "No step number was understood"
+  - action: "esphome.{{ node }}_meals_step"
+    data:
+      step: "{{ step }}"
+    response_variable: moved
+    continue_on_error: true
+  # The device cannot repeat a step by itself, so go back one and forward again: the second answer is the
+  # step the cook was on. On the overview it lands on step 1.
+  - if: "{{ trigger.id == 'repeat' and moved is defined }}"
+    then:
+      - action: "esphome.{{ node }}_meals_step"
+        data:
+          step: next
+        response_variable: moved
+        continue_on_error: true
+  - set_conversation_response: >-
+      {%- if moved is not defined -%}
+        {%- if trigger.id == 'timer' -%}There is no timer to start.
+        {%- elif trigger.id == 'step' -%}I can't go to step {{ step }}.
+        {%- else -%}Nothing is being cooked on this device.
+        {%- endif -%}
+      {%- elif trigger.id == 'timer' -%}Timer started.
+      {%- elif moved.step | int(0) == 0 -%}Here are the ingredients.
+      {%- else -%}Step {{ moved.step }}: {{ moved.text }}
+      {%- endif -%}
+mode: queued
+```
+
+`step` is what `meals_step` is given: `next`, `back`, `overview` for the ingredients, `timer`, or a
+number. The step's number comes from the sentence, as digits ("step 4") or as a word from one to
+twenty ("step four"), whichever speech to text writes. The answer's `step` is 0 on the overview and
+`of` is how many steps the recipe has, so "step 3 of 8" is `{{ moved.step }} of {{ moved.of }}`.
+
+**A bare "next".** Nobody cooking says "next step" every time, and "next" and "back" alone already
+mean the music's next and previous track. A conversation trigger takes a sentence before Home
+Assistant's own media commands see it, so a trigger on the bare "next" for Meals alone would take it
+away from the music. Put both in one automation instead, and let the device decide: `meals_step` fails
+unless the Cooking view is the one on the screen, so try it first, and fall through to the speaker
+when it fails. "Next" steps the recipe while one is being cooked, and skips the track otherwise:
+
+```yaml
+alias: TECHO5 - next and back, for the recipe or for the music
+triggers:
+  - trigger: conversation
+    id: next
+    command:
+      - "next"
+      - "next (song|track)"
+  - trigger: conversation
+    id: back
+    command:
+      - "back"
+      - "go back"
+      - "previous (song|track)"
+actions:
+  - variables:
+      node: "{{ device_attr(trigger.device_id, 'name') | slugify }}"
+      has_meals: "{{ device_entities(trigger.device_id) | select('search', 'meals_keep_awake') | list | count > 0 }}"
+      speaker: "{{ (device_entities(trigger.device_id) | select('match', 'media_player[.]') | list + [''])[0] }}"
+      # Only the bare words are tried on the recipe: "next song" is always the music's.
+      bare: "{{ (trigger.sentence | lower | regex_replace('[^a-z ]', ' ')).split() | join(' ') in ['next', 'back', 'go back'] }}"
+  - if: "{{ has_meals and bare }}"
+    then:
+      - action: "esphome.{{ node }}_meals_step"
+        data:
+          step: "{{ 'next' if trigger.id == 'next' else 'back' }}"
+        response_variable: moved
+        continue_on_error: true
+      - if: "{{ moved is defined }}"
+        then:
+          - set_conversation_response: "{{ 'Here are the ingredients.' if moved.step | int(0) == 0 else 'Step ' ~ moved.step ~ ': ' ~ moved.text }}"
+          - stop: "The recipe took it"
+  - if: "{{ speaker == '' }}"
+    then:
+      - set_conversation_response: "Say that to the speaker you want changed."
+      - stop: "No speaker on this device"
+  - action: "{{ 'media_player.media_next_track' if trigger.id == 'next' else 'media_player.media_previous_track' }}"
+    target:
+      entity_id: "{{ speaker }}"
+  - set_conversation_response: "{{ 'Next.' if trigger.id == 'next' else 'Going back.' }}"
+mode: queued
+```
+
+Only the bare words are tried on the recipe, which `bare` checks: "next song" is always the music's,
+even in the middle of a recipe. "Go back a step" is the Meals steps automation's and "go back" is this
+one's, so no sentence is in both, and they do not both answer. The device's own speaker is the first media player
+the device has in Home Assistant, as in the volume blueprint. If you play music on another speaker,
+put its entity in `speaker`. Say the sentences once against both before you rely on them: whatever
+is on the screen when you say "next" decides which one answers.
+
+**A button on a dashboard.** The actions are ordinary Home Assistant actions, so a button on any
+dashboard can call them. This one opens the meal plan on the kitchen Show (use the action name of
+your own device from Settings > Devices & services > ESPHome):
+
+```yaml
+type: button
+name: Meal plan
+icon: mdi:calendar-week
+tap_action:
+  action: perform-action
+  perform_action: esphome.kitchen_meals_show
+  data:
+    page: plan
+    recipe: ""
+```
+
+**The plan at a time of day.** An automation can put the page up as well. This one opens the plan on
+a Sunday morning, to plan the week with a coffee, and only when somebody is home. Change `page` to
+`today` to put up the dinner to cook in the afternoon instead. A fixed device name is fine here,
+because an automation that names one device is not asked to cope with a device that has no Meals page,
+but the device has to be connected when it runs:
+
+```yaml
+alias: Meal plan on Sunday morning
+triggers:
+  - trigger: time
+    at: "10:00:00"
+conditions:
+  - condition: time
+    weekday:
+      - sun
+  - condition: numeric_state
+    entity_id: zone.home
+    above: 0
+actions:
+  - action: esphome.kitchen_meals_show
+    data:
+      page: plan
+      recipe: ""
+    continue_on_error: true
+mode: single
+```
+
+At night the action lights a screen the night has put out, at the night light's level, so an
+automation set for the small hours wakes the room. Keep these to the day.
+
+**Other languages.** The sentences are Home Assistant's, not the device's, so put them in your own
+language in the `command` lists (the blueprint has them as inputs), and the answers in the
+`set_conversation_response` lines. In the steps automation, the number words are a map in `step`; add
+yours there. The actions take the same words whatever the language: `shopping`, `plan`, `next`,
+`back`, and the rest. The recipe's own text is read out as Mealie has it.
 
 ## Show the forecast or the rain map
 
