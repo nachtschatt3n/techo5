@@ -957,8 +957,8 @@ func (d *Display) gesture(g touch.Gesture) {
 		d.menuGesture(g)
 		return
 	}
-	// A cue turn's captions over the dashboard, the music or the clock: a tap on them puts them away,
-	// and anywhere else is the face's (turn_cue.go).
+	// A cue turn's captions over the dashboard, the music or the clock: a tap on them puts them away
+	// and stops an answer still being said, and anywhere else is the face's (turn_cue.go).
 	if d.captionsTap(g) {
 		return
 	}

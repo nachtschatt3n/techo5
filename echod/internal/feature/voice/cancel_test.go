@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-// Cancel request ends a request that is running, and does nothing with none running.
 // A tap on the words of a reply being said ends the reply, as the stop word over it does.
 func TestStopReplyEndsAReplyBeingSaid(t *testing.T) {
 	c := thinkingTurn(t)
@@ -22,15 +21,7 @@ func TestStopReplyEndsAReplyBeingSaid(t *testing.T) {
 	if !v.StopReply() {
 		t.Fatal("StopReply found no reply being said")
 	}
-	select {
-	case e := <-c.events:
-		if e.kind != evCancel {
-			t.Fatalf("the tap posted %v, want a cancel", e.kind)
-		}
-		c.handle(e)
-	case <-time.After(time.Second):
-		t.Fatal("the tap on a reply being said did nothing")
-	}
+	c.handle(next(t, c, evCancel))
 	if c.Busy() || c.sound.Busy() {
 		t.Fatalf("the reply is still going: turn %s, sound busy %v", c.phase, c.sound.Busy())
 	}
@@ -52,6 +43,7 @@ func TestStopReplyLeavesATurnNotReplyingAlone(t *testing.T) {
 	}
 }
 
+// Cancel request ends a request that is running, and does nothing with none running.
 func TestCancelRequestEndsARunningRequest(t *testing.T) {
 	c := thinkingTurn(t)
 	v := &Voice{turn: c}

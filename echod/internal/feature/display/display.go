@@ -1503,7 +1503,7 @@ func (d *Display) gesture(g touch.Gesture) {
 	}
 
 	// A cue turn's captions over the deck, the dashboard, the music or the clock: a tap on them puts
-	// them away, and anywhere else is the page's (turn_cue.go).
+	// them away and stops an answer still being said, and anywhere else is the page's (turn_cue.go).
 	if d.captionsTap(g) {
 		return
 	}
