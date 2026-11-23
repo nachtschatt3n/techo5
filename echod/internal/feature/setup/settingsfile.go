@@ -251,6 +251,7 @@ var partNames = map[string]string{
 	"deck":            "TECHO5 Deck",
 	"doorbell":        "The doorbell",
 	"home":            "Home screen, weather, radio and photos",
+	"mealie":          "Meals (Mealie)",
 	"media":           "Music and radio",
 	"microphone":      "The microphones",
 	"music_assistant": "Music Assistant",
