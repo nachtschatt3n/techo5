@@ -45,7 +45,8 @@ func (r *renderer) customBar(s scene, summary string, hot, shaded bool) []custom
 			r.roundHighlight(b, rad)
 			fg, face = onAccent(), fc.navBold
 		}
-		r.text(face, tab.label, b.Min.X+(b.Dx()-r.width(face, tab.label))/2, b.Min.Y+b.Dy()/2+r.s(9), fg)
+		name := r.fit(face, tab.tab(), b.Dx()-r.s(8))
+		r.text(face, name, b.Min.X+(b.Dx()-r.width(face, name))/2, b.Min.Y+b.Dy()/2+r.s(9), fg)
 		zones = append(zones, customZone{r: image.Rect(seg.Min.X+i*half, 0, seg.Min.X+(i+1)*half, barH+r.s(6)), kind: "tab", id: tab.id})
 	}
 

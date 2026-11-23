@@ -47,6 +47,10 @@ type customScreen struct {
 	label string // its tab, and its choice in Idle screen
 	rank  int    // its place among the tabs, the lowest first
 
+	// title is its tab's words in the screen's language, from a key of lib/locale (tr); nil for the label
+	// as it is. Idle screen's choice stays the label, which is what Home Assistant has the option called.
+	title func() string
+
 	// offered is whether this device has it (nil for every device): one that needs the owner's own
 	// settings, or a screen of a certain size.
 	offered func() bool
@@ -80,6 +84,14 @@ type customScreen struct {
 	// the hold then lasts while the screen is up, not only while a calendar or the forecast is. Nil for
 	// none. Called with the display's lock held, like awake.
 	night func() bool
+}
+
+// tab is the screen's tab, in the screen's language when it has words for it (title).
+func (c customScreen) tab() string {
+	if c.title != nil {
+		return c.title()
+	}
+	return c.label
 }
 
 // customScreens are the screens registered, in their ranks' order.
