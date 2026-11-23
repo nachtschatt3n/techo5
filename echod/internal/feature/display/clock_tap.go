@@ -19,12 +19,16 @@ type clockTap struct {
 	value string
 }
 
-// clockTaps are the choices, with what the config keeps for each; Assist is kept as nothing.
+// clockTaps are the choices, with what the config keeps for each; Assist is kept as nothing. Meals is
+// last, so the choices before it keep their places, and the Spot, which offers the first three only
+// (clock_tap_spot.go), never shows it. A value is kept by name, so a place in the list is not saved
+// anywhere. Meals on a device without Mealie set up is a tap that does what Assist does.
 var clockTaps = []clockTap{
 	{"Assist", ""},
 	{"Dashboard", "dashboard"},
 	{"Nothing", "nothing"},
 	{"Deck", "deck"},
+	{"Meals", "meals"},
 }
 
 // clockTapChoices are the choices this screen offers: no Assist without a microphone, where a tap
