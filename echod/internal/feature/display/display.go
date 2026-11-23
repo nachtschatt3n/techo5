@@ -1780,9 +1780,9 @@ func (d *Display) gesture(g touch.Gesture) {
 			return
 		}
 		// The clock itself: a voice turn, unless the Tap on the clock setting says the dashboard, the
-		// deck, a panel's apps, or nothing. A turn under way still takes the tap either way, as the way to
-		// stop or answer it, and with no dashboard set up a tap meant for one starts a turn rather than
-		// doing nothing.
+		// deck, a panel's apps, Meals, or nothing. A turn under way still takes the tap either way, as
+		// the way to stop or answer it, and with no dashboard set up a tap meant for one starts a turn
+		// rather than doing nothing.
 		if idle {
 			switch config.Get().Screen.ClockTap {
 			case "nothing":
@@ -1798,6 +1798,13 @@ func (d *Display) gesture(g touch.Gesture) {
 				}
 			case "apps":
 				if d.openTabletApps() {
+					return
+				}
+			case "meals":
+				// Without Mealie set up there is no page to open, and nothing is asked of a server: the
+				// tap falls through to the voice turn, as Assist does.
+				if config.Get().Mealie.Set() && d.openCustom(mealsID) {
+					slog.Info("screen: Meals by a tap on the clock")
 					return
 				}
 			}
