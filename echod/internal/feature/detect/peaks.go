@@ -19,8 +19,8 @@ type PeakKeeper struct {
 	slots int
 	on    atomic.Bool
 
-	// canceling is whether the echo canceller is running, asked only as a slot reaches a new peak. It
-	// is the microphones' own (NewPeaks), and a test's stand-in.
+	// canceling is whether the echo canceller is running, asked on each score while something is marked
+	// (one atomic load on the board). It is the microphones' own (NewPeaks), and a test's stand-in.
 	canceling func() bool
 
 	mu    sync.Mutex
@@ -38,6 +38,12 @@ type Peak struct {
 	// running as it came: what the microphones gave the word then was what the canceller left of it.
 	Cutoff    float64
 	Canceling bool
+
+	// CancelFrom and CancelTo are the first and last scores of the slot, since MarkPeaks, that came with
+	// the echo canceller running, zero when none did: the span the cutoff for playing was in force over.
+	// It runs a second past the last sound the speaker made, which the canceller holds on for. A word
+	// swapped into the slot since the mark starts the span over with its peak.
+	CancelFrom, CancelTo time.Time
 
 	// Held is that score having come while the word could not fire whatever it reached: settling
 	// (Settle, after an unmute), or in the hold and the pause after a detection, which may have been
@@ -97,15 +103,24 @@ func (k *PeakKeeper) note(n int, id string, score, cutoff float64, held bool, no
 	if n >= len(k.peaks) {
 		return
 	}
+	canceling := k.canceling()
 	p := &k.peaks[n]
 	if p.ID != id {
 		// A word swapped in since the mark starts its own peak.
 		*p = Peak{Slot: n, ID: id}
 	}
-	if score > p.Peak || p.At.IsZero() {
-		p.Peak, p.At, p.Cutoff, p.Held = score, now, cutoff, held
-		// Asked only for a new peak, which a frame seldom is.
-		p.Canceling = k.canceling()
+	if canceling {
+		if p.CancelFrom.IsZero() {
+			p.CancelFrom = now
+		}
+		p.CancelTo = now
+	}
+	// A score that only ties the peak, judged against a lower cutoff, takes its place. That way a word
+	// that never rose over its first frame says the cutoff it was judged by while the reply played, not
+	// the one from before the speaker started. Scores are steps of 1/255, so a reply the word heard
+	// nothing in ties at 0 all the way.
+	if score > p.Peak || p.At.IsZero() || (score == p.Peak && cutoff < p.Cutoff) {
+		p.Peak, p.At, p.Cutoff, p.Held, p.Canceling = score, now, cutoff, held, canceling
 	}
 }
 

@@ -22,6 +22,12 @@ import (
 // reply nobody spoke over shows what the reply alone made the stop word score, which is what a try has to
 // be told apart from. Measuring it is one "stop" a reply, and some replies with none.
 //
+// The peak's own canceling and cutoff are those of the frame that scored it, and of equal scores the one
+// judged against the lower cutoff counts. canceling_from_s and canceling_to_s say when, in the window,
+// the cutoff for playing was in force: they normally start a moment after at_s 0, the streamed reply's
+// cushion, and end about a second after the reply's last sound. "none" is a reply the canceller never ran
+// over: one on another media player, in a call, or with cancellation switched off.
+//
 // The window is from the reply's first audio arriving to the turn's end, which is a little longer than
 // the reply sounded: a streamed reply waits for its cushion before it plays, and the canceller only
 // starts once the speaker does. A peak in that first moment is judged as in a quiet room, and says so
@@ -81,7 +87,8 @@ func (r *replyScores) follow(v voice.Reply) {
 		}
 		scored = true
 		args = append([]any{"peak", hundredths(p.Peak), "at_s", tenths(p.At.Sub(began)), "cutoff", hundredths(p.Cutoff),
-			"canceling", p.Canceling, "held", p.Held, "heard", p.Fired}, args...)
+			"canceling", p.Canceling, "held", p.Held, "heard", p.Fired,
+			"canceling_from_s", spanAt(p.CancelFrom, began), "canceling_to_s", spanAt(p.CancelTo, began)}, args...)
 	}
 	if !scored {
 		// Listened for and never scored: the microphones were cut, or the loop was not running.
@@ -94,6 +101,14 @@ func (r *replyScores) follow(v voice.Reply) {
 // tenths is d in seconds, to a tenth; hundredths is a score to two places, as the scores view has it.
 func tenths(d time.Duration) float64 { return math.Round(d.Seconds()*10) / 10 }
 func hundredths(v float64) float64   { return math.Round(v*100) / 100 }
+
+// spanAt is when t was in the window that began at began, in tenths of a second, "none" for no time.
+func spanAt(t, began time.Time) any {
+	if t.IsZero() {
+		return "none"
+	}
+	return tenths(t.Sub(began))
+}
 
 // followReplies keeps the engine's scores over each reply, from a keeper of their own, and says them
 // with say as the reply ends. It returns what stops it.

@@ -2080,7 +2080,11 @@ A "stop" said over an answer is easy to miss on the bar, so the device's log kee
 the way it keeps `wake detected` and `wake near miss`: as each answer ends, a `stop word over the
 reply` line has the stop word's highest score while the answer was on its way and playing, and the
 cutoff it was judged against. It is the best of the whole answer, so to compare, say "stop" once an
-answer, and let a few answers play with nothing said.
+answer, and let a few answers play with nothing said. The line also has `canceling_from_s` and
+`canceling_to_s`: when, in the answer, the echo canceller ran, so the stop word was judged against its
+lower cutoff for playing. They start a moment into the answer, once its first sound reaches the speaker,
+and end about a second after its last. `cutoff` and `canceling` are those of the moment the peak came,
+and a score of 0 throughout reports the cutoff it had while the answer played.
 
 ### Recording takes of a word
 

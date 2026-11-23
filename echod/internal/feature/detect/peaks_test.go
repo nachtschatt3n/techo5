@@ -229,3 +229,91 @@ func TestKeepersAreReadWhileTheEngineScores(t *testing.T) {
 	close(done)
 	scoring.Wait()
 }
+
+// A score that only ties the peak takes its place when it was judged against a lower cutoff, so a word that
+// heard nothing says the cutoff it had while the speaker played. A higher score wins whatever its cutoff.
+func TestATiedPeakTakesTheLowerCutoff(t *testing.T) {
+	fakes(t)
+	e := New(2, nil)
+	canceling := false
+	e.Threshold = func(int) float64 {
+		if canceling {
+			return 0.7
+		}
+		return 0.8
+	}
+	if err := e.Use(1, model("stop", wake.KindMicroWakeWord)); err != nil {
+		t.Fatalf("Use(1): %v", err)
+	}
+	k := e.NewPeaks()
+	k.canceling = func() bool { return canceling }
+	k.MarkPeaks()
+
+	t0 := time.Now()
+	e.judge(1, &e.slots[1], 0, t0, nil)
+	canceling = true
+	e.judge(1, &e.slots[1], 0, t0.Add(20*time.Millisecond), nil)
+	e.judge(1, &e.slots[1], 0, t0.Add(40*time.Millisecond), nil)
+	got := k.Peaks()
+	if len(got) != 1 || got[0].Peak != 0 || got[0].Cutoff != 0.7 || !got[0].Canceling || !got[0].At.Equal(t0.Add(20*time.Millisecond)) {
+		t.Fatalf("peaks %+v, want 0 against 0.7, canceling, at the second frame", got)
+	}
+
+	k.MarkPeaks()
+	e.judge(1, &e.slots[1], 0.3, t0.Add(60*time.Millisecond), nil)
+	canceling = false
+	e.judge(1, &e.slots[1], 0.3, t0.Add(80*time.Millisecond), nil)
+	if got := k.Peaks(); len(got) != 1 || got[0].Cutoff != 0.7 {
+		t.Fatalf("peaks %+v, want the 0.7 kept for the tie", got)
+	}
+
+	k.MarkPeaks()
+	canceling = true
+	e.judge(1, &e.slots[1], 0.3, t0.Add(100*time.Millisecond), nil)
+	canceling = false
+	e.judge(1, &e.slots[1], 0.5, t0.Add(120*time.Millisecond), nil)
+	if got := k.Peaks(); len(got) != 1 || got[0].Peak != 0.5 || got[0].Cutoff != 0.8 {
+		t.Fatalf("peaks %+v, want the higher 0.5 against 0.8", got)
+	}
+}
+
+// A peak says when the canceller ran over the slot's scores, from its first to its last frame.
+func TestAPeakSaysWhenTheCancellerRan(t *testing.T) {
+	fakes(t)
+	e := New(2, nil)
+	e.Threshold = func(int) float64 { return 0.5 }
+	if err := e.Use(1, model("stop", wake.KindMicroWakeWord)); err != nil {
+		t.Fatalf("Use(1): %v", err)
+	}
+	k := e.NewPeaks()
+	canceling := false
+	k.canceling = func() bool { return canceling }
+
+	k.MarkPeaks()
+	t0 := time.Now()
+	e.judge(1, &e.slots[1], 0.1, t0, nil)
+	e.judge(1, &e.slots[1], 0.1, t0.Add(20*time.Millisecond), nil)
+	canceling = true
+	t1, t2 := t0.Add(40*time.Millisecond), t0.Add(80*time.Millisecond)
+	e.judge(1, &e.slots[1], 0.1, t1, nil)
+	e.judge(1, &e.slots[1], 0.1, t0.Add(60*time.Millisecond), nil)
+	e.judge(1, &e.slots[1], 0.1, t2, nil)
+	canceling = false
+	e.judge(1, &e.slots[1], 0.1, t0.Add(100*time.Millisecond), nil)
+	if got := k.Peaks(); len(got) != 1 || !got[0].CancelFrom.Equal(t1) || !got[0].CancelTo.Equal(t2) {
+		t.Errorf("peaks %+v, want the span %v to %v", got, t1, t2)
+	}
+
+	k.MarkPeaks()
+	e.judge(1, &e.slots[1], 0.1, t0.Add(120*time.Millisecond), nil)
+	if got := k.Peaks(); len(got) != 1 || !got[0].CancelFrom.IsZero() || !got[0].CancelTo.IsZero() {
+		t.Errorf("peaks %+v, want no span with the canceller never running", got)
+	}
+
+	k = e.NewPeaks()
+	k.MarkPeaks()
+	e.judge(1, &e.slots[1], 0.1, t0.Add(140*time.Millisecond), nil)
+	if got := k.Peaks(); len(got) != 1 || !got[0].CancelFrom.IsZero() {
+		t.Errorf("peaks %+v, want no span with no microphones", got)
+	}
+}
