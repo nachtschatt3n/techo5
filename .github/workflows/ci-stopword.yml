@@ -1,0 +1,81 @@
+# Temporary, fork only: runs the contributing checks (and upstream's check.yml steps) on each PR
+# branch. Never part of a pull request.
+name: ci-stopword
+
+on:
+  push:
+    branches: [ci-stopword]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        branch:
+          - mealie/t3d
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ matrix.branch }}
+
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version: '1.27'
+          cache-dependency-path: echod/go.sum
+
+      - name: check.yml - build and vet
+        working-directory: echod
+        run: |
+          for tags in "" dot dot,donut spot panel; do
+            echo "== tags: ${tags:-show}"
+            go build -tags "$tags" ./...
+            go vet -tags "$tags" ./...
+            GOOS=linux GOARCH=arm GOARM=7 go build -tags "$tags" ./...
+          done
+          test -z "$(gofmt -l .)" || { gofmt -l .; echo "not gofmt'd"; exit 1; }
+
+      - name: check.yml - translation status
+        run: python3 tools/locale/status.py --check
+
+      - name: check.yml - installer tests
+        run: python3 tools/test_install_show.py
+
+      - name: check.yml - boot layer tests
+        run: python3 tools/test_boot_layer.py
+
+      - name: go test ./...
+        if: always()
+        working-directory: echod
+        run: go test ./...
+
+      - name: go test -tags dot ./...
+        if: always()
+        working-directory: echod
+        run: go test -tags dot ./...
+
+      - name: go test -tags spot ./...
+        if: always()
+        working-directory: echod
+        run: go test -tags spot ./...
+
+      - name: go test -tags dot,donut ./...
+        if: always()
+        working-directory: echod
+        run: go test -tags dot,donut ./...
+
+      - name: go test -tags panel ./...
+        if: always()
+        working-directory: echod
+        run: go test -tags panel ./...
+
+      - name: go vet ./... and gofmt -l .
+        if: always()
+        working-directory: echod
+        run: |
+          go vet ./...
+          test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
