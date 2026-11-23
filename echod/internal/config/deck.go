@@ -266,6 +266,8 @@ func DeckButtonProblem(i, cols int, b DeckButton) string {
 		return where + ": which input?"
 	case b.Action == DeckOBSSource && (b.Scene == "" || b.Source == ""):
 		return where + ": which scene and source?"
+	case b.Action == DeckScreenMeals && !slices.Contains([]string{"", "shopping", "plan", "today"}, b.Path):
+		return where + ": the Meals view is shopping, plan or today"
 	case b.Action.OnComputer() && b.Computer == "":
 		return where + ": which computer?"
 	case b.Action.OnComputer() && b.Value == "":

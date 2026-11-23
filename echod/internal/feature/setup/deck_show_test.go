@@ -153,3 +153,36 @@ func TestDeckPageFormScreenButtons(t *testing.T) {
 		t.Error("the screen's pages, or the path kept, are missing from the page")
 	}
 }
+
+// A Meals button keeps the view its box names, in lower case, and refuses a name that is not one; an empty
+// box is the view the page was left on.
+func TestDeckPageFormMealsButton(t *testing.T) {
+	config.Use(filepath.Join(t.TempDir(), "state.json"))
+	_ = config.Set().Deck().Grid(4, 1)
+	f := pageForm("0",
+		[6]string{"Shop", "screen_meals", " Shopping/", "", "", ""},
+		[6]string{"Plan", "screen_meals", "today", "", "", ""},
+		[6]string{"Meals", "screen_meals", "", "", "", ""},
+		[6]string{"", "screen_library", "", "", "", ""})
+	if p := saveDeckPage(deckPost(f)); p != "" {
+		t.Fatal(p)
+	}
+	d := config.Get().Deck
+	for i, want := range []string{"shopping", "today", ""} {
+		if b := d.Button(0, i); b.Action != config.DeckScreenMeals || b.Path != want || b.Scene != "" {
+			t.Errorf("Meals button %d: %+v, want the view %q", i, b, want)
+		}
+	}
+	w := httptest.NewRecorder()
+	deckSection(w, "tok")
+	if body := w.Body.String(); !strings.Contains(body, `value="shopping"`) || !strings.Contains(body, `value="screen_meals" selected`) {
+		t.Error("the Meals button's view, or the action, is not on the page")
+	}
+	bad := pageForm("0", [6]string{"Meals", "screen_meals", "recipes", "", "", ""}, [6]string{}, [6]string{}, [6]string{})
+	if p := saveDeckPage(deckPost(bad)); !strings.Contains(p, "shopping, plan or today") {
+		t.Errorf("a view that is not one was taken: %q", p)
+	}
+	if b := config.Get().Deck.Button(0, 0); b.Path != "shopping" {
+		t.Errorf("a refused save changed the button to %+v", b)
+	}
+}
