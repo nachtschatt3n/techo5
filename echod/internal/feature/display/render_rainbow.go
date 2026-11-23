@@ -15,7 +15,7 @@ import (
 // answer on a card of frosted glass a little above the middle. A turn opens with a gold globe at the
 // right edge and a wave of pink crossing the screen, frosting the page as it goes. Under the same
 // conditions as the cue light, and the words under the same as the captions (cueOver); a tap on the
-// card puts it away, as a tap on the captions does. An answer longer than the card scrolls on it with
+// card puts it away, and stops an answer still being said, as a tap on the captions does. An answer longer than the card scrolls on it with
 // the voice, by the same reckoning of how much has been said (voice.Spoken) as the Classic pages.
 
 // rainbowFrame is how often Rainbow is drawn again while it moves, from the start of one frame to the
