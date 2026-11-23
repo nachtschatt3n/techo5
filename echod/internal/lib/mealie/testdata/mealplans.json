@@ -1,0 +1,8 @@
+{"page":1,"perPage":-1,"total":4,"totalPages":1,"items":[
+ {"id":7,"date":"2026-11-23","endDate":null,"entryType":"dessert","title":"","text":"","recipeId":"r1","recipeScale":1.5,
+  "recipe":{"id":"r1","slug":"pudding","name":"Pudding","image":"abcd","recipeServings":4,"recipeYieldQuantity":0,"totalTimeSeconds":null}},
+ {"id":8,"date":"2026-11-23","endDate":null,"entryType":"dinner","title":"","text":"","recipeId":"r2","recipeScale":0,
+  "recipe":{"id":"r2","slug":"lasagne","name":"Lasagne","image":null,"recipeServings":0,"recipeYieldQuantity":6,"totalTimeSeconds":2700}},
+ {"id":9,"date":"2026-11-23","endDate":null,"entryType":"breakfast","title":"Out for brunch","text":"table at 10","recipeId":null,"recipeScale":1,"recipe":null},
+ {"id":10,"date":"2026-11-23","endDate":"2026-11-29","entryType":"dinner","title":"Leftovers","text":"","recipeId":null,"recipeScale":1,"recipe":null}
+]}

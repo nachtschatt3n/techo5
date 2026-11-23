@@ -47,6 +47,10 @@ type customScreen struct {
 	label string // its tab, and its choice in Idle screen
 	rank  int    // its place among the tabs, the lowest first
 
+	// title is its tab's words in the screen's language, from a key of lib/locale (tr); nil for the label
+	// as it is. Idle screen's choice stays the label, which is what Home Assistant has the option called.
+	title func() string
+
 	// offered is whether this device has it (nil for every device): one that needs the owner's own
 	// settings, or a screen of a certain size.
 	offered func() bool
@@ -71,6 +75,23 @@ type customScreen struct {
 	// on the canvas with nothing over it, only what changed (renderer.customKept): the canvas is then not
 	// cleared for the frame. A list that scrolls under a page that is slow to draw wants that.
 	keeps bool
+	// awake is whether the screen wants the device held awake while it is up: true keeps the Dashboard
+	// returns time from closing it and counts the screen as in use, so the screen does not dim and does
+	// not go out for nobody near. Nil for a screen that is happy to be forgotten. Called with the
+	// display's lock held, so it must be quick and must not call back into the display.
+	awake func() bool
+	// night is whether a page Home Assistant asked for at night stays lit while this screen is up (askedUp):
+	// the hold then lasts while the screen is up, not only while a calendar or the forecast is. Nil for
+	// none. Called with the display's lock held, like awake.
+	night func() bool
+}
+
+// tab is the screen's tab, in the screen's language when it has words for it (title).
+func (c customScreen) tab() string {
+	if c.title != nil {
+		return c.title()
+	}
+	return c.label
 }
 
 // customScreens are the screens registered, in their ranks' order.
@@ -223,6 +244,29 @@ func (d *Display) closeCustom() {
 	d.wake()
 }
 
+// customHold is whether the custom screen that is up, or else the one drawn last, has the hook pick
+// takes from it and that hook says yes. A screen with no such hook, none up, or one this device does not
+// have is no. Called with d.mu held.
+func (d *Display) customHold(pick func(customScreen) func() bool) bool {
+	name := d.customs.up
+	if name == "" {
+		name = d.customs.shown
+	}
+	c, ok := customByID(name)
+	if !ok {
+		return false
+	}
+	f := pick(c)
+	return f != nil && f()
+}
+
+// customAwake is whether the custom screen that is up wants the device kept awake: it counts as busy.
+func (d *Display) customAwake() bool {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return d.customHold(func(c customScreen) func() bool { return c.awake })
+}
+
 // customShowing is whether a custom screen is on the screen now: drawn in the last frame, and the
 // device idle.
 func (d *Display) customShowing() bool {
@@ -242,7 +286,7 @@ func (d *Display) customScene(s *scene, now time.Time) {
 		s.showWeather || s.showRadar || s.bt.Pairing || s.showDeck || s.showLibrary || s.redClock
 	idle := idleScreen()
 	d.mu.Lock()
-	if d.customs.up != "" && dashForgotten(d.customs.touched) {
+	if d.customs.up != "" && dashForgotten(d.customs.touched) && !d.customHold(func(c customScreen) func() bool { return c.awake }) {
 		d.customs.up = ""
 		slog.Info("custom screen closed: not touched for a while")
 	}
