@@ -351,8 +351,10 @@ language.
 Once a build has a custom screen, Home Assistant gets an **Idle screen** select: the clock, or one of
 the screens shown in its place whenever the clock would be. Music, a dashboard and everything else that
 takes the screen still come first, and the × or a swipe from the left edge puts the screen away for two
-minutes. With no screen registered, as in TECHO5's own builds, nothing changes and there is no Idle
-screen select.
+minutes. TECHO5's own builds register one, the [Meals page](setup.md#meals-mealie), on the Show, the
+Skylight and the Panel app (not the Spot or the Dot). Its choice is offered once Mealie is set up: the
+select lists only the clock until the setup page saves a working address and token, and then gains Meals at
+once, with no restart. A build with no screen registered has no Idle screen select.
 
 ## Releases (maintainer)
 
