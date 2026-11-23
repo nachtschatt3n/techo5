@@ -104,8 +104,9 @@ func (r *paint) captionsTapped(p image.Point) bool {
 	return !r.captionsAt.Empty() && p.In(r.captionsAt)
 }
 
-// captionsTap is a tap on the captions: it puts the words away, as a tap on an answer does, stops the
-// answer if it is still being said, and is not a tap on the page under them. Anywhere else the page has the tap.
+// captionsTap is a tap on the captions: it puts the words away, as a tap on an answer does, stops
+// the answer if it is still being said, and is not a tap on the page under them. Anywhere else the
+// page has the tap.
 func (d *Display) captionsTap(g touch.Gesture) bool {
 	if g.Kind != touch.Tap || d.r == nil || !d.r.captionsTapped(image.Pt(g.X, g.Y)) {
 		return false
