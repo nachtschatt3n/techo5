@@ -47,6 +47,13 @@ const (
 	// libPicMost is the most memory a picture may take decoded: the proxy sends the original when it
 	// will not scale it, and an original cover can be 3000 pixels square.
 	libPicMost = 40 << 20
+	// A picture fitted to a box that is not square (pictureFit) is a recipe's photo, which a server hands
+	// over at a size of its own choosing; it is refused above these many pixels decoded rather than
+	// by memory, since a few of them are held at once on a device with little to spare. The small ones are
+	// the thumbnails and the middle size; the full-size original, for the panels that can use it, has
+	// double.
+	mealsPicMaxPixels         = 2 << 20
+	mealsPicOriginalMaxPixels = 4 << 20
 )
 
 // libPictures is the kept pictures, the newest at the front, and the ones on their way.
@@ -101,7 +108,13 @@ func (p *libPictures) picture(u string, side int, round bool) *image.RGBA {
 	if u == "" || side <= 0 {
 		return nil
 	}
-	key := libPicKey(u, side, round)
+	return p.keptOrAsk(libPicKey(u, side, round), u, func() (*image.RGBA, error) { return loadLibPicture(u, side, round) })
+}
+
+// keptOrAsk is the picture kept under key, or nil, in which case load is run in the background to
+// keep it. The one place that bounds what is on its way and what has just failed, for every shape of
+// picture.
+func (p *libPictures) keptOrAsk(key, u string, load func() (*image.RGBA, error)) *image.RGBA {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if el, ok := p.kept[key]; ok {
@@ -119,14 +132,14 @@ func (p *libPictures) picture(u string, side int, round bool) *image.RGBA {
 		p.slots = make(chan struct{}, libPicsAtOnce)
 	}
 	p.asked[key] = true
-	go p.fetch(key, u, side, round)
+	go p.fetch(key, u, load)
 	return nil
 }
 
 // fetch gets one picture, scales it and keeps it.
-func (p *libPictures) fetch(key, u string, side int, round bool) {
+func (p *libPictures) fetch(key, u string, load func() (*image.RGBA, error)) {
 	p.slots <- struct{}{}
-	img, err := loadLibPicture(u, side, round)
+	img, err := load()
 	<-p.slots
 	p.mu.Lock()
 	delete(p.asked, key)
@@ -153,6 +166,75 @@ func (p *libPictures) fetch(key, u string, side int, round bool) {
 	if changed != nil {
 		changed()
 	}
+}
+
+// pictureFit is u's picture fitted to w by h pixels, if it is kept; otherwise nil, and it is fetched.
+// It fills the box and crops what overflows, from the middle, so a photo is never squeezed, and its
+// corners are rounded as a square cover's are. It shares the kept pictures with picture, under a key
+// of its own, so a box and a square of the same address are two. It refuses a picture of more than
+// mealsPicMaxPixels once decoded.
+func (p *libPictures) pictureFit(u string, w, h int) *image.RGBA {
+	return p.pictureFitMost(u, w, h, mealsPicMaxPixels)
+}
+
+// pictureFitMost is pictureFit with its own limit on the decoded pixels, for the full-size originals.
+func (p *libPictures) pictureFitMost(u string, w, h, most int) *image.RGBA {
+	if u == "" || w <= 0 || h <= 0 {
+		return nil
+	}
+	return p.keptOrAsk(libPicFitKey(u, w, h), u, func() (*image.RGBA, error) { return loadFitPicture(u, w, h, most) })
+}
+
+// libPicFitKey is a fitted picture as it is kept, a box rather than a side.
+func libPicFitKey(u string, w, h int) string {
+	return fmt.Sprintf("%dx%d fit %s", w, h, u)
+}
+
+// loadFitPicture fetches u and fits it to w by h pixels.
+func loadFitPicture(u string, w, h, most int) (*image.RGBA, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	b, status, err := libFetch(ctx, u)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("the picture's server answered %d", status)
+	}
+	return fitPicture(b, w, h, most)
+}
+
+// fitPicture decodes a picture and scales the part of it that has the box's shape, from its middle, to
+// w by h pixels, with rounded corners. A picture of more than most pixels is refused before it is decoded.
+func fitPicture(b []byte, w, h, most int) (*image.RGBA, error) {
+	cfg, format, err := image.DecodeConfig(bytes.NewReader(b))
+	if err != nil {
+		return nil, err
+	}
+	if cfg.Width <= 0 || cfg.Height <= 0 || int64(cfg.Width)*int64(cfg.Height) > int64(most) {
+		return nil, errLibPicLarge
+	}
+	var img image.Image
+	if format == "jpeg" {
+		img, err = fastjpeg.DecodeAtLeast(b, w, h)
+	} else {
+		img, _, err = image.Decode(bytes.NewReader(b))
+	}
+	if err != nil {
+		return nil, err
+	}
+	sb := img.Bounds()
+	// The largest rectangle of the box's shape that fits in the picture, in the middle of it.
+	cw, ch := sb.Dx(), sb.Dx()*h/w
+	if ch > sb.Dy() {
+		cw, ch = sb.Dy()*w/h, sb.Dy()
+	}
+	cw, ch = max(cw, 1), max(ch, 1)
+	src := image.Rect(0, 0, cw, ch).Add(sb.Min).Add(image.Pt((sb.Dx()-cw)/2, (sb.Dy()-ch)/2))
+	out := image.NewRGBA(image.Rect(0, 0, w, h))
+	picscale.CatmullRom.Scale(out, out.Rect, img, src, xdraw.Src)
+	roundCorners(out, max(min(w, h)/14, 2))
+	return out, nil
 }
 
 // keep puts a picture in as if it had been fetched, for a test's preview.
