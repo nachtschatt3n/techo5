@@ -1118,6 +1118,39 @@ var uiEnglish = map[string]string{
 	"ui_this_tablet_has_no_settings_screen_to_open": "This tablet has no settings screen to open",
 	"tablet_apps":                        "Apps",
 	"ui_open_another_app_on_this_tablet": "Open another app on this tablet",
+
+	// meals: the Meals page, its switcher and its states.
+	// the Meals page's tab and name.
+	"meals": "Meals",
+	// the Meals page's Shopping view, in its switcher.
+	"meals_shopping": "Shopping",
+	// the Meals page's Plan view, in its switcher.
+	"meals_plan": "Plan",
+	// the Meals page's Cooking view, in its switcher.
+	"meals_cooking": "Cooking",
+	// the Meals page while its data comes in.
+	"meals_loading": "Loading…",
+	// the Meals page when Mealie does not answer.
+	"meals_unreachable": "Mealie isn't reachable",
+	// the Meals page when Mealie refuses the token.
+	"meals_token_refused": "Mealie refused the token. Check it on the setup page.",
+	// the Meals page when Mealie wants the https address.
+	"meals_use_https": "Use the https address on the setup page.",
+	// the note over Meals data that could not be refreshed: %s is the time it is from.
+	"meals_offline_as_of": "Offline, as of %s",
+	// the Retry button on the Meals page.
+	"meals_retry": "Retry",
+	// the Shopping view's header: %s is the time of its last refresh.
+	"meals_updated": "updated %s",
+	// the Shopping view's header, for a list that has no name.
+	"meals_shopping_list": "Shopping list",
+
+	// meals: the Shopping view.
+
+	// meals: the Plan view.
+
+	// meals: the Cooking view.
+
 }
 
 var uiTranslations = map[string]map[string]string{
@@ -2201,6 +2234,19 @@ var uiTranslations = map[string]map[string]string{
 		"ui_this_tablet_has_no_settings_screen_to_open": "Aquesta tauleta no té cap pantalla d'ajustos per a obrir",
 		"tablet_apps":                                   "Aplicacions",
 		"ui_open_another_app_on_this_tablet":            "Obre una altra aplicació d'aquesta tauleta",
+		// meals: the Meals page, its switcher and its states.
+		"meals":               "Menjars",
+		"meals_shopping":      "Compra",
+		"meals_plan":          "Pla",
+		"meals_cooking":       "Cuinar",
+		"meals_loading":       "Carregant…",
+		"meals_unreachable":   "No s'arriba a Mealie",
+		"meals_token_refused": "Mealie ha rebutjat el token. Comprova'l a la pàgina de configuració.",
+		"meals_use_https":     "Utilitza l'adreça https a la pàgina de configuració.",
+		"meals_offline_as_of": "Sense connexió, des de les %s",
+		"meals_retry":         "Reintenta",
+		"meals_updated":       "actualitzat a les %s",
+		"meals_shopping_list": "Llista de la compra",
 	},
 	"ca-valencia": {
 		// Valencian, as the Acadèmia Valenciana de la Llengua writes it (Catalan as it is written and
@@ -3282,6 +3328,39 @@ var uiTranslations = map[string]map[string]string{
 		"ui_this_tablet_has_no_settings_screen_to_open": "Esta tauleta no té cap pantalla d'ajustos per a obrir",
 		"tablet_apps":                                   "Aplicacions",
 		"ui_open_another_app_on_this_tablet":            "Obri una altra aplicació d'esta tauleta",
+
+		// meals: the Meals page, its switcher and its states.
+		// the Meals page's tab and name.
+		"meals": "Menjars",
+		// the Meals page's Shopping view, in its switcher.
+		"meals_shopping": "Compra",
+		// the Meals page's Plan view, in its switcher.
+		"meals_plan": "Pla",
+		// the Meals page's Cooking view, in its switcher.
+		"meals_cooking": "Cuinar",
+		// the Meals page while its data comes in.
+		"meals_loading": "Carregant…",
+		// the Meals page when Mealie does not answer.
+		"meals_unreachable": "No s'arriba a Mealie",
+		// the Meals page when Mealie refuses the token.
+		"meals_token_refused": "Mealie ha rebutjat el token. Comprova'l a la pàgina de configuració.",
+		// the Meals page when Mealie wants the https address.
+		"meals_use_https": "Usa l'adreça https a la pàgina de configuració.",
+		// the note over Meals data that could not be refreshed: %s is the time it is from.
+		"meals_offline_as_of": "Sense connexió, des de les %s",
+		// the Retry button on the Meals page.
+		"meals_retry": "Reintenta",
+		// the Shopping view's header: %s is the time of its last refresh.
+		"meals_updated": "actualitzat a les %s",
+		// the Shopping view's header, for a list that has no name.
+		"meals_shopping_list": "Llista de la compra",
+
+		// meals: the Shopping view.
+
+		// meals: the Plan view.
+
+		// meals: the Cooking view.
+
 	},
 	"es": {
 		// Words that were written into the drawing code and the features behind it: the calendar
@@ -4382,6 +4461,39 @@ var uiTranslations = map[string]map[string]string{
 		"ui_this_tablet_has_no_settings_screen_to_open": "Esta tableta no tiene una pantalla de ajustes que abrir",
 		"tablet_apps":                        "Aplicaciones",
 		"ui_open_another_app_on_this_tablet": "Abre otra aplicación de esta tableta",
+
+		// meals: the Meals page, its switcher and its states.
+		// the Meals page's tab and name.
+		"meals": "Comidas",
+		// the Meals page's Shopping view, in its switcher.
+		"meals_shopping": "Compra",
+		// the Meals page's Plan view, in its switcher.
+		"meals_plan": "Plan",
+		// the Meals page's Cooking view, in its switcher.
+		"meals_cooking": "Cocinar",
+		// the Meals page while its data comes in.
+		"meals_loading": "Cargando…",
+		// the Meals page when Mealie does not answer.
+		"meals_unreachable": "No se puede llegar a Mealie",
+		// the Meals page when Mealie refuses the token.
+		"meals_token_refused": "Mealie rechazó el token. Revísalo en la página de configuración.",
+		// the Meals page when Mealie wants the https address.
+		"meals_use_https": "Usa la dirección https en la página de configuración.",
+		// the note over Meals data that could not be refreshed: %s is the time it is from.
+		"meals_offline_as_of": "Sin conexión, a las %s",
+		// the Retry button on the Meals page.
+		"meals_retry": "Reintentar",
+		// the Shopping view's header: %s is the time of its last refresh.
+		"meals_updated": "actualizado a las %s",
+		// the Shopping view's header, for a list that has no name.
+		"meals_shopping_list": "Lista de la compra",
+
+		// meals: the Shopping view.
+
+		// meals: the Plan view.
+
+		// meals: the Cooking view.
+
 	},
 	"fr": {
 		// First run on the screen (feature/display/render_firstrun.go, firstrun_spot.go): its steps, buttons
@@ -5477,6 +5589,39 @@ var uiTranslations = map[string]map[string]string{
 		"ui_this_tablet_has_no_settings_screen_to_open": "Cette tablette n'a pas d'écran de paramètres à ouvrir",
 		"tablet_apps":                        "Applications",
 		"ui_open_another_app_on_this_tablet": "Ouvrir une autre application de cette tablette",
+
+		// meals: the Meals page, its switcher and its states.
+		// the Meals page's tab and name.
+		"meals": "Repas",
+		// the Meals page's Shopping view, in its switcher.
+		"meals_shopping": "Courses",
+		// the Meals page's Plan view, in its switcher.
+		"meals_plan": "Plan",
+		// the Meals page's Cooking view, in its switcher.
+		"meals_cooking": "Cuisine",
+		// the Meals page while its data comes in.
+		"meals_loading": "Chargement…",
+		// the Meals page when Mealie does not answer.
+		"meals_unreachable": "Mealie est injoignable",
+		// the Meals page when Mealie refuses the token.
+		"meals_token_refused": "Jeton refusé par Mealie. À vérifier sur la page de réglages.",
+		// the Meals page when Mealie wants the https address.
+		"meals_use_https": "Adresse https à saisir sur la page de réglages.",
+		// the note over Meals data that could not be refreshed: %s is the time it is from.
+		"meals_offline_as_of": "Hors ligne, à %s",
+		// the Retry button on the Meals page.
+		"meals_retry": "Réessayer",
+		// the Shopping view's header: %s is the time of its last refresh.
+		"meals_updated": "à jour à %s",
+		// the Shopping view's header, for a list that has no name.
+		"meals_shopping_list": "Liste de courses",
+
+		// meals: the Shopping view.
+
+		// meals: the Plan view.
+
+		// meals: the Cooking view.
+
 	},
 	"gl": {
 		// First run on the screen (feature/display/render_firstrun.go, firstrun_spot.go): its steps, buttons
@@ -6568,6 +6713,39 @@ var uiTranslations = map[string]map[string]string{
 		"ui_this_tablet_has_no_settings_screen_to_open": "Esta tableta non ten unha pantalla de axustes que abrir",
 		"tablet_apps":                        "Aplicacións",
 		"ui_open_another_app_on_this_tablet": "Abre outra aplicación desta tableta",
+
+		// meals: the Meals page, its switcher and its states.
+		// the Meals page's tab and name.
+		"meals": "Comidas",
+		// the Meals page's Shopping view, in its switcher.
+		"meals_shopping": "Compra",
+		// the Meals page's Plan view, in its switcher.
+		"meals_plan": "Plan",
+		// the Meals page's Cooking view, in its switcher.
+		"meals_cooking": "Cociñar",
+		// the Meals page while its data comes in.
+		"meals_loading": "Cargando…",
+		// the Meals page when Mealie does not answer.
+		"meals_unreachable": "Non se pode chegar a Mealie",
+		// the Meals page when Mealie refuses the token.
+		"meals_token_refused": "Mealie rexeitou o token. Revísao na páxina de configuración.",
+		// the Meals page when Mealie wants the https address.
+		"meals_use_https": "Usa o enderezo https na páxina de configuración.",
+		// the note over Meals data that could not be refreshed: %s is the time it is from.
+		"meals_offline_as_of": "Sen conexión, ás %s",
+		// the Retry button on the Meals page.
+		"meals_retry": "Reintentar",
+		// the Shopping view's header: %s is the time of its last refresh.
+		"meals_updated": "actualizado ás %s",
+		// the Shopping view's header, for a list that has no name.
+		"meals_shopping_list": "Lista da compra",
+
+		// meals: the Shopping view.
+
+		// meals: the Plan view.
+
+		// meals: the Cooking view.
+
 	},
 	"it": {
 		// First run on the screen (feature/display/render_firstrun.go, firstrun_spot.go): its steps, buttons
@@ -7663,6 +7841,39 @@ var uiTranslations = map[string]map[string]string{
 		"ui_this_tablet_has_no_settings_screen_to_open": "Questo tablet non ha una schermata di impostazioni da aprire",
 		"tablet_apps":                        "App",
 		"ui_open_another_app_on_this_tablet": "Apri un'altra app di questo tablet",
+
+		// meals: the Meals page, its switcher and its states.
+		// the Meals page's tab and name.
+		"meals": "Pasti",
+		// the Meals page's Shopping view, in its switcher.
+		"meals_shopping": "Spesa",
+		// the Meals page's Plan view, in its switcher.
+		"meals_plan": "Piano",
+		// the Meals page's Cooking view, in its switcher.
+		"meals_cooking": "Cucina",
+		// the Meals page while its data comes in.
+		"meals_loading": "Caricamento…",
+		// the Meals page when Mealie does not answer.
+		"meals_unreachable": "Mealie non è raggiungibile",
+		// the Meals page when Mealie refuses the token.
+		"meals_token_refused": "Mealie ha rifiutato il token. Controllalo nella pagina di configurazione.",
+		// the Meals page when Mealie wants the https address.
+		"meals_use_https": "Usa l'indirizzo https nella pagina di configurazione.",
+		// the note over Meals data that could not be refreshed: %s is the time it is from.
+		"meals_offline_as_of": "Offline, alle %s",
+		// the Retry button on the Meals page.
+		"meals_retry": "Riprova",
+		// the Shopping view's header: %s is the time of its last refresh.
+		"meals_updated": "aggiornato alle %s",
+		// the Shopping view's header, for a list that has no name.
+		"meals_shopping_list": "Lista della spesa",
+
+		// meals: the Shopping view.
+
+		// meals: the Plan view.
+
+		// meals: the Cooking view.
+
 	},
 	"nl": {
 		// First run on the screen (feature/display/render_firstrun.go, firstrun_spot.go): its steps, buttons
@@ -10584,6 +10795,39 @@ var uiTranslations = map[string]map[string]string{
 		"ui_this_tablet_has_no_settings_screen_to_open": "このタブレットには開ける設定画面がありません",
 		"tablet_apps":                        "アプリ",
 		"ui_open_another_app_on_this_tablet": "このタブレットの別のアプリを開く",
+
+		// meals: the Meals page, its switcher and its states.
+		// the Meals page's tab and name.
+		"meals": "食事",
+		// the Meals page's Shopping view, in its switcher.
+		"meals_shopping": "買い物",
+		// the Meals page's Plan view, in its switcher.
+		"meals_plan": "予定",
+		// the Meals page's Cooking view, in its switcher.
+		"meals_cooking": "調理",
+		// the Meals page while its data comes in.
+		"meals_loading": "読み込み中…",
+		// the Meals page when Mealie does not answer.
+		"meals_unreachable": "Mealieに接続できません",
+		// the Meals page when Mealie refuses the token.
+		"meals_token_refused": "Mealieがトークンを拒否しました。設定ページで確認してください。",
+		// the Meals page when Mealie wants the https address.
+		"meals_use_https": "設定ページでhttpsのアドレスを使ってください。",
+		// the note over Meals data that could not be refreshed: %s is the time it is from.
+		"meals_offline_as_of": "オフライン（%s時点）",
+		// the Retry button on the Meals page.
+		"meals_retry": "再試行",
+		// the Shopping view's header: %s is the time of its last refresh.
+		"meals_updated": "%s に更新",
+		// the Shopping view's header, for a list that has no name.
+		"meals_shopping_list": "買い物リスト",
+
+		// meals: the Shopping view.
+
+		// meals: the Plan view.
+
+		// meals: the Cooking view.
+
 	},
 
 	// de is the German catalog. The English of every entry is above it, so a
@@ -12306,6 +12550,39 @@ var uiTranslations = map[string]map[string]string{
 		"ui_this_tablet_has_no_settings_screen_to_open": "Dieses Tablet hat keinen Einstellungsbildschirm zum Öffnen",
 		"tablet_apps":                        "Apps",
 		"ui_open_another_app_on_this_tablet": "Eine andere App auf diesem Tablet öffnen",
+
+		// meals: the Meals page, its switcher and its states.
+		// the Meals page's tab and name.
+		"meals": "Essen",
+		// the Meals page's Shopping view, in its switcher.
+		"meals_shopping": "Einkauf",
+		// the Meals page's Plan view, in its switcher.
+		"meals_plan": "Plan",
+		// the Meals page's Cooking view, in its switcher.
+		"meals_cooking": "Kochen",
+		// the Meals page while its data comes in.
+		"meals_loading": "Lädt…",
+		// the Meals page when Mealie does not answer.
+		"meals_unreachable": "Mealie ist nicht erreichbar",
+		// the Meals page when Mealie refuses the token.
+		"meals_token_refused": "Mealie hat das Token abgelehnt. Prüfe es auf der Einrichtungsseite.",
+		// the Meals page when Mealie wants the https address.
+		"meals_use_https": "Auf der Einrichtungsseite die https-Adresse verwenden.",
+		// the note over Meals data that could not be refreshed: %s is the time it is from.
+		"meals_offline_as_of": "Offline, Stand %s",
+		// the Retry button on the Meals page.
+		"meals_retry": "Nochmal",
+		// the Shopping view's header: %s is the time of its last refresh.
+		"meals_updated": "Stand %s",
+		// the Shopping view's header, for a list that has no name.
+		"meals_shopping_list": "Einkaufsliste",
+
+		// meals: the Shopping view.
+
+		// meals: the Plan view.
+
+		// meals: the Cooking view.
+
 	},
 	"ro": {
 		// Romanian, with tu (the informal you, as Android and Home Assistant write it): "atinge" for the
@@ -13387,6 +13664,39 @@ var uiTranslations = map[string]map[string]string{
 		"ui_this_tablet_has_no_settings_screen_to_open": "Tableta nu are un ecran de setări de deschis",
 		"tablet_apps":                                   "Aplicații",
 		"ui_open_another_app_on_this_tablet":            "Deschide altă aplicație pe tabletă",
+
+		// meals: the Meals page, its switcher and its states.
+		// the Meals page's tab and name.
+		"meals": "Mese",
+		// the Meals page's Shopping view, in its switcher.
+		"meals_shopping": "Listă",
+		// the Meals page's Plan view, in its switcher.
+		"meals_plan": "Plan",
+		// the Meals page's Cooking view, in its switcher.
+		"meals_cooking": "Gătit",
+		// the Meals page while its data comes in.
+		"meals_loading": "Se încarcă…",
+		// the Meals page when Mealie does not answer.
+		"meals_unreachable": "Mealie nu poate fi contactat",
+		// the Meals page when Mealie refuses the token.
+		"meals_token_refused": "Mealie a refuzat tokenul. Verifică-l în pagina de configurare.",
+		// the Meals page when Mealie wants the https address.
+		"meals_use_https": "Folosește adresa https în pagina de configurare.",
+		// the note over Meals data that could not be refreshed: %s is the time it is from.
+		"meals_offline_as_of": "Offline, la %s",
+		// the Retry button on the Meals page.
+		"meals_retry": "Reîncearcă",
+		// the Shopping view's header: %s is the time of its last refresh.
+		"meals_updated": "actualizat la %s",
+		// the Shopping view's header, for a list that has no name.
+		"meals_shopping_list": "Lista de cumpărături",
+
+		// meals: the Shopping view.
+
+		// meals: the Plan view.
+
+		// meals: the Cooking view.
+
 	},
 	"tr": {
 		// First run on the screen (feature/display/render_firstrun.go, firstrun_spot.go): its steps, buttons
@@ -14483,6 +14793,39 @@ var uiTranslations = map[string]map[string]string{
 		"ui_this_tablet_has_no_settings_screen_to_open": "Bu tablette açılacak bir ayarlar ekranı yok",
 		"tablet_apps":                        "Uygulamalar",
 		"ui_open_another_app_on_this_tablet": "Bu tabletteki başka bir uygulamayı aç",
+
+		// meals: the Meals page, its switcher and its states.
+		// the Meals page's tab and name.
+		"meals": "Yemek",
+		// the Meals page's Shopping view, in its switcher.
+		"meals_shopping": "Alışveriş",
+		// the Meals page's Plan view, in its switcher.
+		"meals_plan": "Plan",
+		// the Meals page's Cooking view, in its switcher.
+		"meals_cooking": "Pişirme",
+		// the Meals page while its data comes in.
+		"meals_loading": "Yükleniyor…",
+		// the Meals page when Mealie does not answer.
+		"meals_unreachable": "Mealie'ye ulaşılamıyor",
+		// the Meals page when Mealie refuses the token.
+		"meals_token_refused": "Mealie belirteci reddetti. Kurulum sayfasında kontrol edin.",
+		// the Meals page when Mealie wants the https address.
+		"meals_use_https": "Kurulum sayfasında https adresini kullanın.",
+		// the note over Meals data that could not be refreshed: %s is the time it is from.
+		"meals_offline_as_of": "Çevrimdışı, saat %s",
+		// the Retry button on the Meals page.
+		"meals_retry": "Tekrar dene",
+		// the Shopping view's header: %s is the time of its last refresh.
+		"meals_updated": "%s itibarıyla güncel",
+		// the Shopping view's header, for a list that has no name.
+		"meals_shopping_list": "Alışveriş listesi",
+
+		// meals: the Shopping view.
+
+		// meals: the Plan view.
+
+		// meals: the Cooking view.
+
 	},
 	"pl": {
 		"popup_started":                 "Rozpoczęte",
