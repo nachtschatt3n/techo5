@@ -196,7 +196,7 @@ func shopItemsOf(l mealie.List, over map[string]bool) mealie.List {
 	return l
 }
 
-// shopColor is a label's color for its dot: the one the server gave, else a neutral grey.
+// shopColor is a label's color for its dot: the one the server gave, else a neutral gray.
 func shopColor(l *mealie.Label) color.RGBA {
 	if l != nil {
 		if c, err := parseHex(l.HexColor()); err == nil {

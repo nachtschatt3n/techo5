@@ -16,7 +16,7 @@ type Label struct {
 	Color string `json:"color"`
 }
 
-// HexColor is the label's color as "#rrggbb", or the grey Mealie uses when it has none.
+// HexColor is the label's color as "#rrggbb", or the gray Mealie uses when it has none.
 func (l Label) HexColor() string {
 	if l.Color == "" {
 		return "#959595"

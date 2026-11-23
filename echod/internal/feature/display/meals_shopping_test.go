@@ -327,7 +327,7 @@ func TestMealsShoppingGroupsAndDone(t *testing.T) {
 	}
 	for _, r := range m.rows {
 		if r.kind == shopHead && r.text == "Produce" && r.dot.R != 0x95 {
-			t.Errorf("a label with no color is %v, want grey", r.dot)
+			t.Errorf("a label with no color is %v, want gray", r.dot)
 		}
 		if r.kind == shopHead && r.text == "Dairy" && (r.dot.R != 0x21 || r.dot.B != 0xf3) {
 			t.Errorf("Dairy's dot is %v", r.dot)
