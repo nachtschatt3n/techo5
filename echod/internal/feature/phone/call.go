@@ -112,6 +112,12 @@ func talk(ctx context.Context, m *diago.DialogMedia, say <-chan []int16) error {
 func carry(ctx context.Context, enc io.Writer, dec io.Reader, wide bool, say <-chan []int16) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+	// With Wake words hear the canceller before suppression on, the wake words would hear WebRTC's
+	// canceller before its suppressor, the far end's voice with it, while the hang-up word's check on
+	// the far end goes by how much the whole canceller takes off (detect.hangUp). For the call they
+	// hear what is sent to the far end, as they did before the setting. Held before the canceller for
+	// the call goes on and let go after the one from before is back, so no frame falls between.
+	defer mic.Get().HoldWakeLinear()()
 	defer callCanceller(mic.Get().SetCancelEngine)()
 
 	var st stats

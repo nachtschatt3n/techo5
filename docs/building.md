@@ -187,7 +187,11 @@ image goes on with `fastboot flash boot` (with the Show in fastboot, docs/instal
 ## Optional: the echo canceller
 
 [tools/linux/build-aec.sh](../tools/linux/build-aec.sh) compiles the WebRTC echo canceller helper for
-armv7 (Linux or WSL). `deploy-rootfs.sh` includes `bin/techo5-aec-arm` when it exists.
+armv7 (Linux or WSL). `deploy-rootfs.sh` includes `bin/techo5-aec-arm` when it exists. For
+**Wake words hear the canceller before suppression** the helper needs a header the library's package
+leaves out, so the script downloads the library's source release once (webrtc-audio-processing 1.3,
+checked against a pinned sha256) and takes the header from it. Without it, or with another version of
+the library installed, the helper is built all the same, without that part.
 
 The `techo5-aec` WebRTC echo canceller is separate from the optional
 [External microphone ASP interface](external-asp.md). Building or installing one does not install or

@@ -367,6 +367,26 @@ func (l *leveler) applyFrom(frame []int16, exact []float32) {
 	}
 }
 
+// applyLast scales a frame in place by the gain apply last settled on, and learns nothing from it: it
+// is for a second signal riding beside the one being leveled (the canceller's linear output, for the
+// wake words), which should arrive at the same level without moving the gain, the floor or anything
+// published. Only the cap on its own loudest sample is its own, since it can be the louder of the two,
+// and its clipping is not counted in Clipped, which is about the one channel.
+func (l *leveler) applyLast(frame []int16) {
+	gain := l.gain
+	var peak float32
+	for _, s := range frame {
+		peak = max(peak, float32(abs(s)))
+	}
+	if peak > 0 {
+		gain = min(gain, l.headroom/peak)
+	}
+	for i, s := range frame {
+		v := float32(s) * gain
+		frame[i] = int16(max(min(v, fullScale-1), -fullScale))
+	}
+}
+
 // SetLeveling turns leveling on or off. It takes effect on the next frame.
 func (s *Source) SetLeveling(on bool) {
 	s.leveling.Store(on)

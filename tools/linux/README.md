@@ -228,6 +228,16 @@ elsewhere), or the mix with the **Echo cancellation on all microphones**
 switch on (on by default on the Echo Dot 2nd gen and the Echo 2nd gen, off
 elsewhere; docs/setup.md).
 
+With **Wake words hear the canceller before suppression** on, the daemon
+starts the helper with `--linear`: it then also writes AEC3's linear output
+(the microphone with the filter's echo estimate taken off, before the
+suppressor and NS), and the daemon hands that to the wake engine alone while
+the canceller runs (`hardware/mic`, broadcastSelected). The library only
+exports it when AEC3 is built for it, which needs AEC3's own header; the -dev
+package leaves it out, so `build-aec.sh` takes it from the library's 1.3 source
+release (pinned sha256) and builds without `--linear` when it can't. A helper
+without it refuses the flag, and the daemon starts it again without.
+
 ## Screen
 
 The daemon paints everything (hardware/screen, feature/display): the clock,
