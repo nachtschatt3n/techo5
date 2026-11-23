@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"slices"
 	"sync"
+	"sync/atomic"
 
 	esphome "github.com/ygelfand/go-esphome-device"
 
@@ -24,6 +25,18 @@ import (
 // or when the Meals page has loaded the lists to show them (mealsNoteLists). Until then, and whenever
 // Mealie cannot be reached, the saved choice is the one option besides "The first list", so that Home
 // Assistant never shows a choice blank and a save from it never loses one.
+
+// mealsAtStart is whether Mealie was set up, an address and a token both saved, when the daemon started:
+// what Home Assistant was told. A device without Mealie has nothing of Meals there, not the two entities,
+// not Meals among the Idle screen's or Tap on the clock's choices, and not the Idle screen select itself
+// when Meals would be its only custom screen. Home Assistant reads which entities a device has once, when
+// the server starts (feature/api), and nothing can be added to or taken from that list later, so this is
+// read once, as the display is built, and the setup page restarts the daemon when a save sets Mealie up
+// or takes it away (feature/setup/mealie.go), as the Tessera switch does for its own entities.
+var mealsAtStart atomic.Bool
+
+// mealsListed is whether Home Assistant has the Meals entities and choices on this run of the daemon.
+func mealsListed() bool { return mealsAtStart.Load() }
 
 const (
 	// mealsFirstList is the choice that is no list in particular: Mealie's first one, whatever it is called.
@@ -188,4 +201,6 @@ func (d *Display) mealsChanged() {
 		}
 	}
 	m.awake.Set(!c.Sleeps)
+	// A save on the setup page also changes whether Meals is offered as the idle screen.
+	d.refreshIdleScreen()
 }

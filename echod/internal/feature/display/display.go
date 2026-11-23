@@ -559,6 +559,8 @@ func Get() *Display {
 }
 
 func build() *Display {
+	// Before anything that lists Meals' choices: whether Home Assistant is told of Meals on this run.
+	mealsAtStart.Store(config.Get().Mealie.Set())
 	d := &Display{
 		light: &esphome.Light{
 			Base:                esphome.Base{ObjectID: "screen", Name: "Screen", Icon: "mdi:monitor"},
@@ -726,7 +728,7 @@ func (d *Display) clockTapSel() *esphome.Select { return d.clockTap }
 
 func (d *Display) Entities() []esphome.Entity {
 	ents := append([]esphome.Entity{d.light, d.power, d.roomSw, d.auto, d.clock, d.clockStyleSel, d.clockPos, d.dateCol, d.weatherPos, d.glanceSz, d.glanceMus, d.camTime, cameraFitSel, cameraBandsSel, cameraShadeSel, d.answerTime, d.turnStyle, d.timerStyle, d.skinSl, d.callBtn, d.saverBtn, d.callScreenSel, d.weatherFx, d.warmthSw, d.lang, d.strip, d.themeSel, d.lightThemeSel, d.themeModeSel, d.nightHours, d.nightStart, d.nightEnd, d.weekendStart, d.weekendEnd, d.nightMode, d.atNight, d.nightStyle, d.glowLevel, d.dimmestNum, d.idleDimSel, d.dimBtn, d.dimSensor,
-		d.pop.on, d.pop.lead, d.pop.chime, d.pop.allDay, d.pop.shown, d.pop.popping, d.clockTap, d.styleSwipeSw, d.volumeSwipeSw, d.nightTapSw, d.nightInfoSw, d.fontSel, d.textSizeSel, d.meals.list, d.meals.awake}, d.lookEnts...)
+		d.pop.on, d.pop.lead, d.pop.chime, d.pop.allDay, d.pop.shown, d.pop.popping, d.clockTap, d.styleSwipeSw, d.volumeSwipeSw, d.nightTapSw, d.nightInfoSw, d.fontSel, d.textSizeSel}, d.lookEnts...)
 	if !screen.CanTint {
 		// Night warmth tints the frame on its way to the panel, which a tablet's screen does not take.
 		ents = slices.DeleteFunc(ents, func(e esphome.Entity) bool { return e == esphome.Entity(d.warmthSw) })
@@ -736,6 +738,9 @@ func (d *Display) Entities() []esphome.Entity {
 	}
 	if nightAlarmHere() {
 		ents = append(ents, d.nightAlarmSw)
+	}
+	if mealsListed() {
+		ents = append(ents, d.meals.list, d.meals.awake)
 	}
 	if len(offeredScreens()) > 0 {
 		ents = append(ents, d.idleScreenSel)

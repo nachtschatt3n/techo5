@@ -120,8 +120,6 @@ var registered = []string{
 	"max_listen_2",
 	"max_think_1",
 	"max_think_2",
-	"meals_keep_awake",
-	"meals_shopping_list",
 	"media_duck_level",
 	"media_on_turn",
 	"memory_available",

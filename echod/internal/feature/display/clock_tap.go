@@ -4,6 +4,7 @@ package display
 
 import (
 	"log/slog"
+	"slices"
 
 	esphome "github.com/ygelfand/go-esphome-device"
 
@@ -22,7 +23,8 @@ type clockTap struct {
 // clockTaps are the choices, with what the config keeps for each; Assist is kept as nothing. Meals is
 // last, so the choices before it keep their places, and the Spot, which offers the first three only
 // (clock_tap_spot.go), never shows it. A value is kept by name, so a place in the list is not saved
-// anywhere. Meals on a device without Mealie set up is a tap that does what Assist does.
+// anywhere. Meals is a choice only where Home Assistant has the Meals page (mealsListed); a tap kept as
+// Meals on a device without Mealie set up does what Assist does, and reads as Assist.
 var clockTaps = []clockTap{
 	{"Assist", ""},
 	{"Dashboard", "dashboard"},
@@ -32,12 +34,17 @@ var clockTaps = []clockTap{
 }
 
 // clockTapChoices are the choices this screen offers: no Assist without a microphone, where a tap
-// kept as Assist opens the dashboard (Display.gesture), and so reads as Dashboard.
+// kept as Assist opens the dashboard (Display.gesture), and so reads as Dashboard; and no Meals on a
+// device that started without Mealie set up (mealsListed).
 func clockTapChoices() []clockTap {
-	if !hasMicrophone() {
-		return clockTapsHere[1:]
+	taps := clockTapsHere
+	if !mealsListed() {
+		taps = slices.DeleteFunc(slices.Clone(taps), func(c clockTap) bool { return c.value == "meals" })
 	}
-	return clockTapsHere
+	if !hasMicrophone() {
+		return taps[1:]
+	}
+	return taps
 }
 
 // clockTapSelect is the Home Assistant setting.

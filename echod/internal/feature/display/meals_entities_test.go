@@ -7,6 +7,8 @@ import (
 	"slices"
 	"testing"
 
+	esphome "github.com/ygelfand/go-esphome-device"
+
 	"github.com/HuskerMinion/techo5/echod/internal/config"
 	"github.com/HuskerMinion/techo5/echod/internal/lib/mealie"
 )
@@ -98,4 +100,87 @@ func TestEntityMealsListKeepsSaved(t *testing.T) {
 	if got := config.Get().Mealie.List; got != "gone9" {
 		t.Errorf("choosing the saved option changed the id to %q", got)
 	}
+}
+
+// mealsStarted is the device as a daemon started with Mealie set up or not finds it, for one test: what
+// Home Assistant was told (mealsAtStart), with Meals the only custom screen there is, as on a Show.
+func mealsStarted(t *testing.T, setUp bool) *Display {
+	t.Helper()
+	d := Get()
+	wasListed, wasScreens := mealsAtStart.Load(), customScreens
+	t.Cleanup(func() {
+		mealsAtStart.Store(wasListed)
+		customScreens = wasScreens
+		d.mealsChanged()
+	})
+	customScreens = slices.DeleteFunc(slices.Clone(customScreens), func(c customScreen) bool { return c.id != mealsID })
+	mealsAtStart.Store(setUp)
+	return d
+}
+
+func mealsSetUpTo(t *testing.T, on bool) {
+	t.Helper()
+	tok := ""
+	if on {
+		tok = "token-for-a-test"
+	}
+	if err := config.Set().Mealie().Server("https://mealie.example.test", &tok); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// What Home Assistant is told of Meals: nothing on a device without Mealie set up, neither entity and no
+// Idle screen select, which Meals alone would have been the reason for, as on a device without Meals; all
+// of it once a daemon starts with Mealie set up; and nothing again after the restart that follows taking
+// it away. Between a save and its restart a Mealie taken away is no longer a choice of Idle screen.
+func TestMealsInHomeAssistantOnlyWhenSetUp(t *testing.T) {
+	config.Use(filepath.Join(t.TempDir(), "state.json"))
+	listed := func(d *Display) (list, awake, idle bool) {
+		ents := d.Entities()
+		return slices.Contains(ents, esphome.Entity(d.meals.list)), slices.Contains(ents, esphome.Entity(d.meals.awake)),
+			slices.Contains(ents, esphome.Entity(d.idleScreenSel))
+	}
+
+	d := mealsStarted(t, false)
+	if list, awake, idle := listed(d); list || awake || idle {
+		t.Fatalf("not set up: shopping list %v, keep awake %v, idle screen %v", list, awake, idle)
+	}
+	// Set up on the setup page: nothing shows before the restart the save asks for.
+	mealsSetUpTo(t, true)
+	d.mealsChanged()
+	if list, awake, idle := listed(d); list || awake || idle {
+		t.Fatalf("set up, before the restart: shopping list %v, keep awake %v, idle screen %v", list, awake, idle)
+	}
+	if _, ok := customByID(mealsID); ok {
+		t.Fatal("Meals is offered before the restart")
+	}
+
+	// The restart: a daemon that finds Mealie set up.
+	mealsAtStart.Store(true)
+	d.mealsChanged()
+	if list, awake, idle := listed(d); !list || !awake || !idle {
+		t.Fatalf("set up: shopping list %v, keep awake %v, idle screen %v", list, awake, idle)
+	}
+	if got := idleScreenOptions(); !slices.Equal(got, []string{"Clock", "Meals"}) {
+		t.Fatalf("set up: idle screen options %v", got)
+	}
+	d.idleScreenSel.OnCommand("Meals")
+	if got := d.idleScreenSel.Get(); got != "Meals" {
+		t.Fatalf("choosing Meals shows %q", got)
+	}
+
+	// Taken away: Meals is no choice from the save on, and the restart takes the rest.
+	mealsSetUpTo(t, false)
+	d.mealsChanged()
+	if got := d.idleScreenSel.Options; !slices.Equal(got, []string{"Clock"}) {
+		t.Fatalf("removed, before the restart: idle screen options %v", got)
+	}
+	if got := d.idleScreenSel.Get(); got != "Clock" {
+		t.Fatalf("removed, before the restart: the idle screen shows %q", got)
+	}
+	mealsAtStart.Store(false)
+	if list, awake, idle := listed(d); list || awake || idle {
+		t.Fatalf("removed: shopping list %v, keep awake %v, idle screen %v", list, awake, idle)
+	}
+	_ = config.Set().Screen().IdleScreen("")
 }

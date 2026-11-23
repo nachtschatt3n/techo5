@@ -2391,7 +2391,9 @@ data:
 The Meals page's two choices are entities, not actions: the **Meals shopping list** select
 (`select.<node>_meals_shopping_list`) and the **Meals keep the screen on** switch
 (`switch.<node>_meals_keep_awake`). The setup page has both as well. Set the page's address and token
-only on the setup page, as with Music Assistant.
+only on the setup page, as with Music Assistant. The two entities are there only once Mealie is set up:
+saving the address and the token, or taking either away, restarts the device's software, and they
+appear or go away as Home Assistant connects again. The two actions are there either way.
 
 ## Show the forecast or the rain map
 

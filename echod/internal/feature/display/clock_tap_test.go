@@ -6,6 +6,7 @@ import (
 	"context"
 	"image"
 	"path/filepath"
+	"slices"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -20,6 +21,7 @@ import (
 // Assist, as a tap always was. Meals is the last choice, and the Spot's three are still the first three.
 func TestClockTapSetting(t *testing.T) {
 	config.Use(filepath.Join(t.TempDir(), "state.json"))
+	listedAsMeals(t, true)
 	if clockTapIndex() != 0 {
 		t.Fatalf("default is %s", clockTaps[clockTapIndex()].label)
 	}
@@ -45,6 +47,56 @@ func TestClockTapSetting(t *testing.T) {
 	}
 	if got := clockTaps[:3]; got[0].label != "Assist" || got[1].label != "Dashboard" || got[2].label != "Nothing" {
 		t.Errorf("the Spot's choices are %v, want Assist, Dashboard and Nothing", got)
+	}
+}
+
+// listedAsMeals is a daemon that started with Mealie set up, or without, for one test.
+func listedAsMeals(t *testing.T, on bool) {
+	t.Helper()
+	was := mealsAtStart.Load()
+	mealsAtStart.Store(on)
+	t.Cleanup(func() { mealsAtStart.Store(was) })
+}
+
+// Meals is a choice for Tap on the clock only on a device that started with Mealie set up, last, after
+// the choices it had before; without it the choices are the ones a Show had before Meals, and a tap kept
+// as Meals reads as Assist. A choice Home Assistant does not offer is not taken from it either.
+func TestClockTapMealsOnlyWhenSetUp(t *testing.T) {
+	config.Use(filepath.Join(t.TempDir(), "state.json"))
+	wasMic := hasMicrophone
+	hasMicrophone = func() bool { return true }
+	t.Cleanup(func() { hasMicrophone = wasMic })
+	before := []string{"Assist", "Dashboard", "Nothing", "Deck"}
+
+	listedAsMeals(t, false)
+	if got := clockTapOptions(); !slices.Equal(got[:len(before)], before) || slices.Contains(got, "Meals") {
+		t.Fatalf("not set up: choices %q", got)
+	}
+	s := clockTapSelect()
+	s.OnCommand("Meals")
+	if got := config.Get().Screen.ClockTap; got != "" {
+		t.Errorf("not set up: Meals was taken and kept as %q", got)
+	}
+	if err := config.Set().Screen().ClockTap("meals"); err != nil {
+		t.Fatal(err)
+	}
+	if got := clockTapOptions()[clockTapIndex()]; got != "Assist" {
+		t.Errorf("not set up: a tap kept as Meals reads as %s", got)
+	}
+
+	listedAsMeals(t, true)
+	got := clockTapOptions()
+	if !slices.Equal(got[:len(before)], before) || !slices.Contains(got, "Meals") {
+		t.Fatalf("set up: choices %q", got)
+	}
+	if got := clockTapOptions()[clockTapIndex()]; got != "Meals" {
+		t.Errorf("set up: a tap kept as Meals reads as %s", got)
+	}
+
+	// Taken away and restarted: gone again.
+	listedAsMeals(t, false)
+	if got := clockTapOptions(); slices.Contains(got, "Meals") {
+		t.Errorf("removed: choices %q", got)
 	}
 }
 

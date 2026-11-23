@@ -15,6 +15,9 @@ import (
 // deck is the Show's; a Deck shared from a Show reads here as Assist, and a tap starts a turn.
 var clockTapsHere = clockTaps[:3]
 
+// mealsListed: the Spot has no Meals page (meals_entities.go is the Show's).
+func mealsListed() bool { return false }
+
 // clockTapSel is the Tap on the clock setting in Home Assistant.
 func (d *Display) clockTapSel() *esphome.Select { return d.clockTap }
 

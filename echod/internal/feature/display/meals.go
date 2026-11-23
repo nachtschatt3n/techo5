@@ -23,7 +23,8 @@ import (
 // page still loading or that cannot load). Each view is a file of its own that adds itself to
 // mealsViews from its init and brings its own data, drawing and touch, so no view edits this file.
 //
-// The page is offered only when the setup page has a Mealie address and token (config.Mealie.Set).
+// The page is offered only when the setup page has a Mealie address and token (config.Mealie.Set), and
+// the daemon found them there when it started (mealsListed, meals_entities.go).
 // Nothing here reaches the network until then, and nothing is fetched while the page is not on the
 // screen: a frame of it asking for its data (mealsFill) is how the page knows somebody is looking.
 
@@ -129,7 +130,7 @@ var meals = &mealsHub{}
 func init() {
 	registerScreen(customScreen{
 		id: mealsID, label: "Meals", title: func() string { return tr("meals") }, rank: 30,
-		offered: func() bool { return config.Get().Mealie.Set() },
+		offered: func() bool { return mealsListed() && config.Get().Mealie.Set() },
 		listen:  func(changed func()) { meals.mu.Lock(); meals.changed = changed; meals.mu.Unlock() },
 		fill:    mealsFill,
 		draw:    mealsDraw,
