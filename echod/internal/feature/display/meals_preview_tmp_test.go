@@ -5,6 +5,7 @@ package display
 import (
 	"fmt"
 	"image"
+	"image/draw"
 	"image/png"
 	"os"
 	"path/filepath"
@@ -15,12 +16,16 @@ import (
 )
 
 func prevSave(t *testing.T, name string, r *renderer) {
+	// The screen is black behind the views, so a preview is painted over black.
+	out := image.NewRGBA(r.dst.Bounds())
+	draw.Draw(out, out.Bounds(), image.Black, image.Point{}, draw.Src)
+	draw.Draw(out, out.Bounds(), r.dst, r.dst.Bounds().Min, draw.Over)
 	f, err := os.Create(filepath.Join(os.Getenv("SHOW_PREVIEW"), name+".png"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer f.Close()
-	if err := png.Encode(f, r.dst); err != nil {
+	if err := png.Encode(f, out); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -57,6 +62,7 @@ func TestPreviewMealsTmp(t *testing.T) {
 		c, data := cookOpen(t, cookRecipe(), 1)
 		for _, page := range []int{0, 2} {
 			c.Go(page)
+			draw.Draw(d.r.dst, d.r.dst.Bounds(), image.Transparent, image.Point{}, draw.Src)
 			cookDrawn(d.r, data)
 			prevSave(t, fmt.Sprintf("meals-cook-%d-%s", page, tag), d.r)
 		}
