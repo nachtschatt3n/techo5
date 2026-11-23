@@ -3,6 +3,7 @@ package mealie
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -151,6 +152,95 @@ func TestClientFollowsSameHostRedirect(t *testing.T) {
 	}
 	if auth != "Bearer tok-123" {
 		t.Errorf("after the redirect: %q", auth)
+	}
+}
+
+// A write that the server redirects with a 301 or 302 is not followed: the client would send a GET with no
+// body, which comes back as a list, and the item would be left as it was with nothing said.
+func TestClientDoesNotFollowRedirectOfWrite(t *testing.T) {
+	var l List
+	if err := json.Unmarshal(fixture(t, "list.json"), &l); err != nil {
+		t.Fatal(err)
+	}
+	for _, code := range []int{http.StatusMovedPermanently, http.StatusFound, http.StatusSeeOther} {
+		var gets, puts atomic.Int32
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			switch {
+			case r.Method == http.MethodPut && r.URL.Path == "/api/households/shopping/items":
+				puts.Add(1)
+				http.Redirect(w, r, "/api/households/shopping/items/", code)
+			default:
+				gets.Add(1)
+				w.Write([]byte(`{"items":[]}`))
+			}
+		}))
+		err := Client{URL: srv.URL, Token: "tok-123"}.SetChecked(context.Background(), l.Items[0], true)
+		srv.Close()
+		if !errors.Is(err, ErrUnreachable) || gets.Load() != 0 || puts.Load() != 1 {
+			t.Errorf("%d: err = %v, %d gets, %d puts: the write was taken as made", code, err, gets.Load(), puts.Load())
+		}
+	}
+	// A 307 keeps the method and the body, and is followed.
+	var got []map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/households/shopping/items" {
+			http.Redirect(w, r, "/api/households/shopping/items/", http.StatusTemporaryRedirect)
+			return
+		}
+		json.NewDecoder(r.Body).Decode(&got)
+		w.Write([]byte(`{}`))
+	}))
+	defer srv.Close()
+	if err := (Client{URL: srv.URL, Token: "tok-123"}).SetChecked(context.Background(), l.Items[0], true); err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0]["checked"] != true {
+		t.Errorf("after a 307 the server got %v", got)
+	}
+}
+
+// An http address whose server sends this device to https on the usual port (not the one it was reached
+// on) still wants the https address, and a host that differs only in case is the same host.
+func TestClientRedirectHostAndPort(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "https://"+r.Host[:strings.LastIndex(r.Host, ":")]+r.URL.Path, http.StatusMovedPermanently)
+	}))
+	_, err := Client{URL: srv.URL, Token: "tok-123"}.Lists(context.Background())
+	srv.Close()
+	if !errors.Is(err, ErrUseHTTPS) {
+		t.Errorf("http on another port to https: err = %v, want the https address", err)
+	}
+
+	var auth string
+	var hits atomic.Int32
+	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasSuffix(r.URL.Path, "/") {
+			http.Redirect(w, r, "http://LocalHost:"+r.Host[strings.LastIndex(r.Host, ":")+1:]+r.URL.Path+"/", http.StatusMovedPermanently)
+			return
+		}
+		hits.Add(1)
+		auth = r.Header.Get("Authorization")
+		w.Write([]byte(`{"items":[]}`))
+	}))
+	defer srv.Close()
+	port := srv.URL[strings.LastIndex(srv.URL, ":")+1:]
+	if _, err := (Client{URL: "http://localhost:" + port, Token: "tok-123"}).Lists(context.Background()); err != nil {
+		t.Fatalf("a host in another case: %v", err)
+	}
+	if hits.Load() != 1 || auth != "Bearer tok-123" {
+		t.Errorf("%d answers, auth %q", hits.Load(), auth)
+	}
+	// Another port on the same host is another server.
+	other := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { hits.Add(1) }))
+	defer other.Close()
+	hits.Store(0)
+	srv2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "http://localhost:"+other.URL[strings.LastIndex(other.URL, ":")+1:]+r.URL.Path, http.StatusFound)
+	}))
+	defer srv2.Close()
+	port2 := srv2.URL[strings.LastIndex(srv2.URL, ":")+1:]
+	if _, err := (Client{URL: "http://localhost:" + port2, Token: "tok-123"}).Lists(context.Background()); !errors.Is(err, ErrUnreachable) || hits.Load() != 0 {
+		t.Errorf("a redirect to another port: err = %v, %d hits", err, hits.Load())
 	}
 }
 

@@ -52,19 +52,29 @@ var hc = &http.Client{Timeout: 15 * time.Second, CheckRedirect: followSameHost}
 
 // followSameHost lets a request follow a redirect on the same host and scheme (a trailing slash is the
 // usual one), and nothing else. A hop to another host would carry the token there; a hop from http to
-// https is reported, so the person puts the right address on the setup page.
+// https is reported, so the person puts the right address on the setup page. A write is followed only
+// when the redirect keeps its method (307 and 308): the client turns a 301 or 302 of a PUT into a GET
+// with no body, which the server answers with a list, and the write would never have been made.
 func followSameHost(req *http.Request, via []*http.Request) error {
 	if len(via) >= 5 {
 		return ErrUnreachable
 	}
-	prev := via[len(via)-1].URL
-	if req.URL.Host != via[0].URL.Host {
+	first, prev := via[0], via[len(via)-1]
+	if first.Method != http.MethodGet && first.Method != http.MethodHead && req.Method != first.Method {
 		return ErrUnreachable
 	}
-	if req.URL.Scheme != prev.Scheme {
-		if prev.Scheme == "http" && req.URL.Scheme == "https" {
+	// The host is a name, which is not case sensitive, and the port is looked at after the scheme: a server
+	// on its own port that sends this device to https on the usual one wants the https address.
+	if !strings.EqualFold(req.URL.Hostname(), first.URL.Hostname()) {
+		return ErrUnreachable
+	}
+	if req.URL.Scheme != prev.URL.Scheme {
+		if prev.URL.Scheme == "http" && req.URL.Scheme == "https" {
 			return ErrUseHTTPS
 		}
+		return ErrUnreachable
+	}
+	if req.URL.Port() != first.URL.Port() {
 		return ErrUnreachable
 	}
 	return nil
