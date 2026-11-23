@@ -1181,8 +1181,15 @@ The page is offered only once an address and a token are saved, and only on the 
 the Panel app (not the Spot or the Echo Dot). Nothing is written to Mealie except ticking and unticking
 shopping items. The two choices are also entities in Home Assistant: **Meals shopping list**
 (`meals_shopping_list`, a select of the list names) and **Meals keep the screen on**
-(`meals_keep_awake`, a switch). The address and the token are set only on this page, like Music
-Assistant's.
+(`meals_keep_awake`, a switch). The select lists the names Mealie gave when the page or this card last
+asked it; until then, or when Mealie cannot be reached, it offers only **The first list** and the saved
+choice. The address and the token are set only on this page, like Music Assistant's.
+
+Home Assistant has these two entities only once Mealie is set up, an address and a token both saved, and
+only then is *Meals* a choice of **Idle screen**, a select that is not there at all while nothing offers
+a screen for it. Saving the card so that Mealie is set up, or taking the address or the token away,
+restarts the device's software, which is back in a minute or so; the entities appear or go away as Home
+Assistant connects again. A save that changes neither restarts nothing.
 
 **Troubleshooting Meals.** "Refused the token": Mealie did not accept it, or it was made for another
 user; make a new one and save it. "Use the https address": put the `https` address in. Not the lists

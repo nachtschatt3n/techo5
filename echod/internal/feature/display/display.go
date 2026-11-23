@@ -438,6 +438,7 @@ type Display struct {
 	popupQueue []hass.Event         // due while another was up: shown next
 	popupGone  map[string]time.Time // events tapped away on another device (popupMatch), and when; kept in the config too
 	pop        popupEntities        // the pop-ups' settings in Home Assistant
+	meals      mealsEntities        // the Meals page's two choices in Home Assistant (meals_entities.go)
 
 	// The alert page (alerts.go): up until alertUntil, on alertIdx of the alerts at home, scrolled
 	// alertScroll lines.
@@ -553,6 +554,8 @@ func Get() *Display {
 }
 
 func build() *Display {
+	// Before anything that lists Meals' choices: whether Home Assistant is told of Meals on this run.
+	mealsAtStart.Store(config.Get().Mealie.Set())
 	d := &Display{
 		light: &esphome.Light{
 			Base:                esphome.Base{ObjectID: "screen", Name: "Screen", Icon: "mdi:monitor"},
@@ -616,6 +619,8 @@ func build() *Display {
 	d.liftSw = adaptiveBacklightSwitch(d)
 	d.buildPopupEntities()
 	d.buildLookEntities()
+	d.buildMealsEntities()
+	d.listenMeals()
 	d.atNight = atNightSelect(d)
 	d.nightMode = nightModeSwitch(d)
 	d.glowLevel = glowNumber(d)
@@ -732,6 +737,9 @@ func (d *Display) Entities() []esphome.Entity {
 	if nightAlarmHere() {
 		ents = append(ents, d.nightAlarmSw)
 	}
+	if mealsListed() {
+		ents = append(ents, d.meals.list, d.meals.awake)
+	}
 	if len(offeredScreens()) > 0 {
 		ents = append(ents, d.idleScreenSel)
 	}
@@ -785,6 +793,7 @@ func (d *Display) Restore(c config.Config) {
 	d.liftSw.Set(c.Screen.AdaptiveBacklight)
 	d.popupSettingsChanged()
 	d.lookChanged()
+	d.mealsChanged()
 	d.glowLevel.Set(float32(d.glowSetting()))
 	d.dimmestNum.Set(float32(dimmestSetting()))
 	d.restoreLightOff(c.Alarms.HeldDark, time.Now())

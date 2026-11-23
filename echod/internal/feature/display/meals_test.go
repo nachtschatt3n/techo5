@@ -34,11 +34,13 @@ func mealsFresh(t *testing.T) {
 	if err := config.Set().Mealie().Server("https://mealie.example.test", &tok); err != nil {
 		t.Fatal(err)
 	}
-	wasHub, wasViews := meals, mealsViews
+	wasHub, wasViews, wasListed := meals, mealsViews, mealsAtStart.Load()
 	meals, mealsViews = &mealsHub{}, nil
+	mealsAtStart.Store(true) // as a daemon started with Mealie set up
 	t.Cleanup(func() {
 		meals.wg.Wait()
 		meals, mealsViews = wasHub, wasViews
+		mealsAtStart.Store(wasListed)
 		setCustomZones(nil)
 		_ = config.Set().Screen().Language("")
 	})
@@ -72,6 +74,9 @@ func mealsFrameOf(t *testing.T) mealsFrame {
 // token.
 func TestMealsOfferedOnlyWhenSetUp(t *testing.T) {
 	config.Use(filepath.Join(t.TempDir(), "state.json"))
+	wasListed := mealsAtStart.Load()
+	mealsAtStart.Store(true) // a daemon that started with Mealie set up (meals_entities_test.go has one that did not)
+	t.Cleanup(func() { mealsAtStart.Store(wasListed) })
 	if _, ok := customByID(mealsID); ok {
 		t.Fatal("Meals is offered with nothing set up")
 	}
