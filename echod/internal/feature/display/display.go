@@ -2868,7 +2868,7 @@ func (d *Display) frame() (next time.Duration) {
 	d.mu.Unlock()
 	busy := updateVisible || view.Phase != "idle" || call.Phase != phone.Idle || ring.any() || reminding || sheetUp || pinIsOpen() ||
 		d.wakeLight(now) > 0 || d.popupUp() != nil || asksAtDevice() || wifiUp || camUp || video.Get().State().Active() ||
-		keepawake.Held()
+		keepawake.Held() || d.customAwake()
 	if d.coverTick(on) { // the night may have lit the panel under a closed cover
 		d.mu.Lock()
 		on = d.on

@@ -109,7 +109,8 @@ func (d *Display) askedAtNight(now time.Time) {
 }
 
 // askedUp is whether a page Home Assistant asked for at night is still up: the hold lasts while the
-// page does, the Radar button or a tap on the calendar keeping it up keeping the hold too, and ends
+// page does, the Radar button or a tap on the calendar keeping it up keeping the hold too, as does a
+// custom screen that asks for it (customScreen.night), and ends
 // the first time the page is found closed, so a page put up later is not held for it. Called with
 // d.mu held.
 func (d *Display) askedUp(now time.Time) bool {
@@ -117,6 +118,9 @@ func (d *Display) askedUp(now time.Time) bool {
 		return false
 	}
 	if now.Before(d.weatherUntil) || now.Before(d.calUntil) || (d.drawer && d.drawerTab == drawerTodo) {
+		return true
+	}
+	if d.customHold(func(c customScreen) func() bool { return c.night }) {
 		return true
 	}
 	d.askedNight = false
