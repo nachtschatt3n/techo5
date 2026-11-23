@@ -22,10 +22,10 @@ can be complete and still never have been looked at on a real screen.
 | Italian (it) | 1122 | 100% | angelor87 (#310, #353) | Echo Show 5 1st gen (#353) |
 | Japanese (ja) | 1122 | 100% | lem0njuice0 (#270) | Echo Show 5 2nd gen (#270) |
 | Polish (pl) | 1077 | 95% | Szaman | Echo Show 8 1st gen, v1.6.50 |
-| Romanian (ro) | 1120 | 99% |  | Echo Show 5 1st gen, v1.6.48 (local build) |
+| Romanian (ro) | 1122 | 100% |  | Echo Show 5 1st gen, v1.6.48 (local build) |
 | Spanish (es) | 1122 | 100% | KOPYk4T (#327), mactron254 (#608) | Echo Show 5 2nd gen, v1.6.12 (#327) |
 | Turkish (tr) | 1122 | 100% | senolsun (#349) | Not yet |
-| Valencian (ca-valencia) | 1120 | 99% | rubenzori86 | Echo Show 5 2nd gen, v1.6.47 (local build) |
+| Valencian (ca-valencia) | 1122 | 100% | rubenzori86 | Echo Show 5 2nd gen, v1.6.47 (local build) |
 <!-- status:end -->
 
 Portuguese and Russian write the clock's day and date, the forecast and the weather's words;
