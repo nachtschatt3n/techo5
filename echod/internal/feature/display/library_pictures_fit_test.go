@@ -4,13 +4,16 @@ package display
 
 import (
 	"bytes"
+	"container/list"
 	"context"
 	"errors"
+	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
 	"image/png"
 	"net/http"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -151,5 +154,45 @@ func TestPictureFitDecodedSize(t *testing.T) {
 	}
 	if len(p.kept) != 2 {
 		t.Fatalf("%d pictures kept, want the fitted one and the square one", len(p.kept))
+	}
+}
+
+// A store that has seen many pictures over the size limit does not remember them all: the set is
+// bounded, and a picture that fell out of it is only asked for once more.
+func TestPictureLargeSetIsBounded(t *testing.T) {
+	p := &libPictures{asked: map[string]bool{}, failed: map[string]time.Time{}, kept: map[string]*list.Element{},
+		slots: make(chan struct{}, 1)}
+	for i := range 3 * libPicsLargeMost {
+		p.fetch(fmt.Sprintf("big %d", i), "https://example.test/big", func() (*image.RGBA, error) { return nil, errLibPicLarge })
+	}
+	if n := len(p.large); n == 0 || n > libPicsLargeMost {
+		t.Fatalf("%d pictures remembered as too large, want between 1 and %d", n, libPicsLargeMost)
+	}
+}
+
+// pictureFitKept hands back a picture that is kept and never asks for one that is not.
+func TestPictureFitKeptDoesNotAsk(t *testing.T) {
+	var asked atomic.Int32
+	was := libFetch
+	libFetch = func(context.Context, string) ([]byte, int, error) {
+		asked.Add(1)
+		return bandsPNG(t, 160, 90), http.StatusOK, nil
+	}
+	t.Cleanup(func() { libFetch = was })
+	p := &libPictures{}
+	if p.pictureFitKept("https://example.test/a.png", 80, 45) != nil || asked.Load() != 0 {
+		t.Fatalf("a picture that was never asked for: asked %d", asked.Load())
+	}
+	for i := 0; p.pictureFit("https://example.test/a.png", 80, 45) == nil; i++ {
+		if i > 500 {
+			t.Fatal("the picture never came")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if p.pictureFitKept("https://example.test/a.png", 80, 45) == nil {
+		t.Fatal("a kept picture was not handed back")
+	}
+	if p.pictureFitKept("https://example.test/a.png", 81, 45) != nil || asked.Load() != 1 {
+		t.Fatalf("another size: asked %d times", asked.Load())
 	}
 }

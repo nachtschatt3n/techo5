@@ -13,18 +13,18 @@ can be complete and still never have been looked at on a real screen.
 <!-- status:begin -->
 | Language | Strings | Coverage | Translated by | Tried on a device |
 |---|---:|---:|---|---|
-| English | 1088 | source | | |
-| Catalan (ca) | 1088 | 100% | adocampo | Echo Show 5 1st gen, v1.6.46 (local build) |
-| Dutch (nl) | 1036 | 95% | christianschmidt (#365) | Echo Show 5 1st gen, v1.6.36 (local build) |
-| French (fr) | 1088 | 100% | royto (#346) | Not yet |
-| Galician (gl) | 1088 | 100% | Xocko12 (#368) | Echo Show 5 2nd gen, v1.6.17 |
-| German (de) | 1088 | 100% | christianschmidt (#322) | Echo Show 5 1st gen, v1.6.12 (#322) |
-| Italian (it) | 1088 | 100% | angelor87 (#310, #353) | Echo Show 5 1st gen (#353) |
-| Japanese (ja) | 1088 | 100% | lem0njuice0 (#270) | Echo Show 5 2nd gen (#270) |
-| Romanian (ro) | 1088 | 100% |  | Echo Show 5 1st gen, v1.6.48 (local build) |
-| Spanish (es) | 1088 | 100% | KOPYk4T (#327), mactron254 (#608) | Echo Show 5 2nd gen, v1.6.12 (#327) |
-| Turkish (tr) | 1088 | 100% | senolsun (#349) | Not yet |
-| Valencian (ca-valencia) | 1088 | 100% | rubenzori86 | Echo Show 5 2nd gen, v1.6.47 (local build) |
+| English | 1099 | source | | |
+| Catalan (ca) | 1099 | 100% | adocampo | Echo Show 5 1st gen, v1.6.46 (local build) |
+| Dutch (nl) | 1036 | 94% | christianschmidt (#365) | Echo Show 5 1st gen, v1.6.36 (local build) |
+| French (fr) | 1099 | 100% | royto (#346) | Not yet |
+| Galician (gl) | 1099 | 100% | Xocko12 (#368) | Echo Show 5 2nd gen, v1.6.17 |
+| German (de) | 1099 | 100% | christianschmidt (#322) | Echo Show 5 1st gen, v1.6.12 (#322) |
+| Italian (it) | 1099 | 100% | angelor87 (#310, #353) | Echo Show 5 1st gen (#353) |
+| Japanese (ja) | 1099 | 100% | lem0njuice0 (#270) | Echo Show 5 2nd gen (#270) |
+| Romanian (ro) | 1099 | 100% |  | Echo Show 5 1st gen, v1.6.48 (local build) |
+| Spanish (es) | 1099 | 100% | KOPYk4T (#327), mactron254 (#608) | Echo Show 5 2nd gen, v1.6.12 (#327) |
+| Turkish (tr) | 1099 | 100% | senolsun (#349) | Not yet |
+| Valencian (ca-valencia) | 1099 | 100% | rubenzori86 | Echo Show 5 2nd gen, v1.6.47 (local build) |
 <!-- status:end -->
 
 Portuguese and Russian write the clock's day and date, the forecast and the weather's words;

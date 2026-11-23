@@ -37,6 +37,9 @@ const (
 	// cover in a grid on the Show 8 is about 230 pixels square, 210 KB.
 	libPicsMost  = 300
 	libPicsBytes = 32 << 20
+	// libPicsLargeMost is how many pictures over the size limit are remembered as such: the set is
+	// emptied when it is full, so it cannot grow with every recipe and box size that was ever drawn.
+	libPicsLargeMost = 64
 	// libPicsAtOnce is how many pictures are fetched at once, and libPicsWaiting how many may wait
 	// for their turn: a finger swiping through pages asks for every page's pictures, and the ones of
 	// the pages it went past are asked for again if it comes back.
@@ -64,6 +67,7 @@ type libPictures struct {
 	bytes   int64
 	asked   map[string]bool      // on their way
 	failed  map[string]time.Time // would not load, at
+	large   map[string]bool      // over the limit: it will be again, so it is not asked for a second time
 	slots   chan struct{}
 	changed func() // a picture arrived: the frame is drawn again
 }
@@ -145,8 +149,20 @@ func (p *libPictures) fetch(key, u string, load func() (*image.RGBA, error)) {
 	delete(p.asked, key)
 	if err != nil {
 		p.failed[key] = time.Now()
+		if errors.Is(err, errLibPicLarge) {
+			if p.large == nil || len(p.large) >= libPicsLargeMost {
+				// Forgotten, a picture over the limit is found out again by one more fetch.
+				p.large = map[string]bool{}
+			}
+			p.large[key] = true
+		}
+		changed := p.changed
 		p.mu.Unlock()
 		slog.Debug("music library picture", "host", picHost(u), "err", err)
+		// A frame that is waiting for the picture is drawn again: it may have another to draw instead.
+		if changed != nil {
+			changed()
+		}
 		return
 	}
 	delete(p.failed, key)
@@ -183,6 +199,32 @@ func (p *libPictures) pictureFitMost(u string, w, h, most int) *image.RGBA {
 		return nil
 	}
 	return p.keptOrAsk(libPicFitKey(u, w, h), u, func() (*image.RGBA, error) { return loadFitPicture(u, w, h, most) })
+}
+
+// pictureFitKept is the fitted picture of u, w by h, if it is kept, and otherwise nil, without asking
+// for it: a picture drawn while its better one is on its way.
+func (p *libPictures) pictureFitKept(u string, w, h int) *image.RGBA {
+	if u == "" || w <= 0 || h <= 0 {
+		return nil
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if el, ok := p.kept[libPicFitKey(u, w, h)]; ok {
+		p.order.MoveToFront(el)
+		return el.Value.(*libPic).img
+	}
+	return nil
+}
+
+// fitFailed is whether the fitted picture of u, w by h would not load: it is still being left alone
+// before it is asked for again (libPicRetry), or it is over the limit, which asking again does not
+// change.
+func (p *libPictures) fitFailed(u string, w, h int) bool {
+	key := libPicFitKey(u, w, h)
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	at, ok := p.failed[key]
+	return p.large[key] || (ok && time.Since(at) < libPicRetry)
 }
 
 // libPicFitKey is a fitted picture as it is kept, a box rather than a side.

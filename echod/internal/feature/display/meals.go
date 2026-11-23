@@ -435,9 +435,24 @@ func (d *Display) openRecipe(slug string, scale float64) bool {
 		scale = 1
 	}
 	meals.mu.Lock()
+	other := meals.recipe.slug != slug
 	meals.recipe.slug, meals.recipe.scale, meals.recipe.at = slug, scale, time.Now()
 	meals.view = "cooking"
+	if other {
+		// Another recipe: what went wrong with the one before is not to be shown over this one, nor
+		// waited out.
+		f := meals.feed(mealsCookID)
+		f.Err, f.fails, f.nextAt = nil, 0, time.Time{}
+		// In the same hold, a fetch of the other recipe that is on its way stops being the one wanted, so
+		// that its answer, an error included, cannot land between here and the fetch started below.
+		meals.seq++
+		f.gen = meals.seq
+	}
 	meals.mu.Unlock()
+	if other {
+		// Asked for at once, over a fetch of the other one that is on its way: its answer is dropped.
+		meals.start(mealsCookID, true)
+	}
 	d.mu.Lock()
 	up := d.customs.shown == mealsID
 	d.mu.Unlock()
