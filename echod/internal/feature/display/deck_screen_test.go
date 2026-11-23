@@ -213,6 +213,7 @@ func TestDeckLauncherWithMeals(t *testing.T) {
 	mealsSetUp(t)
 	libClient = func() (musicassistant.Client, bool) { return musicassistant.Client{URL: "http://ma.invalid"}, true }
 	_ = config.Set().Dashboard().Mode(config.DashboardStreamed)
+	_ = config.Set().Calendar().Sources([]string{"calendar.family"})
 	page := deckLauncherPage()
 	if cols, rows := page.Grid(); cols != 4 || rows != 2 {
 		t.Errorf("the launcher's grid with Meals is %dx%d", cols, rows)
