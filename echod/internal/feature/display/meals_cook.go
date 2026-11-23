@@ -74,13 +74,16 @@ type cookLine struct {
 
 // mealsCook is one recipe being cooked.
 type mealsCook struct {
-	mu      sync.Mutex
-	recipe  mealie.Recipe
-	step    int     // 0 is the overview, 1 to len(steps) the steps
-	scale   float64 // the multiple of the recipe's own amounts
-	ticked  map[int]bool
-	pills   map[[2]int]time.Time // (step, pill) to when its timer was started
-	touched time.Time            // the last touch or action: the keep-awake cap counts from here
+	mu     sync.Mutex
+	recipe mealie.Recipe
+	step   int     // 0 is the overview, 1 to len(steps) the steps
+	scale  float64 // the multiple of the recipe's own amounts
+	ticked map[int]bool
+	pills  map[[2]int]time.Time // (step, pill) to when its timer was started
+	// starting are the pills whose timer is being set as the device's own: the write to flash and the
+	// publish to Home Assistant are done with no lock held, and a second tap meanwhile finds it taken.
+	starting map[[2]int]bool
+	touched  time.Time // the last touch or action: the keep-awake cap counts from here
 }
 
 // newMealsCook starts on the overview at scale times the recipe's amounts. A scale of 0 or less is 1,
@@ -124,6 +127,11 @@ func (c *mealsCook) Step() int {
 func (c *mealsCook) Go(n int) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	return c.goLocked(n)
+}
+
+// goLocked is Go with c.mu held.
+func (c *mealsCook) goLocked(n int) bool {
 	c.touched = mealsNow()
 	n = min(max(n, 0), len(c.recipe.Steps))
 	if n == c.step {
@@ -133,11 +141,21 @@ func (c *mealsCook) Go(n int) bool {
 	return true
 }
 
-// Next moves on a page. It reports false on the last one, where the view's button is "Finish".
-func (c *mealsCook) Next() bool { return c.Go(c.Step() + 1) }
+// Next moves on a page. It reports false on the last one, where the view's button is "Finish". The page
+// it is on and the page it moves to are read and written in one hold, so a tap and the voice assistant's
+// "next" at the same moment are two pages and not one.
+func (c *mealsCook) Next() bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.goLocked(c.step + 1)
+}
 
 // Back moves back a page, false on the overview.
-func (c *mealsCook) Back() bool { return c.Go(c.Step() - 1) }
+func (c *mealsCook) Back() bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.goLocked(c.step - 1)
+}
 
 // Last is whether the cook is on the last page, the one where Next finishes.
 func (c *mealsCook) Last() bool {
@@ -311,18 +329,33 @@ func (c *mealsCook) pillsLocked() []cookPill {
 // nothing, since cancelling is on the timers' own screen.
 func (c *mealsCook) StartPill(i int) bool {
 	c.mu.Lock()
-	defer c.mu.Unlock()
 	c.touched = mealsNow()
 	pills := c.pillsLocked()
-	if i < 0 || i >= len(pills) || !pills[i].Started.IsZero() {
+	key := [2]int{c.step, i}
+	if i < 0 || i >= len(pills) || !pills[i].Started.IsZero() || c.starting[key] {
+		c.mu.Unlock()
 		return false
 	}
 	s, _ := c.current()
 	name := cookTimerName(s, c.recipe.Name, c.step)
-	if mealsTimerStart(name, pills[i].D) == "" {
+	d := pills[i].D
+	if c.starting == nil {
+		c.starting = map[[2]int]bool{}
+	}
+	c.starting[key] = true
+	c.mu.Unlock()
+
+	// Setting the timer saves the timers to flash and tells Home Assistant: the display asks this model
+	// for its frame, so it does that with the lock let go.
+	id := mealsTimerStart(name, d)
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	delete(c.starting, key)
+	if id == "" {
 		return false
 	}
-	c.pills[[2]int{c.step, i}] = mealsNow()
+	c.pills[key] = mealsNow()
 	return true
 }
 
@@ -382,6 +415,24 @@ var cooking struct {
 func mealsCookOpen(r mealie.Recipe, scale float64) *mealsCook {
 	cooking.mu.Lock()
 	defer cooking.mu.Unlock()
+	return mealsCookOpenLocked(r, scale)
+}
+
+// mealsCookOpenIf is mealsCookOpen for a fetch of the recipe that was open as slug, and it opens nothing,
+// returning nil, when that is not the open recipe any more: the fetch was on its way while another recipe
+// was opened, and what it brings must not take the place of the one being cooked. The check and the
+// replacing are one hold of the lock that keeps the recipe.
+func mealsCookOpenIf(slug string, r mealie.Recipe, scale float64) *mealsCook {
+	cooking.mu.Lock()
+	defer cooking.mu.Unlock()
+	if open, _, ok := mealsOpenRecipe(); !ok || open != slug {
+		return nil
+	}
+	return mealsCookOpenLocked(r, scale)
+}
+
+// mealsCookOpenLocked is mealsCookOpen with cooking.mu held.
+func mealsCookOpenLocked(r mealie.Recipe, scale float64) *mealsCook {
 	if c := cooking.now; c != nil && c.sameRecipe(r) && mealsNow().Sub(c.lastTouched()) <= mealsKeep {
 		c.Touched()
 		return c
@@ -404,6 +455,22 @@ func mealsCooking() *mealsCook {
 func mealsCookKept() *mealsCook {
 	c := mealsCooking()
 	if c == nil || mealsNow().Sub(c.lastTouched()) > mealsKeep {
+		return nil
+	}
+	return c
+}
+
+// mealsCookedOpen is the recipe being cooked if it is the one that is open on the page: while another
+// recipe is being loaded the one kept is still the one from before, and an action must not move that.
+func mealsCookedOpen() *mealsCook {
+	c := mealsCookKept()
+	if c == nil {
+		return nil
+	}
+	meals.mu.Lock()
+	slug := meals.recipe.slug
+	meals.mu.Unlock()
+	if slug == "" || (c.recipe.Slug != slug && c.recipe.ID != slug) {
 		return nil
 	}
 	return c

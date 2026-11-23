@@ -577,3 +577,74 @@ func TestMealsSwitcherZones(t *testing.T) {
 		}
 	}
 }
+
+// Opening another recipe forgets what went wrong with the one before, so that its error is not shown over
+// the new one, and has the new one fetched at once rather than after the backoff.
+func TestMealsOpenRecipeForgetsTheOthersError(t *testing.T) {
+	d := noticeDisplay(t, 960, 480)
+	mealsFresh(t)
+	var fetched atomic.Int32
+	registerMealsView(mealsTestView("shopping", 1, nil, nil))
+	registerMealsView(mealsTestView("cooking", 2, func(context.Context, mealie.Client) (any, error) {
+		fetched.Add(1)
+		return mealsCookData{Slug: "pancakes"}, nil
+	}, nil))
+	if !d.openRecipe("tomato-soup", 1) {
+		t.Fatal("the recipe was not opened")
+	}
+	meals.wg.Wait()
+	meals.mu.Lock()
+	f := meals.feed("cooking")
+	f.Err, f.fails, f.nextAt = mealie.ErrUnreachable, 3, time.Now().Add(2*time.Minute)
+	meals.mu.Unlock()
+	fetched.Store(0)
+
+	// The same recipe again: nothing is forgotten.
+	d.openRecipe("tomato-soup", 1)
+	meals.wg.Wait()
+	meals.mu.Lock()
+	kept := meals.feed("cooking").Err
+	meals.mu.Unlock()
+	if kept == nil || fetched.Load() != 0 {
+		t.Fatalf("reopening the same recipe: error %v, %d fetches", kept, fetched.Load())
+	}
+
+	d.openRecipe("pancakes", 1)
+	meals.wg.Wait()
+	meals.mu.Lock()
+	f = meals.feed("cooking")
+	err, fails, loaded := f.Err, f.fails, f.Loaded
+	meals.mu.Unlock()
+	if err != nil || fails != 0 || !loaded || fetched.Load() != 1 {
+		t.Fatalf("after opening another recipe: error %v after %d fails, loaded %v, %d fetches", err, fails, loaded, fetched.Load())
+	}
+}
+
+// An error that was on its way for the recipe before does not land on the one opened now, whenever it
+// comes.
+func TestMealsOpenRecipeDropsTheOthersLateError(t *testing.T) {
+	d := noticeDisplay(t, 960, 480)
+	mealsFresh(t)
+	release := make(chan struct{})
+	var calls atomic.Int32
+	registerMealsView(mealsTestView("shopping", 1, nil, nil))
+	registerMealsView(mealsTestView("cooking", 2, func(context.Context, mealie.Client) (any, error) {
+		if calls.Add(1) == 1 {
+			<-release
+			return nil, mealie.ErrUnreachable
+		}
+		return mealsCookData{Slug: "pancakes"}, nil
+	}, nil))
+	d.openRecipe("tomato-soup", 1)
+	mealsWaitFor(t, func() bool { return calls.Load() == 1 })
+	d.openRecipe("pancakes", 1)
+	close(release)
+	meals.wg.Wait()
+	meals.mu.Lock()
+	f := meals.feed("cooking")
+	err, fails, loaded := f.Err, f.fails, f.Loaded
+	meals.mu.Unlock()
+	if err != nil || fails != 0 || !loaded {
+		t.Fatalf("the other recipe's late error landed: error %v after %d fails, loaded %v", err, fails, loaded)
+	}
+}
