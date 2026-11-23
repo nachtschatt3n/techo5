@@ -14,6 +14,7 @@ func at(t *testing.T, clock *time.Time) {
 		state.now = was
 		state.mu.Lock()
 		state.sounding, state.until, state.offer = 0, time.Time{}, time.Time{}
+		state.began, state.ended = time.Time{}, time.Time{}
 		state.silences, state.snoozes, state.releases = nil, nil, nil
 		state.mu.Unlock()
 	})
@@ -122,5 +123,57 @@ func TestDoneIsIdempotent(t *testing.T) {
 	second()
 	if IsSounding() {
 		t.Fatal("still sounding after every ring finished")
+	}
+}
+
+func TestBeganIsWhenTheFirstRingStarted(t *testing.T) {
+	now := time.Unix(1_000_000, 0)
+	at(t, &now)
+	start := now
+
+	if !Began().IsZero() {
+		t.Fatal("began with nothing sounding")
+	}
+	first := Sounding()
+	now = now.Add(5 * time.Second)
+	second := Sounding()
+	if !Began().Equal(start) {
+		t.Fatalf("began = %v, want the first ring's start %v", Began(), start)
+	}
+	first()
+	if !Began().Equal(start) {
+		t.Fatal("began moved while a ring still sounded")
+	}
+	second()
+	if !Began().IsZero() {
+		t.Fatal("began is set with nothing sounding")
+	}
+}
+
+func TestTheOnsetCoversWhatCameBeforeTheRing(t *testing.T) {
+	now := time.Unix(1_000_000, 0)
+	at(t, &now)
+	start := now
+
+	if InOnset(start) {
+		t.Fatal("in an onset with nothing sounding")
+	}
+	done := Sounding()
+	defer done()
+
+	for _, c := range []struct {
+		name string
+		at   time.Time
+		want bool
+	}{
+		{"before the ring began", start.Add(-700 * time.Millisecond), true},
+		{"as it began", start, true},
+		{"just inside", start.Add(Onset - time.Millisecond), true},
+		{"at the end of the onset", start.Add(Onset), false},
+		{"well after", start.Add(5 * time.Second), false},
+	} {
+		if got := InOnset(c.at); got != c.want {
+			t.Errorf("%s: InOnset = %v, want %v", c.name, got, c.want)
+		}
 	}
 }

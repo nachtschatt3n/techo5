@@ -16,6 +16,7 @@ const (
 	routeCancelAndHangUp       // the hang-up word in a turn: the turn and the call both end, if hangUp agrees
 	routeCommand               // a command word, with no call and no talk through a camera: command.heard
 	routeCancelCall            // the stop or hang-up word before a call asked for by voice is dialed: it is not placed
+	routeRingOnset             // the stop word in the first moment of a ring: ignored, so the chime cannot stop itself
 )
 
 // heard is everything route decides on, read once where the word is heard.
@@ -29,6 +30,9 @@ type heard struct {
 	turnOpen bool // a turn is running: listening, thinking or replying
 	waiting  bool // a call is being placed and has not been dialed yet (phone.State.Waiting)
 	takes    bool // takes of a word are being recorded (feature/takes), or just were
+	// ringOnset is that a ring began a moment ago (ring.InOnset): the stop word may be hearing the
+	// chime, or a sound from before it.
+	ringOnset bool
 }
 
 // routeFor decides what a word heard in slot does.
@@ -60,11 +64,18 @@ type heard struct {
 // over: thirty takes of a wake word must not open thirty turns, nor takes of "stop" interrupt anything.
 // Only the stop word over a ring is let through, so an alarm that rings into the recording can still be
 // stopped by voice.
+//
+// In the first moment of a ring (ring.Onset) the stop word is ignored, whatever else is going on: what
+// it hears then may be the chime itself coming on, or a sound from just before it, and nobody can have
+// reacted to a ring that is only starting. Without this a chime that scored high enough would stop
+// itself.
 func routeFor(slot int, h heard) route {
 	inCall := h.phase != phone.Idle
 	switch {
 	case h.takes && !(slot == StopSlot && h.ringing):
 		return routeIgnore
+	case slot == StopSlot && h.ringOnset:
+		return routeRingOnset
 	case isCommandSlot(slot) && (inCall || h.talkBack):
 		return routeIgnore
 	case isCommandSlot(slot):

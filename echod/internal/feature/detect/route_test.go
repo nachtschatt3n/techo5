@@ -26,6 +26,12 @@ func TestRouteFor(t *testing.T) {
 		{"stop word over a ring, takes", StopSlot, heard{takes: true, ringing: true}, routeInterrupt},
 		{"wake word over a ring, takes", wake, heard{takes: true, ringing: true}, routeIgnore},
 
+		// The first moment of a ring: the chime may be what the stop word heard.
+		{"stop word in a ring's first moment", StopSlot, heard{ringing: true, ringOnset: true}, routeRingOnset},
+		{"stop word in a ring's first moment, on a call", StopSlot, heard{phase: phone.Talking, ringing: true, ringOnset: true}, routeRingOnset},
+		{"stop word in a ring's first moment, takes", StopSlot, heard{takes: true, ringing: true, ringOnset: true}, routeRingOnset},
+		{"wake word in a ring's first moment", wake, heard{ringing: true, ringOnset: true}, routeTurn},
+
 		// No call: as before any of this.
 		{"wake word, no call", wake, heard{}, routeTurn},
 		{"stop word, no call", StopSlot, heard{}, routeInterrupt},

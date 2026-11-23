@@ -2,6 +2,7 @@ package detect
 
 import (
 	"log/slog"
+	"math"
 	"sync"
 	"time"
 
@@ -63,8 +64,11 @@ type ducker struct {
 	duck    func(bool)
 	ringing func() bool
 	hush    func()
-	now     func() time.Time
-	after   func(time.Duration, func()) interface{ Reset(time.Duration) bool }
+	// began is when the ring began (ring.Began), so a near miss from before it, or from its first
+	// moment, can be told apart.
+	began func() time.Time
+	now   func() time.Time
+	after func(time.Duration, func()) interface{ Reset(time.Duration) bool }
 }
 
 // newDucker wires a ducker to the device.
@@ -76,6 +80,7 @@ func newDucker() *ducker {
 		duck:    func(on bool) { speaker.Sound().Backgrounds().Duck("near miss", on) },
 		ringing: ring.IsSounding,
 		hush:    ring.Hush,
+		began:   ring.Began,
 		now:     time.Now,
 		after: func(d time.Duration, f func()) interface{ Reset(time.Duration) bool } {
 			return time.AfterFunc(d, f)
@@ -83,14 +88,21 @@ func newDucker() *ducker {
 	}
 }
 
-// heard is called on every near miss.
-func (d *ducker) heard(slot int, peak float64) {
+// heard is called on every near miss. at is when the word peaked, which is a moment before it is told
+// (the engine reports a peak only once lower scores have followed it).
+func (d *ducker) heard(slot int, peak float64, at time.Time) {
 	// A ring is handled first and on its own terms. It is the stop word and the wake words, because
 	// those are what somebody says at a ringing alarm ("stop", or "Alexa, stop" - a wake word heard
 	// silences the ring too), and it is not gated on the media setting: that setting is about music
 	// getting out of the way, where this is about an alarm being stoppable at all.
 	if (slot == StopSlot || isWakeSlot(slot)) && d.ringing() {
-		d.hushRing(slot, peak)
+		if b := d.began(); !b.IsZero() && at.Before(b.Add(ring.Onset)) {
+			// Not a hush, and not counted against ringAgain: a real try a second later still hushes.
+			slog.Info("near miss at the start of a ring, not hushing it",
+				"slot", slot+1, "peak", peak, "before_s", math.Round(b.Add(ring.Onset).Sub(at).Seconds()*100)/100)
+		} else {
+			d.hushRing(slot, peak)
+		}
 	}
 	// The command words are listened for only while music plays, and their near misses are mostly the
 	// music: ducking for them would hold the music down for nobody.
@@ -134,7 +146,8 @@ func (d *ducker) heard(slot int, peak float64) {
 func isWakeSlot(slot int) bool { return slot >= 0 && slot < StopSlot }
 
 // hushRing holds the chime back so the next try lands in a gap, no more often than ringHushQuiet,
-// however many words nearly fire.
+// however many words nearly fire. The caller does not hush for a near miss from the first moment of a
+// ring (ring.Onset): that may be the chime itself.
 func (d *ducker) hushRing(slot int, peak float64) {
 	now := d.now()
 
@@ -167,7 +180,7 @@ func (d *ducker) restore() {
 
 // watch wires the ducker to an engine.
 func (d *ducker) watch(e *Engine) {
-	e.OnNearMiss = func(slot int, peak float64, _ time.Time) {
-		safe.Go("near miss duck", func() { d.heard(slot, peak) })
+	e.OnNearMiss = func(slot int, peak float64, at time.Time) {
+		safe.Go("near miss duck", func() { d.heard(slot, peak, at) })
 	}
 }

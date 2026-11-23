@@ -1,6 +1,11 @@
 package detect
 
-import "testing"
+import (
+	"testing"
+	"time"
+
+	"github.com/HuskerMinion/techo5/echod/internal/feature/ring"
+)
 
 // The ring gets out of the way for the stop word.
 //
@@ -12,7 +17,7 @@ func TestANearMissOnTheStopWordHushesTheRing(t *testing.T) {
 	k.ringing = true
 	k.playing = false // Only the ring is sounding; there is no music.
 
-	k.d.heard(StopSlot, 0.65)
+	k.d.heard(StopSlot, 0.65, k.clock)
 
 	if k.hushes != 1 {
 		t.Fatalf("a near miss on the stop word over a ring should hush it once, got %d", k.hushes)
@@ -26,7 +31,7 @@ func TestTheRingIsHushedEvenWithNearMissDuckingOff(t *testing.T) {
 	k.ringing = true
 	k.on = false
 
-	k.d.heard(StopSlot, 0.65)
+	k.d.heard(StopSlot, 0.65, k.clock)
 
 	if k.hushes != 1 {
 		t.Fatalf("the ring hush should not depend on the media setting, got %d hushes", k.hushes)
@@ -44,7 +49,7 @@ func TestANearMissOnAWakeWordHushesTheRing(t *testing.T) {
 		k.ringing = true
 		k.playing = false
 
-		k.d.heard(slot, 0.74)
+		k.d.heard(slot, 0.74, k.clock)
 
 		if k.hushes != 1 {
 			t.Errorf("a near miss on wake slot %d over a ring should hush it once, got %d", slot, k.hushes)
@@ -58,9 +63,9 @@ func TestWakeAndStopNearMissesShareOneHush(t *testing.T) {
 	k := newDeck()
 	k.ringing = true
 
-	k.d.heard(0, 0.70)
-	k.d.heard(1, 0.74)
-	k.d.heard(StopSlot, 0.65)
+	k.d.heard(0, 0.70, k.clock)
+	k.d.heard(1, 0.74, k.clock)
+	k.d.heard(StopSlot, 0.65, k.clock)
 
 	if k.hushes != 1 {
 		t.Fatalf("near misses on one try should hush once, got %d", k.hushes)
@@ -74,7 +79,7 @@ func TestOtherSlotsDoNotHushTheRing(t *testing.T) {
 		k := newDeck()
 		k.ringing = true
 
-		k.d.heard(slot, 0.9)
+		k.d.heard(slot, 0.9, k.clock)
 
 		if k.hushes != 0 {
 			t.Errorf("slot %d should not hush a ring, got %d", slot, k.hushes)
@@ -87,7 +92,7 @@ func TestNoRingNoHush(t *testing.T) {
 	k := newDeck()
 	k.ringing = false
 
-	k.d.heard(StopSlot, 0.9)
+	k.d.heard(StopSlot, 0.9, k.clock)
 
 	if k.hushes != 0 {
 		t.Fatalf("there is no ring to hush, got %d", k.hushes)
@@ -100,7 +105,7 @@ func TestARoomThatKeepsNearlySayingItCannotSilenceTheAlarm(t *testing.T) {
 	k := newDeck()
 	k.ringing = true
 
-	k.d.heard(StopSlot, 0.65)
+	k.d.heard(StopSlot, 0.65, k.clock)
 	if k.hushes != 1 {
 		t.Fatalf("the first near miss should hush, got %d", k.hushes)
 	}
@@ -109,7 +114,7 @@ func TestARoomThatKeepsNearlySayingItCannotSilenceTheAlarm(t *testing.T) {
 	// inside it; the twentieth would land exactly on the boundary, where a hush is due again.
 	for range 19 {
 		k.tick(ringHushQuiet / 20)
-		k.d.heard(StopSlot, 0.65)
+		k.d.heard(StopSlot, 0.65, k.clock)
 	}
 	if k.hushes != 1 {
 		t.Fatalf("hushes should not stack inside the cool-off, got %d", k.hushes)
@@ -117,7 +122,7 @@ func TestARoomThatKeepsNearlySayingItCannotSilenceTheAlarm(t *testing.T) {
 
 	// Past the window it may hush again.
 	k.tick(ringHushQuiet)
-	k.d.heard(StopSlot, 0.65)
+	k.d.heard(StopSlot, 0.65, k.clock)
 	if k.hushes != 2 {
 		t.Fatalf("a near miss after the cool-off should hush again, got %d", k.hushes)
 	}
@@ -130,12 +135,84 @@ func TestARingOverMusicHushesAndDucks(t *testing.T) {
 	k.ringing = true
 	k.playing = true
 
-	k.d.heard(StopSlot, 0.65)
+	k.d.heard(StopSlot, 0.65, k.clock)
 
 	if k.hushes != 1 {
 		t.Errorf("the ring should be hushed, got %d", k.hushes)
 	}
 	if len(k.ducked) != 1 || !k.ducked[0] {
 		t.Errorf("the music should be ducked too, got %v", k.ducked)
+	}
+}
+
+// A near miss is told only after lower scores have followed its peak, so one told in the first
+// moments of a ring peaked before the ring did, and is not the word somebody said at it.
+func TestANearMissThatPeakedBeforeTheRingDoesNotHushIt(t *testing.T) {
+	k := newDeck()
+	k.ringing = true
+	k.playing = false
+	k.began = k.clock
+
+	k.d.heard(StopSlot, 0.647, k.clock.Add(-700*time.Millisecond))
+
+	if k.hushes != 0 {
+		t.Fatalf("a near miss from before the ring should not hush it, got %d", k.hushes)
+	}
+}
+
+func TestANearMissInTheChimesFirstMomentDoesNotHushIt(t *testing.T) {
+	k := newDeck()
+	k.ringing = true
+	k.playing = false
+	k.began = k.clock
+	k.clock = k.clock.Add(time.Second)
+
+	k.d.heard(StopSlot, 0.65, k.began.Add(300*time.Millisecond))
+
+	if k.hushes != 0 {
+		t.Fatalf("a near miss in the chime's first moment should not hush it, got %d", k.hushes)
+	}
+}
+
+func TestANearMissAfterTheOnsetStillHushes(t *testing.T) {
+	k := newDeck()
+	k.ringing = true
+	k.playing = false
+	k.began = k.clock
+	k.clock = k.clock.Add(2 * time.Second)
+
+	k.d.heard(StopSlot, 0.65, k.began.Add(ring.Onset))
+
+	if k.hushes != 1 {
+		t.Fatalf("a near miss after the onset should hush, got %d", k.hushes)
+	}
+}
+
+// Skipping a hush is not hushing: the rate limit is for hushes that happened.
+func TestASkippedOnsetHushDoesNotDelayTheNextOne(t *testing.T) {
+	k := newDeck()
+	k.ringing = true
+	k.playing = false
+	k.began = k.clock
+
+	k.d.heard(StopSlot, 0.65, k.clock.Add(-500*time.Millisecond))
+	k.clock = k.clock.Add(time.Second)
+	k.d.heard(StopSlot, 0.65, k.clock)
+
+	if k.hushes != 1 {
+		t.Fatalf("the near miss after an onset one should hush, got %d", k.hushes)
+	}
+}
+
+func TestAWakeWordNearMissInTheOnsetDoesNotHushEither(t *testing.T) {
+	k := newDeck()
+	k.ringing = true
+	k.playing = false
+	k.began = k.clock
+
+	k.d.heard(0, 0.6, k.began.Add(100*time.Millisecond))
+
+	if k.hushes != 0 {
+		t.Fatalf("a wake word near miss in the onset should not hush, got %d", k.hushes)
 	}
 }

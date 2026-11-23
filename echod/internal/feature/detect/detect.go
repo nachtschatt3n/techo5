@@ -256,6 +256,8 @@ func newDetect() *Detect {
 			turnOpen: voice.Get().Busy(),
 			waiting:  st.Waiting,
 			takes:    takes.Get().Holding(),
+			// A ring that began a moment ago: see ring.Onset.
+			ringOnset: ring.InOnset(time.Now()),
 		}
 		switch routeFor(slot, h) {
 		case routeHangUp:
@@ -274,6 +276,8 @@ func newDetect() *Detect {
 		case routeCancelCall:
 			slog.Info("stop or hang-up word before a call was dialed, canceling it", "slot", slot+1)
 			phone.Get().Hangup()
+		case routeRingOnset:
+			slog.Info("stop word in the first moment of a ring, ignored", "slot", slot+1)
 		case routeEndRing:
 			slog.Info("stop word during a call, ending the ring")
 			ring.End()

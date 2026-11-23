@@ -167,6 +167,12 @@ that setting is about music getting out of the way, where this is about an alarm
 all. Rate limited to once per `3 x ring.HushFor`, so a room that keeps nearly saying it can quiet at
 most a third of a ringing alarm.
 
+A near miss whose peak came before the ring began, or within `ring.Onset` (0.6 s) of it, does not hush
+and does not use up that rate limit. The reason is that a peak is reported only `NearMissSettle`
+(0.7 s) after it happened, so one reported just after a ring starts is from before it, and what the
+chime itself scores in its first moment is not somebody speaking. For the same reason a stop word
+detection in the onset is routed to `routeRingOnset` and ignored, so the chime cannot stop itself.
+
 ### R3a - The header, from decision 3 - BUILT
 
 `header` in `feature/display/render.go`, deferred from the first line of `draw` so it runs last and
