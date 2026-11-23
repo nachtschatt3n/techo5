@@ -1146,6 +1146,16 @@ var uiEnglish = map[string]string{
 	"meals_shopping_list": "Shopping list",
 
 	// meals: the Shopping view.
+	// the Shopping view's strip: how many items are left to buy.
+	"meals_to_buy": "%d to buy",
+	// the Shopping view's heading of the folded block of checked items.
+	"meals_done_count": "Done (%d)",
+	// the Shopping view over a list with nothing left on it.
+	"meals_nothing_to_buy": "Nothing to buy",
+	// the Shopping view's strip when checking an item did not reach the server.
+	"meals_save_failed": "Couldn't save, try again",
+	// the Shopping view's pill that unchecks the item checked last.
+	"meals_undo": "Undo",
 
 	// meals: the Plan view.
 
@@ -2247,6 +2257,12 @@ var uiTranslations = map[string]map[string]string{
 		"meals_retry":         "Reintenta",
 		"meals_updated":       "actualitzat a les %s",
 		"meals_shopping_list": "Llista de la compra",
+		// meals: the Shopping view.
+		"meals_to_buy":         "%d per comprar",
+		"meals_done_count":     "Fet (%d)",
+		"meals_nothing_to_buy": "No hi ha res per comprar",
+		"meals_save_failed":    "No s'ha pogut desar, torna-ho a provar",
+		"meals_undo":           "Desfés",
 	},
 	"ca-valencia": {
 		// Valencian, as the Acadèmia Valenciana de la Llengua writes it (Catalan as it is written and
@@ -3356,6 +3372,16 @@ var uiTranslations = map[string]map[string]string{
 		"meals_shopping_list": "Llista de la compra",
 
 		// meals: the Shopping view.
+		// the Shopping view's strip: how many items are left to buy.
+		"meals_to_buy": "%d per comprar",
+		// the Shopping view's heading of the folded block of checked items.
+		"meals_done_count": "Fet (%d)",
+		// the Shopping view over a list with nothing left on it.
+		"meals_nothing_to_buy": "No hi ha res per comprar",
+		// the Shopping view's strip when checking an item did not reach the server.
+		"meals_save_failed": "No s'ha pogut desar, torna-ho a provar",
+		// the Shopping view's pill that unchecks the item checked last.
+		"meals_undo": "Desfés",
 
 		// meals: the Plan view.
 
@@ -4489,6 +4515,16 @@ var uiTranslations = map[string]map[string]string{
 		"meals_shopping_list": "Lista de la compra",
 
 		// meals: the Shopping view.
+		// the Shopping view's strip: how many items are left to buy.
+		"meals_to_buy": "%d por comprar",
+		// the Shopping view's heading of the folded block of checked items.
+		"meals_done_count": "Hecho (%d)",
+		// the Shopping view over a list with nothing left on it.
+		"meals_nothing_to_buy": "Nada por comprar",
+		// the Shopping view's strip when checking an item did not reach the server.
+		"meals_save_failed": "No se pudo guardar, inténtalo de nuevo",
+		// the Shopping view's pill that unchecks the item checked last.
+		"meals_undo": "Deshacer",
 
 		// meals: the Plan view.
 
@@ -5617,6 +5653,16 @@ var uiTranslations = map[string]map[string]string{
 		"meals_shopping_list": "Liste de courses",
 
 		// meals: the Shopping view.
+		// the Shopping view's strip: how many items are left to buy.
+		"meals_to_buy": "%d à acheter",
+		// the Shopping view's heading of the folded block of checked items.
+		"meals_done_count": "Fait (%d)",
+		// the Shopping view over a list with nothing left on it.
+		"meals_nothing_to_buy": "Rien à acheter",
+		// the Shopping view's strip when checking an item did not reach the server.
+		"meals_save_failed": "Échec de l'enregistrement, réessayez",
+		// the Shopping view's pill that unchecks the item checked last.
+		"meals_undo": "Annuler",
 
 		// meals: the Plan view.
 
@@ -6741,6 +6787,16 @@ var uiTranslations = map[string]map[string]string{
 		"meals_shopping_list": "Lista da compra",
 
 		// meals: the Shopping view.
+		// the Shopping view's strip: how many items are left to buy.
+		"meals_to_buy": "%d por mercar",
+		// the Shopping view's heading of the folded block of checked items.
+		"meals_done_count": "Feito (%d)",
+		// the Shopping view over a list with nothing left on it.
+		"meals_nothing_to_buy": "Nada por mercar",
+		// the Shopping view's strip when checking an item did not reach the server.
+		"meals_save_failed": "Non se puido gardar, téntao de novo",
+		// the Shopping view's pill that unchecks the item checked last.
+		"meals_undo": "Desfacer",
 
 		// meals: the Plan view.
 
@@ -7869,6 +7925,16 @@ var uiTranslations = map[string]map[string]string{
 		"meals_shopping_list": "Lista della spesa",
 
 		// meals: the Shopping view.
+		// the Shopping view's strip: how many items are left to buy.
+		"meals_to_buy": "%d da comprare",
+		// the Shopping view's heading of the folded block of checked items.
+		"meals_done_count": "Fatto (%d)",
+		// the Shopping view over a list with nothing left on it.
+		"meals_nothing_to_buy": "Niente da comprare",
+		// the Shopping view's strip when checking an item did not reach the server.
+		"meals_save_failed": "Impossibile salvare, riprova",
+		// the Shopping view's pill that unchecks the item checked last.
+		"meals_undo": "Annulla",
 
 		// meals: the Plan view.
 
@@ -10823,6 +10889,16 @@ var uiTranslations = map[string]map[string]string{
 		"meals_shopping_list": "買い物リスト",
 
 		// meals: the Shopping view.
+		// the Shopping view's strip: how many items are left to buy.
+		"meals_to_buy": "残り %d 件",
+		// the Shopping view's heading of the folded block of checked items.
+		"meals_done_count": "完了 (%d)",
+		// the Shopping view over a list with nothing left on it.
+		"meals_nothing_to_buy": "買うものはありません",
+		// the Shopping view's strip when checking an item did not reach the server.
+		"meals_save_failed": "保存できませんでした。もう一度お試しください",
+		// the Shopping view's pill that unchecks the item checked last.
+		"meals_undo": "元に戻す",
 
 		// meals: the Plan view.
 
@@ -12578,6 +12654,16 @@ var uiTranslations = map[string]map[string]string{
 		"meals_shopping_list": "Einkaufsliste",
 
 		// meals: the Shopping view.
+		// the Shopping view's strip: how many items are left to buy.
+		"meals_to_buy": "%d zu kaufen",
+		// the Shopping view's heading of the folded block of checked items.
+		"meals_done_count": "Erledigt (%d)",
+		// the Shopping view over a list with nothing left on it.
+		"meals_nothing_to_buy": "Nichts zu kaufen",
+		// the Shopping view's strip when checking an item did not reach the server.
+		"meals_save_failed": "Speichern fehlgeschlagen, nochmal versuchen",
+		// the Shopping view's pill that unchecks the item checked last.
+		"meals_undo": "Rückgängig",
 
 		// meals: the Plan view.
 
@@ -13692,6 +13778,16 @@ var uiTranslations = map[string]map[string]string{
 		"meals_shopping_list": "Lista de cumpărături",
 
 		// meals: the Shopping view.
+		// the Shopping view's strip: how many items are left to buy.
+		"meals_to_buy": "%d de cumpărat",
+		// the Shopping view's heading of the folded block of checked items.
+		"meals_done_count": "Gata (%d)",
+		// the Shopping view over a list with nothing left on it.
+		"meals_nothing_to_buy": "Nimic de cumpărat",
+		// the Shopping view's strip when checking an item did not reach the server.
+		"meals_save_failed": "Nu s-a putut salva, încearcă din nou",
+		// the Shopping view's pill that unchecks the item checked last.
+		"meals_undo": "Anulează",
 
 		// meals: the Plan view.
 
@@ -14821,6 +14917,16 @@ var uiTranslations = map[string]map[string]string{
 		"meals_shopping_list": "Alışveriş listesi",
 
 		// meals: the Shopping view.
+		// the Shopping view's strip: how many items are left to buy.
+		"meals_to_buy": "%d alınacak",
+		// the Shopping view's heading of the folded block of checked items.
+		"meals_done_count": "Bitti (%d)",
+		// the Shopping view over a list with nothing left on it.
+		"meals_nothing_to_buy": "Alınacak bir şey yok",
+		// the Shopping view's strip when checking an item did not reach the server.
+		"meals_save_failed": "Kaydedilemedi, tekrar dene",
+		// the Shopping view's pill that unchecks the item checked last.
+		"meals_undo": "Geri al",
 
 		// meals: the Plan view.
 
