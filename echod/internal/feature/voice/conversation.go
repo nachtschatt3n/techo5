@@ -224,6 +224,14 @@ type conversation struct {
 	followUp  bool
 	followUps int
 
+	// questions is how many follow-ups in a row opened because Home Assistant asked a question, and
+	// heldOpen that the open turn was a follow-up whose listening ran to the limit, listenFrom on: nobody
+	// in it was heard to finish. Between them they keep a question from being put to a television over
+	// and over (unheardQuestion).
+	questions  int
+	heldOpen   bool
+	listenFrom time.Time
+
 	// woke is the open turn's nextTurn.woke, asked its nextTurn.asked, and opened when it was asked
 	// for (nextTurn.at).
 	woke   bool
@@ -332,6 +340,9 @@ const drainFor = 3 * time.Second
 type nextTurn struct {
 	slot     int
 	followUp bool
+
+	// question is a follow-up Home Assistant asked for: the reply before it was a question (evContinue).
+	question bool
 
 	// woke is a turn the wake word opened, rather than a button, Home Assistant or a follow-up: the
 	// only kind that can have been opened by mistake.
@@ -620,9 +631,16 @@ func (c *conversation) turnEvent(e event) {
 		// only records the intent; evPlayed opens it.
 		// Never for realtime voice, whose next turn would not know the question (rtBackend.finish): a
 		// Home Assistant run's late question is not its.
+		// Nor when the question is more likely to have been put to a television than to anyone in the
+		// room (unheardQuestion).
 		if _, rt := c.be.(*rtBackend); c.phase != phaseIdle && !rt {
+			if why := c.unheardQuestion(); why != "" {
+				slog.Info("pipeline asked for an answer; not listening for it", "slot", c.slot+1, "why", why,
+					"questions", c.questions)
+				return
+			}
 			slog.Info("pipeline asked for an answer", "slot", c.slot+1)
-			c.pending = &nextTurn{slot: c.slot, followUp: true}
+			c.pending = &nextTurn{slot: c.slot, followUp: true, question: true}
 		}
 
 	case evHeard:
@@ -1059,6 +1077,13 @@ func (c *conversation) start(n nextTurn) (started bool) {
 	} else {
 		c.followUps = 0
 	}
+	// Home Assistant's questions in a row: any other turn starts that count again.
+	if n.question {
+		c.questions++
+	} else {
+		c.questions = 0
+	}
+	c.heldOpen = false
 
 	// Before the chime, and before Home Assistant is told anything. Ducking is what the room hears
 	// first, and it has a second of queued music to get through, so every step it waits behind is a
@@ -1109,6 +1134,7 @@ func (c *conversation) start(n nextTurn) (started bool) {
 
 	c.shown = State{}
 	c.enter(phaseListening)
+	c.listenFrom = c.now()
 	c.turn.Listening()
 	c.reply = reply{}
 
@@ -1164,12 +1190,46 @@ func endpointSettings() endpoint.Settings {
 	return s
 }
 
+// heldOpenFor is how long a follow-up has to have listened to count as having run to the limit
+// (heldOpen). Home Assistant takes whatever it has once fifteen seconds of a request have gone by
+// without its detector hearing an end, which is also the device's own Max listening time by default;
+// this is a second short of that, for the events to arrive. An answer to a question is a few words and
+// is over in a few seconds. Sound that is still going at the limit is a television, a radio or a room
+// full of voices, and with nothing to stop it, its transcript is answered with another question, and
+// the answer to that is listened for over the same sound, again and again.
+const heldOpenFor = 14 * time.Second
+
+// questionsInRow is how many of Home Assistant's questions in a row are listened for without the wake
+// word being said again. A sound with pauses in it can let Home Assistant end each listen before the
+// limit, so none of them is held open; this ends that too. An assistant that wants more answers than
+// this gets the next one after the wake word.
+const questionsInRow = 3
+
+// unheardQuestion is why a question Home Assistant has just asked is not to be listened for, or "" when
+// it is. The question is still said; nothing listens for the answer. After a wake word one always is:
+// somebody has just spoken to the device. After a follow-up that listened to the limit it is not: the
+// device heard nobody finish, and the question was very likely put to what it heard instead. Nor is one
+// past questionsInRow.
+func (c *conversation) unheardQuestion() string {
+	switch {
+	case c.heldOpen:
+		return "the follow-up listened to the limit"
+	case c.questions >= questionsInRow:
+		return "too many questions in a row"
+	}
+	return ""
+}
+
 // followsReply is whether slot listens again once the reply has been heard: after every reply while the
 // slot's follow-ups allow it, unless a turn is already owed or the answer put a page on the screen.
 //
 // A closing phrase ("thank you", "that's all") ends it, even a question Home Assistant asked: "never
 // mind" is the answer to that too (#510). With a filler before it or a word after it (#532) it may
 // have been an answer ("yes, thank you"), so a question asked back is still listened for.
+//
+// A follow-up that listened to the limit (heldOpen) is not followed by another either: what it heard
+// never stopped, so the next one would hear the same. A question Home Assistant asks after it is
+// turned down where it is asked (unheardQuestion).
 func (c *conversation) followsReply(slot int) bool {
 	asked := c.pending != nil && c.pending.followUp
 	if c.closing && (c.closingExact || !asked) {
@@ -1181,6 +1241,10 @@ func (c *conversation) followsReply(slot int) bool {
 	}
 	limit := wakeword.FollowUps(slot)
 	follow := c.pending == nil && !c.lookHere && wakeword.FollowUp(slot) > 0 && (limit == 0 || c.followUps < limit)
+	if follow && c.heldOpen {
+		slog.Info("the follow-up listened to the limit; not listening again", "slot", slot+1)
+		return false
+	}
 	if follow {
 		slog.Info("listening again after the reply", "slot", slot+1, "for", wakeword.FollowUp(slot))
 	}
@@ -1202,6 +1266,10 @@ func deviceEnds(be backend, followUp bool) bool {
 // think stops sending audio. The same animation turned around says the device has stopped listening
 // and is waiting on an answer, which is a different thing to be doing and looks like one.
 func (c *conversation) think() {
+	// Whether a follow-up listened to the limit is measured as it stops listening, whatever stopped it:
+	// Home Assistant giving up on hearing an end, the device's own limit, or a reply arriving.
+	c.heldOpen = c.followUp && c.phase == phaseListening && !c.listenFrom.IsZero() &&
+		c.now().Sub(c.listenFrom) >= heldOpenFor
 	c.stopStreaming()
 	c.enter(phaseThinking)
 	c.arm(wakeword.MaxThink(c.slot))

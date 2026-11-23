@@ -1461,6 +1461,13 @@ same in the screen's other languages). The answer to it is the last thing said, 
 listening, even after a question. Said with more, like "thanks, and what time is it?", it's an
 ordinary turn.
 
+A television, a radio or a room full of voices can keep a conversation going on its own: it wakes the
+device, the assistant asks what was meant, and what it hears next is more of the same. So the device
+stops listening after an answer, even to a question, once a follow-up heard sound to the end of its
+listening time (15 seconds in Home Assistant) without anyone finishing. It also listens for at most 3
+questions in a row before the wake word is needed again. The question is still said either way. The
+device's log then says `pipeline asked for an answer; not listening for it` with the reason.
+
 **The stop word.** Say "stop", with no wake word, while the device is making a sound: it stops a
 ringing alarm or timer, an answer, an announcement or the music. After an alarm it also lets go of a
 wake light held on. With nothing playing it does nothing, so "stop the timer" said to Home Assistant
