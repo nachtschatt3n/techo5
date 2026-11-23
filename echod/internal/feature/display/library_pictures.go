@@ -64,6 +64,7 @@ type libPictures struct {
 	bytes   int64
 	asked   map[string]bool      // on their way
 	failed  map[string]time.Time // would not load, at
+	large   map[string]bool      // over the limit: it will be again, so it is not asked for a second time
 	slots   chan struct{}
 	changed func() // a picture arrived: the frame is drawn again
 }
@@ -145,8 +146,19 @@ func (p *libPictures) fetch(key, u string, load func() (*image.RGBA, error)) {
 	delete(p.asked, key)
 	if err != nil {
 		p.failed[key] = time.Now()
+		if errors.Is(err, errLibPicLarge) {
+			if p.large == nil {
+				p.large = map[string]bool{}
+			}
+			p.large[key] = true
+		}
+		changed := p.changed
 		p.mu.Unlock()
 		slog.Debug("music library picture", "host", picHost(u), "err", err)
+		// A frame that is waiting for the picture is drawn again: it may have another to draw instead.
+		if changed != nil {
+			changed()
+		}
 		return
 	}
 	delete(p.failed, key)
@@ -183,6 +195,17 @@ func (p *libPictures) pictureFitMost(u string, w, h, most int) *image.RGBA {
 		return nil
 	}
 	return p.keptOrAsk(libPicFitKey(u, w, h), u, func() (*image.RGBA, error) { return loadFitPicture(u, w, h, most) })
+}
+
+// fitFailed is whether the fitted picture of u, w by h would not load: it is still being left alone
+// before it is asked for again (libPicRetry), or it is over the limit, which asking again does not
+// change.
+func (p *libPictures) fitFailed(u string, w, h int) bool {
+	key := libPicFitKey(u, w, h)
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	at, ok := p.failed[key]
+	return p.large[key] || (ok && time.Since(at) < libPicRetry)
 }
 
 // libPicFitKey is a fitted picture as it is kept, a box rather than a side.

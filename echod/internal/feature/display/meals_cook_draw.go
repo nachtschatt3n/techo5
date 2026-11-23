@@ -227,16 +227,7 @@ func (u *cookUIState) letGoHero() {
 
 // cookForgetPicture lets the library's store go of the photo, when it is kept.
 func cookForgetPicture(h cookHero) {
-	key := libPicFitKey(h.url, h.w, h.h)
-	p := libPics
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if el, ok := p.kept[key]; ok {
-		pic := el.Value.(*libPic)
-		p.order.Remove(el)
-		delete(p.kept, key)
-		p.bytes -= int64(len(pic.img.Pix))
-	}
+	libPics.forgetFit(h.url, h.w, h.h)
 }
 
 // debounce says whether a second activation of the button named key is a wet finger's: the first of a
@@ -299,7 +290,10 @@ func (r *renderer) cookGone(body image.Rectangle) []customZone {
 func (r *renderer) cookHeroDraw(box image.Rectangle, c *mealsCook, data mealsCookData) {
 	ui := mealsCookUI
 	url, most := data.Min, mealsPicMaxPixels
-	if box.Dx() > 640 && data.Full != "" {
+	// The original is for a box wider than the middle size is. A photo taken on a phone is bigger than the
+	// original's limit, though, and one that would not load for another reason is no better: for as long as
+	// the original is not to be had, the middle size is drawn in its place.
+	if box.Dx() > 640 && data.Full != "" && (data.Min == "" || !libPics.fitFailed(data.Full, box.Dx(), box.Dy())) {
 		url, most = data.Full, mealsPicOriginalMaxPixels
 	}
 	if url != "" {

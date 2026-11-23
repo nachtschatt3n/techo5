@@ -762,3 +762,106 @@ func TestCookHeroFreedOnClose(t *testing.T) {
 		t.Fatalf("after Finish: %d photos kept, cooking %v", kept(), mealsCooking())
 	}
 }
+
+// A recipe's photo as a phone took it is over the original's limit. A box wide enough to want the
+// original draws the middle size instead, for good, and does not ask the server for the original again.
+func TestCookHeroFallsBackToMiddleSize(t *testing.T) {
+	d, _ := cookSetUp(t, 1920, 1080)
+	var originals, middles atomic.Int32
+	phone := bandsPNG(t, 4032, 3024) // 12 million pixels
+	libFetch = func(_ context.Context, u string) ([]byte, int, error) {
+		if strings.Contains(u, "/images/original.webp") {
+			originals.Add(1)
+			return phone, http.StatusOK, nil
+		}
+		middles.Add(1)
+		return cookPNG(), http.StatusOK, nil
+	}
+	_, data := cookOpen(t, cookStepsRecipe(3), 1)
+	hero := func() int {
+		n := 0
+		b := d.r.dst.Bounds()
+		for y := b.Min.Y; y < b.Max.Y; y++ {
+			for x := b.Min.X; x < b.Max.X; x++ {
+				if c := d.r.dst.RGBAAt(x, y); c.A == 255 && c.R >= 195 && c.R <= 205 && c.G < 60 {
+					n++
+				}
+			}
+		}
+		return n
+	}
+	// The photo's own red edge is wide on the biggest canvas; the placeholder and the page have none.
+	mealsWaitFor(t, func() bool {
+		cookDrawn(d.r, data)
+		return hero() > 10000
+	})
+	if originals.Load() != 1 || middles.Load() != 1 {
+		t.Fatalf("asked for %d originals and %d middle sizes, want one of each", originals.Load(), middles.Load())
+	}
+	libPics.mu.Lock()
+	large := len(libPics.large)
+	libPics.mu.Unlock()
+	if large != 1 {
+		t.Fatalf("%d pictures remembered as too large, want the original", large)
+	}
+	for range 5 {
+		cookDrawn(d.r, data)
+	}
+	time.Sleep(20 * time.Millisecond)
+	if originals.Load() != 1 || middles.Load() != 1 {
+		t.Fatalf("after more frames: %d originals and %d middle sizes asked for", originals.Load(), middles.Load())
+	}
+}
+
+// A picture is asked for with no token on it: Mealie's media needs none, and the address of a picture
+// can be anyone's after a redirect.
+func TestPictureRequestsCarryNoToken(t *testing.T) {
+	var seen, bad atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if strings.HasPrefix(req.URL.Path, "/api/media/") {
+			seen.Add(1)
+			if req.Header.Get("Authorization") != "" {
+				bad.Add(1)
+				w.WriteHeader(http.StatusForbidden)
+				return
+			}
+			_, _ = w.Write(cookPNG())
+			return
+		}
+		if req.Header.Get("Authorization") != "Bearer token-for-a-test" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		_, _ = w.Write([]byte(`{"id":"id-soup","slug":"tomato-soup","name":"Tomato soup","image":"k1","recipeServings":4,
+			"recipeInstructions":[{"text":"Fry the onions."}]}`))
+	}))
+	t.Cleanup(srv.Close)
+	real := libFetch
+	d, _ := cookSetUp(t, 1920, 1080)
+	// The guard that keeps a picture off the device's own addresses has no use for a test server on it.
+	wasClient := libPicClient
+	libPicClient = &http.Client{Timeout: 5 * time.Second}
+	libFetch = real
+	t.Cleanup(func() { libPicClient = wasClient })
+	was := mealsClient
+	mealsClient = func() mealie.Client { return mealie.Client{URL: srv.URL, Token: "token-for-a-test"} }
+	t.Cleanup(func() { mealsClient = was })
+
+	meals.mu.Lock()
+	meals.recipe.slug, meals.recipe.scale, meals.recipe.at = "tomato-soup", 1, time.Now()
+	meals.mu.Unlock()
+	got, err := cookFetch(context.Background(), mealsClient())
+	if err != nil {
+		t.Fatal(err)
+	}
+	data := got.(mealsCookData)
+	mealsWaitFor(t, func() bool {
+		cookDrawn(d.r, data)
+		libPics.mu.Lock()
+		defer libPics.mu.Unlock()
+		return len(libPics.kept) == 1
+	})
+	if seen.Load() == 0 || bad.Load() != 0 {
+		t.Fatalf("%d picture requests, %d of them with an Authorization header", seen.Load(), bad.Load())
+	}
+}
