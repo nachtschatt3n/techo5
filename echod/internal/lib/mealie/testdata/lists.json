@@ -1,0 +1,8 @@
+{"page":1,"perPage":-1,"total":2,"totalPages":1,"next":null,"previous":null,"items":[
+ {"id":"11111111-0000-0000-0000-000000000001","name":null,"groupId":"g","userId":"u","householdId":"h","extras":{},
+  "createdAt":"2026-01-02T10:00:00","updatedAt":"2026-01-02T10:00:00","recipeReferences":[],
+  "labelSettings":[
+   {"id":"s1","shoppingListId":"11111111-0000-0000-0000-000000000001","labelId":"lab-dairy","position":1,"label":{"id":"lab-dairy","name":"Dairy","color":"#2196f3","groupId":"g"}},
+   {"id":"s2","shoppingListId":"11111111-0000-0000-0000-000000000001","labelId":"lab-produce","position":0,"label":{"id":"lab-produce","name":"Produce","color":null,"groupId":"g"}}]},
+ {"id":"11111111-0000-0000-0000-000000000002","name":"Party","createdAt":"2026-02-01T10:00:00","labelSettings":[],"someNewField":42}
+]}
