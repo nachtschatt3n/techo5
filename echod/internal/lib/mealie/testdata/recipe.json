@@ -1,0 +1,11 @@
+{"id":"r2","slug":"lasagne","name":"Lasagne","description":"A **slow** one.","image":"k3y","recipeServings":0,"recipeYieldQuantity":6,"recipeYield":"servings",
+ "totalTime":"45 min","totalTimeSeconds":2700,"prepTimeSeconds":900,"performTimeSeconds":null,"comments":[{"id":"c","text":"x"}],"settings":{"showNutrition":false},
+ "recipeIngredient":[
+  {"referenceId":"a1","title":"Sauce","quantity":500,"unit":{"name":"gram","pluralName":"grams","abbreviation":"g","pluralAbbreviation":"g","useAbbreviation":true,"fraction":false},"food":{"name":"minced beef","pluralName":null},"note":"","display":"500 g minced beef","originalText":null},
+  {"referenceId":"a2","title":null,"quantity":1,"unit":null,"food":{"name":"onion","pluralName":"onions"},"note":"diced","display":"1 onion diced"},
+  {"referenceId":"a3","title":null,"quantity":null,"unit":null,"food":null,"note":"a pinch of salt","display":"a pinch of salt"}],
+ "recipeInstructions":[
+  {"id":"s1","title":"Sauce","summary":"","text":"Fry the **onion** for 10 minutes.","ingredientReferences":[{"referenceId":"a2"},{"referenceId":"gone"}],"durationSeconds":null},
+  {"id":"s2","title":null,"summary":"Rest","text":"","ingredientReferences":[],"durationSeconds":600},
+  {"id":"s3","title":"Bake","summary":null,"text":"","ingredientReferences":[]},
+  {"id":"s4","title":null,"summary":null,"text":"","ingredientReferences":[]}]}
