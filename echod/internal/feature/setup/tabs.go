@@ -233,7 +233,7 @@ var tabFor = map[string]string{
 	"timer_cancel": "alarms", "snoozes_cancel": "alarms", "haalarms": "alarms",
 
 	"screen": "screen", "themes": "screen", "theme-colors": "screen", "font-remove": "screen", "fonts": "screen",
-	"dashpanel": "screen", "dashboard": "screen", "calendar-look": "screen", "todo": "screen",
+	"dashpanel": "screen", "dashboard": "screen", "calendar-look": "screen", "todo": "screen", "mealie": "screen",
 	"immich": "screen", "immich-album": "screen", "immich-show": "screen", "immich-forget": "screen",
 	"photos-remove": "screen", "photos": "screen", "video": "screen",
 	"deckobs": "screen", "deckgrid": "screen", "deckpage": "screen", "deckpc": "screen", "deck": "screen",

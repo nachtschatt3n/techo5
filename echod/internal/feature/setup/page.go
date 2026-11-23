@@ -334,6 +334,8 @@ func (f *Feature) save(w http.ResponseWriter, r *http.Request) {
 		problem = saveBrain(r)
 	case "music":
 		problem = saveMusic(r)
+	case "mealie":
+		problem = saveMealie(r)
 	case "streaming":
 		problem = saveStreaming(r)
 	case "bluetooth":
@@ -656,6 +658,7 @@ func (f *Feature) drawTab(ctx context.Context, w http.ResponseWriter, token, tab
 		dashboardSection(w, token)
 		calendarLookSection(w, token)
 		todoSection(w, token)
+		mealieSection(ctx, w, token)
 		fmt.Fprint(w, `<h3>Photos and video</h3>`)
 		immichSection(w, token)
 		photosSection(w, token)
