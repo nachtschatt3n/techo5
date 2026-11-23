@@ -23,7 +23,7 @@ jobs:
           - mealie/t9-pr4
           - mealie/t9-pr5
           - mealie/t9-pr6
-          - mealie/t9-pr7
+          - mealie/t9-pr7b
           - mealie/t9
           - mealie/t9-preview
     steps:
