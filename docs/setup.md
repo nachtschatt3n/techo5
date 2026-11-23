@@ -1185,6 +1185,24 @@ shopping items. The two choices are also entities in Home Assistant: **Meals sho
 asked it; until then, or when Mealie cannot be reached, it offers only **The first list** and the saved
 choice. The address and the token are set only on this page, like Music Assistant's.
 
+**The page.** Meals is a full screen of its own, with the **Shopping** and **Plan** views along the
+top. Either of two ways brings it up: choose *Meals* in Home Assistant's **Idle screen** select, and it
+stands in for the clock whenever the clock would be there; or swipe in from the left edge of the clock,
+which opens the screen shown last when no dashboard is set up. The × or a swipe in from the left edge
+puts it away for two minutes.
+
+- **Shopping** is one of Mealie's shopping lists, grouped by label as Mealie groups it. Tap an item to
+  check it off; the box flips at once and Mealie is told in the background. The items already checked
+  are in a **Done** block at the foot, folded until you tap it, and a tap on one unchecks it. **Undo**
+  takes back the last check, and a check that did not reach Mealie turns back with a short note. With
+  more than one list, tap the list's name to turn to the next. The list is read again every half minute
+  while it is on the screen.
+- **Plan** is the next seven days of Mealie's meal plan, a card for each day, today first, with each
+  entry's picture, name and how long it takes. What is planned for the whole week has a **This week**
+  card before today's. Swipe sideways to move over the days, or up and down on a screen held upright.
+- When Mealie cannot be reached, the page keeps showing what it last had, marked **Offline, as of** the
+  time it is from, with a **Retry** pill.
+
 **Troubleshooting Meals.** "Refused the token": Mealie did not accept it, or it was made for another
 user; make a new one and save it. "Use the https address": put the `https` address in. Not the lists
 you expected: the token's household is the one shown, so make the token while signed in to the other
