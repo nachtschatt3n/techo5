@@ -12,7 +12,10 @@ import (
 	"unicode"
 
 	"github.com/HuskerMinion/techo5/echod/internal/config"
+	"github.com/HuskerMinion/techo5/echod/internal/lib/hook"
 	"github.com/HuskerMinion/techo5/echod/internal/lib/mealie"
+	"github.com/HuskerMinion/techo5/echod/internal/lib/safe"
+	"github.com/HuskerMinion/techo5/echod/internal/update"
 )
 
 // The Meals card: the Mealie server (config.Mealie) whose shopping list, meal plan and recipes the
@@ -34,6 +37,18 @@ type mealieAnswer struct {
 	listed bool
 }
 
+// MealieNote is what the screen is told of the Meals settings: that they were saved here, or the shopping
+// lists Mealie answered with. The device's own entities (feature/display/meals_entities.go) listen, so
+// the list the select offers is the one this card was just shown, without a request of their own.
+type MealieNote struct {
+	// Lists are the shopping lists Mealie named; only meaningful when Listed.
+	Lists  []mealie.ListSummary
+	Listed bool
+}
+
+// MealieNoted fires after a settings save and after each lookup that got Mealie's lists.
+var MealieNoted hook.Hook[MealieNote]
+
 // mealieLookup keeps Mealie's answer (lookup.go): up to three questions, bounded together.
 var mealieLookup = &lookup[mealieAnswer]{ask: 8 * time.Second}
 
@@ -54,6 +69,7 @@ func askMealie(ctx context.Context, m config.Mealie) mealieAnswer {
 		return a
 	}
 	a.lists, a.listed = lists, true
+	MealieNoted.Emit(MealieNote{Lists: lists, Listed: true})
 	return a
 }
 
@@ -126,6 +142,39 @@ func mealieIDOK(v string) bool {
 	return true
 }
 
+// mealieCardSave is the card's Save: saveMealie, and a restart of the daemon when the save set Mealie up
+// or took it away. Home Assistant has the Meals entities, and Meals among the Idle screen's and Tap on the
+// clock's choices, only on a device with Mealie set up, and reads which entities a device has only when the
+// daemon starts (feature/display/meals_entities.go), so they come and go with the restart. A save that
+// leaves it set up, or not, restarts nothing. done is what the page says of it: the restart, or nothing for
+// the usual "Saved."
+func mealieCardSave(r *http.Request) (problem, done string) {
+	was := config.Get().Mealie.Set()
+	if problem = saveMealie(r); problem != "" {
+		return problem, ""
+	}
+	now := config.Get().Mealie.Set()
+	if now == was {
+		return "", ""
+	}
+	why := "mealie removed"
+	if now {
+		why = "mealie set up"
+	}
+	slog.Info("setup page: restarting so Home Assistant sees Meals", "set_up", now)
+	mealieRestart(why)
+	return "", "restarting"
+}
+
+// mealieRestart restarts the daemon a moment after the save, as a rename does (rename.go): long enough for
+// the page to answer first. The daemon restarts, not the device. Replaced in tests.
+var mealieRestart = func(why string) {
+	safe.Go("restart for meals", func() {
+		time.Sleep(3 * time.Second)
+		update.Restart(why)
+	})
+}
+
 func saveMealie(r *http.Request) string {
 	if !hasMeals {
 		return "this device has no Meals page"
@@ -173,6 +222,7 @@ func saveMealie(r *http.Request) string {
 		}
 	}
 	mealieLookup.forget() // the next draw asks the server as it is now saved
+	MealieNoted.Emit(MealieNote{})
 	slog.Info("setup page: mealie set", "token", tok != nil, "list", list != "")
 	return ""
 }

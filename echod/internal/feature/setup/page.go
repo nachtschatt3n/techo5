@@ -265,7 +265,7 @@ func (f *Feature) save(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var problem string
+	var problem, done string
 	var renamed bool
 	switch what := r.PostFormValue("what"); what {
 	case "wifi":
@@ -335,7 +335,7 @@ func (f *Feature) save(w http.ResponseWriter, r *http.Request) {
 	case "music":
 		problem = saveMusic(r)
 	case "mealie":
-		problem = saveMealie(r)
+		problem, done = mealieCardSave(r)
 	case "streaming":
 		problem = saveStreaming(r)
 	case "bluetooth":
@@ -441,7 +441,10 @@ func (f *Feature) save(w http.ResponseWriter, r *http.Request) {
 	}
 
 	what := r.PostFormValue("what")
-	to := back(what, "saved", doneCode(what, r))
+	if done == "" {
+		done = doneCode(what, r)
+	}
+	to := back(what, "saved", done)
 	if renamed {
 		to = back(what, "renamed", "1")
 	}
@@ -470,6 +473,7 @@ var doneSaid = map[string]string{
 	"reached":    "The trainer answered.",
 	"trusted":    "Trusted. Test it again.",
 	"tested":     "The add-on says these settings work. They are not saved until Save is pressed.",
+	"restarting": "Saved. The device's software restarts to show the change in Home Assistant, and is back in a minute or so.",
 }
 
 // doneWords is what the page says for a redirect's code; anything else is a save.
