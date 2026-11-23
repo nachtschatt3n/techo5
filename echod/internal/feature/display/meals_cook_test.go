@@ -4,6 +4,7 @@ package display
 
 import (
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -397,5 +398,99 @@ func TestCookStateKept30Min(t *testing.T) {
 	}
 	if n := mealsCookOpen(other, 1); n.Step() != 0 || n.Scale() != 1 {
 		t.Fatal("a reopening after 30 minutes kept the step")
+	}
+}
+
+// A tap and the voice assistant's "next" at the same moment are two pages, not one: the page moved from is
+// read and the page moved to written in one hold.
+func TestCookNextIsAtomic(t *testing.T) {
+	cookClockAt(t)
+	r := cookRecipe()
+	r.Steps = nil
+	for range 400 {
+		r.Steps = append(r.Steps, mealie.Step{Text: "Stir."})
+	}
+	c := newMealsCook(r, 1)
+	var wg sync.WaitGroup
+	for range 2 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for range 150 {
+				c.Next()
+			}
+		}()
+	}
+	wg.Wait()
+	if c.Step() != 300 {
+		t.Fatalf("300 Next from two hands left the cook on %d", c.Step())
+	}
+	for range 2 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for range 100 {
+				c.Back()
+			}
+		}()
+	}
+	wg.Wait()
+	if c.Step() != 100 {
+		t.Fatalf("200 Back from two hands left the cook on %d", c.Step())
+	}
+}
+
+// Setting the timer saves it to flash and tells Home Assistant, and the display's frame asks this model
+// for what it draws: the frame is not held up by the write, and a second tap while it is being set does
+// not start a second timer.
+func TestCookStartPillHoldsNoLockWhileStarting(t *testing.T) {
+	cookClockAt(t)
+	c := newMealsCook(cookRecipe(), 1)
+	c.Go(1)
+	in, release := make(chan struct{}), make(chan struct{})
+	var started int
+	was := mealsTimerStart
+	mealsTimerStart = func(string, time.Duration) string {
+		started++
+		close(in)
+		<-release
+		return "t1"
+	}
+	t.Cleanup(func() { mealsTimerStart = was })
+	done := make(chan bool)
+	go func() { done <- c.StartPill(0) }()
+	<-in
+	frame := make(chan struct{})
+	go func() {
+		c.Step()
+		c.Pills()
+		c.Lines()
+		close(frame)
+	}()
+	select {
+	case <-frame:
+	case <-time.After(5 * time.Second):
+		close(release)
+		t.Fatal("a frame waited for the timer to be set")
+	}
+	if c.StartPill(0) {
+		t.Error("a second tap started a second timer while the first was being set")
+	}
+	close(release)
+	if !<-done || started != 1 {
+		t.Fatalf("the timer was not started once (started %d)", started)
+	}
+	if c.Pills()[0].Started.IsZero() {
+		t.Error("the pill does not show as started")
+	}
+	// A timer that could not be set leaves the pill free to be tried again.
+	c.Go(2)
+	mealsTimerStart = func(string, time.Duration) string { return "" }
+	if c.StartPill(0) || !c.Pills()[0].Started.IsZero() {
+		t.Error("a pill whose timer was not set shows as started")
+	}
+	mealsTimerStart = func(string, time.Duration) string { return "t2" }
+	if !c.StartPill(0) {
+		t.Error("the pill could not be tried again")
 	}
 }
