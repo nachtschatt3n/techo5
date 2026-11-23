@@ -24,9 +24,10 @@ const nightNever = ""
 
 // Actions: screen_night_hours sets the night to any start and end, "19:00" and "09:30"; both empty is
 // no night. screen_weekend_night_hours sets the weekend's the same way; both empty is the same as every
-// other night. The rest put a page up from an automation: the calendar, the forecast, the rain map.
+// other night. The rest put a page up from an automation: the calendar, the forecast, the rain map,
+// and the Meals page (mealsActions, in meals_actions.go).
 func (d *Display) Actions() []*esphome.Action {
-	return []*esphome.Action{{
+	return append([]*esphome.Action{{
 		Name: "screen_night_hours",
 		Args: []esphome.Arg{{Name: "start", Type: esphome.ArgString}, {Name: "end", Type: esphome.ArgString}},
 		Run:  func(c esphome.Call) (any, error) { return nil, d.setNightHours(c.String("start"), c.String("end")) },
@@ -64,7 +65,7 @@ func (d *Display) Actions() []*esphome.Action {
 	}, {
 		Name: "radar_show",
 		Run:  func(esphome.Call) (any, error) { return nil, d.weatherShown(true) },
-	}}
+	}}, d.mealsActions()...)
 }
 
 // weatherShown is the weather_show and radar_show actions: the forecast or the rain map, as a tap on
