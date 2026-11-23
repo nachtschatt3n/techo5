@@ -71,7 +71,7 @@ func (d *Display) buildMealsEntities() {
 	m.awake = &esphome.Switch{
 		Base: esphome.Base{
 			ObjectID: "meals_keep_awake",
-			Name:     "Keep the screen on while cooking",
+			Name:     "Meals keep the screen on",
 			Icon:     "mdi:chef-hat",
 			Category: esphome.CategoryConfig,
 		},
