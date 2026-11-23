@@ -217,6 +217,17 @@ func Restored(cur Config, file []byte, model string) (Restoration, error) {
 			c.Wake.Words[i].Realtime = false
 		}
 	}
+	// Which microphones the echo canceller reads is a property of the board: what was measured or chosen
+	// on a Dot's seven says nothing about a Show's two. A file from another model leaves it as this device
+	// has it, set here or following its own board; one from the same model (a reinstall, or a second Show
+	// of the same kind) brings it.
+	if other {
+		c.Microphone.CancelOnMix = nil
+		if cur.Microphone.CancelOnMix != nil {
+			v := *cur.Microphone.CancelOnMix
+			c.Microphone.CancelOnMix = &v
+		}
+	}
 	c.Device = cur.Device
 	r.Config, r.Changed, r.Servers = c, Changed(cur, c), serverChanges(cur, c)
 	if other {

@@ -109,6 +109,33 @@ type canceller struct {
 	// with nothing playing before the turn does the count say the reply alone was learned over or not
 	// (the turn logs that itself, feature/voice learnOverReply). Reader-only, like hold.
 	learned int
+
+	// path is the one the filter last read (cancelInput), so that follow can tell when it moved.
+	// Reader-only.
+	path cancelPath
+}
+
+// follow is told, before every frame it cancels, which path that frame comes from. When it is not the
+// one the filter learned, the built-in filter forgets what it knew and learns again: the path from the
+// speaker to one microphone is not the path to the average of them, and taps fitted to one are wrong
+// for the other (aec.Canceller.Reset says the same). It is the path that counts, not either setting that
+// chooses it: the switch moves it only where the mixing is not Center, and with the switch on a change of
+// mixing moves it (Center to All microphones) or does not (All microphones to Beamformer, which is
+// canceled on the average too). A filter starting from nothing cancels nothing, which is the device
+// without a canceller, until it has learned the new path: about half a second of playback (cancelMu), or
+// the end of the turn if the path moves while somebody is being listened to and the learning is held
+// (SetAdapting). WebRTC's canceller is left as it is: it adapts to a changed echo path on its own, and
+// restarting the helper would cost more than it relearns. The built-in filter starts over even while
+// WebRTC's runs, so that it does not take up the old path if the helper fails.
+func (c *canceller) follow(path cancelPath) {
+	if c.path == path {
+		return
+	}
+	was := c.path
+	c.path = path
+	c.filter.Load().Reset()
+	slog.Info("echo cancellation input changed, the built-in filter starts over",
+		"from", was.String(), "to", path.String(), "engine", c.engine)
 }
 
 func newCanceller() *canceller {
@@ -320,6 +347,23 @@ func (s *Source) SetCanceling(on bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.canceling = on
+}
+
+// SetCancelOnMix chooses which microphones the echo canceller reads while something plays: the mix
+// (with a steered mix, the plain average) or the center microphone alone. It takes effect on the next
+// frame, with no restart: the canceller notices there when its path moved and starts over (follow).
+// Which one is better is the board's to measure (DefaultCancelOnMix), and this is how to measure it.
+func (s *Source) SetCancelOnMix(on bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.cancelOnMix = on
+}
+
+// CancelOnMix reports whether the echo canceller reads the mix rather than the center microphone.
+func (s *Source) CancelOnMix() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.cancelOnMix
 }
 
 // SetCancelEngine chooses which canceller runs — "builtin" or "webrtc" — and reports what it

@@ -128,6 +128,7 @@ var registered = []string{
 	"microphone_asp_active",
 	"microphone_asp_selected",
 	"microphone_cancel_echo",
+	"microphone_cancel_echo_all_mics",
 	"microphone_echo_canceller",
 	"microphone_end_of_speech",
 	"microphone_end_of_speech_pause",

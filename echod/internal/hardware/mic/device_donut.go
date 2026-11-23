@@ -35,9 +35,10 @@ const (
 	// CenterMic: the Dot 3 has no center microphone, so ch0 stands in, as on the Show 8.
 	CenterMic = 0
 
-	// CancelOnMix runs the echo canceller on the mix rather than one microphone. Off until it is
+	// DefaultCancelOnMix is where the "Echo cancellation on all microphones" switch starts: whether the
+	// echo canceller runs on the mix rather than one microphone (cancelInput). Off until it is
 	// measured on this device.
-	CancelOnMix = false
+	DefaultCancelOnMix = false
 
 	donutMicDevice = 1
 	donutRefDevice = 7

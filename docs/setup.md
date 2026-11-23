@@ -1341,6 +1341,33 @@ before that moment and be lost. Turn this on to reach back a quarter of a second
 with no wake sound does. It only takes effect with **Microphone echo cancellation** on, and the end of
 the wake word then reaches speech-to-text with the request.
 
+**Echo cancellation on all microphones** is a switch in Home Assistant (the device's microphone
+settings), on by default on the Echo Dot 2nd gen and the Echo 2nd gen and off on every other device.
+It chooses what the echo canceller works on while the device plays something. Off, it works on one
+microphone (the middle one on the Echo Dot 2nd gen and the Echo 2nd gen, the first one elsewhere), and
+that microphone alone is what the wake word, the stop word and speech-to-text hear over the device's own
+sound, whatever **Microphone mixing** says; the mix comes back about a second after the sound stops.
+On, it works on the mix itself, so they keep hearing every microphone over music and replies too. With
+**Delay and sum** or **Beamformer** it works on the plain average of all the microphones instead, since
+a mix that steers would turn toward the speaker it is canceling. On an Echo Dot 2nd gen the average of
+its seven microphones heard speech over music 5.4 dB better than the canceled middle one with the
+built-in canceller, for the same processor time; with WebRTC's canceller the gain was about 2 dB, and it
+caught no more wake words over loud music. On the other devices it has not been measured yet, which is
+why it starts off there, and fewer microphones (two on a Show 5, four on a Show 8 or a Spot) leave less
+to gain. On a Show 5 whose kernel still averages its two microphones into both channels
+([Two microphones](hardware.md#two-microphones-and-why-the-stream-showed-one)) it changes nothing.
+To try it, play music at a volume you use, say the wake word a few times with the switch off and a few
+times with it on, and compare the scores ([Watching the wake word scores](#watching-the-wake-word-scores)).
+
+It takes effect at once, without a restart. The built-in canceller starts learning from nothing when what
+it reads moves (this switch, or **Microphone mixing** changed while it is on), so the first half second of
+sound after a change comes through less canceled (all of a request, if you change it while the device is
+listening); WebRTC's canceller adapts by itself. With **Microphone mixing** on **Center mic** the
+switch changes nothing, since the mix is then the one microphone it would read anyway. It needs
+**Microphone echo cancellation** on, and on a TECHO5 Panel, with one microphone, it changes nothing. It
+is not shared with the other devices. A settings file carries it only once it has been switched, and
+only to a device of the same model: restoring one made on a Dot leaves a Show as it was.
+
 On the setup page (Sound) or in Home Assistant, **Night volume** turns the device down to that
 level as quiet hours start, if it is louder, and back to where it was as they end. Turned up or down
 during the night, it stays where it was put. Changing Night volume during the night moves the device to

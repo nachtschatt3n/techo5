@@ -85,9 +85,11 @@ type Source struct {
 	mixing config.Mixing
 
 	// cancel belongs to the reader alone. canceling is the switch, which anything may set, and is read
-	// under mu with the mixer.
-	cancel    *canceller
-	canceling bool
+	// under mu with the mixer. cancelOnMix is the same kind of switch, for which microphones the
+	// canceller reads (cancelInput).
+	cancel      *canceller
+	canceling   bool
+	cancelOnMix bool
 
 	// leveler and wasLeveling belong to the reader alone; leveling is the switch, which anything may
 	// set.
@@ -143,14 +145,20 @@ func New() *Source {
 		aspOpen: func(ctx context.Context, d asp.Descriptor) (aspProcess, error) {
 			return asp.Start(ctx, d)
 		},
-		raw:       map[int]chan []byte{},
-		mixer:     mixer,
-		mixing:    mixing,
-		leveler:   newLeveler(),
-		finder:    NewBeamformer(),
-		cancel:    newCanceller(),
-		canceling: config.Get().Microphone.Cancel,
-		denoiser:  denoise.NewStream(Rate),
+		raw:         map[int]chan []byte{},
+		mixer:       mixer,
+		mixing:      mixing,
+		leveler:     newLeveler(),
+		finder:      NewBeamformer(),
+		cancel:      newCanceller(),
+		canceling:   config.Get().Microphone.Cancel,
+		cancelOnMix: config.Get().Microphone.CancelOnMixOr(DefaultCancelOnMix),
+		denoiser:    denoise.NewStream(Rate),
+	}
+	if s.cancel != nil {
+		// The filter starts out reading the path the setting names, so the first frame is not taken
+		// for a change of path (canceller.follow).
+		s.cancel.path = cancelPathOf(s.mixer, s.cancelOnMix)
 	}
 	s.finder.hold = 1
 	s.facing.Store(-1)
@@ -484,7 +492,9 @@ func (s *Source) broadcastSelected(raw []byte, cut bool, external *aspResponse) 
 	// is as often a powered speaker in the same room (AUX) as headphones, and where nothing in the room
 	// hears the playback the filter finds no echo and passes the microphone through.
 	if s.canceling && s.cancel != nil {
-		if canceled := s.cancel.apply(raw, cancelInput(s.mixer, mics, frame)); canceled != nil {
+		input, path := cancelInput(s.mixer, mics, frame, s.cancelOnMix)
+		s.cancel.follow(path)
+		if canceled := s.cancel.apply(raw, input); canceled != nil {
 			frame = canceled
 		}
 	}

@@ -52,24 +52,59 @@ func (Center) Mix(mics [][]int16) []int16 {
 	return mics[CenterMic]
 }
 
-// fixedPath marks a mix whose acoustic path never moves, which is what an echo canceller can learn.
-// Anything that steers is not one.
-type fixedPath interface{ fixedPath() }
+// fixedPath marks a mix whose acoustic path never moves, which is what an echo canceller can learn, and
+// says which one it is. Anything that steers is not one.
+type fixedPath interface{ cancelPath() cancelPath }
 
-func (Center) fixedPath()  {}
-func (Average) fixedPath() {}
+func (Center) cancelPath() cancelPath  { return pathCenter }
+func (Average) cancelPath() cancelPath { return pathAverage }
 
-// cancelInput is what the echo canceller reads for this frame. Where CancelOnMix, a fixed mix is
-// canceled as it is, and a steered one falls back to the plain average, the fixed path nearest to it;
-// otherwise it is the center microphone, whatever the mix.
-func cancelInput(m Mixer, mics [][]int16, mixed []int16) []int16 {
-	if !CancelOnMix {
-		return mics[CenterMic]
+// cancelPath is which signal the echo canceller reads: what its filter learns the speaker's path to. Two
+// settings choose it together, the "Echo cancellation on all microphones" switch and Microphone mixing,
+// and the canceller starts over whenever it moves (canceller.follow), whichever of them moved it.
+type cancelPath uint8
+
+const (
+	// pathCenter is the center microphone alone (ch0 where a board has no center).
+	pathCenter cancelPath = iota
+	// pathAverage is every microphone averaged.
+	pathAverage
+)
+
+func (p cancelPath) String() string {
+	if p == pathAverage {
+		return "average"
+	}
+	return "center"
+}
+
+// cancelPathOf is the path the canceller reads under mixer m with the switch at onMix (cancelInput). With
+// one microphone the average is that microphone, so it is the one path either way, and turning the switch
+// on a TECHO5 Panel does not throw away what its filter learned.
+func cancelPathOf(m Mixer, onMix bool) cancelPath {
+	if !onMix || Mics == 1 {
+		return pathCenter
+	}
+	if f, ok := m.(fixedPath); ok {
+		return f.cancelPath()
+	}
+	return pathAverage
+}
+
+// cancelInput is what the echo canceller reads for this frame, and which path that is. With onMix (the
+// "Echo cancellation on all microphones" switch, which starts at the board's DefaultCancelOnMix), a fixed
+// mix is canceled as it is, and a steered one falls back to the plain average, the fixed path nearest to
+// it; otherwise it is the center microphone, whatever the mix. Center mixing with the switch on is the
+// center microphone too, so flipping the switch there does not move the path.
+func cancelInput(m Mixer, mics [][]int16, mixed []int16, onMix bool) ([]int16, cancelPath) {
+	path := cancelPathOf(m, onMix)
+	if path == pathCenter {
+		return mics[CenterMic], path
 	}
 	if _, ok := m.(fixedPath); ok && mixed != nil {
-		return mixed
+		return mixed, path
 	}
-	return Average{}.Mix(mics)
+	return Average{}.Mix(mics), path
 }
 
 type mix struct {
