@@ -438,6 +438,7 @@ type Display struct {
 	popupQueue []hass.Event         // due while another was up: shown next
 	popupGone  map[string]time.Time // events tapped away on another device (popupMatch), and when; kept in the config too
 	pop        popupEntities        // the pop-ups' settings in Home Assistant
+	meals      mealsEntities        // the Meals page's two choices in Home Assistant (meals_entities.go)
 
 	// The alert page (alerts.go): up until alertUntil, on alertIdx of the alerts at home, scrolled
 	// alertScroll lines.
@@ -616,6 +617,8 @@ func build() *Display {
 	d.liftSw = adaptiveBacklightSwitch(d)
 	d.buildPopupEntities()
 	d.buildLookEntities()
+	d.buildMealsEntities()
+	d.listenMeals()
 	d.atNight = atNightSelect(d)
 	d.nightMode = nightModeSwitch(d)
 	d.glowLevel = glowNumber(d)
@@ -718,7 +721,7 @@ func (d *Display) clockTapSel() *esphome.Select { return d.clockTap }
 
 func (d *Display) Entities() []esphome.Entity {
 	ents := append([]esphome.Entity{d.light, d.power, d.roomSw, d.auto, d.clock, d.clockStyleSel, d.clockPos, d.dateCol, d.weatherPos, d.glanceSz, d.glanceMus, d.camTime, cameraFitSel, cameraBandsSel, cameraShadeSel, d.answerTime, d.turnStyle, d.timerStyle, d.skinSl, d.callBtn, d.saverBtn, d.callScreenSel, d.weatherFx, d.warmthSw, d.lang, d.strip, d.themeSel, d.lightThemeSel, d.themeModeSel, d.nightHours, d.nightStart, d.nightEnd, d.weekendStart, d.weekendEnd, d.nightMode, d.atNight, d.nightStyle, d.glowLevel, d.dimmestNum, d.idleDimSel, d.dimBtn, d.dimSensor,
-		d.pop.on, d.pop.lead, d.pop.chime, d.pop.allDay, d.pop.shown, d.pop.popping, d.clockTap, d.styleSwipeSw, d.volumeSwipeSw, d.nightTapSw, d.nightInfoSw, d.fontSel, d.textSizeSel}, d.lookEnts...)
+		d.pop.on, d.pop.lead, d.pop.chime, d.pop.allDay, d.pop.shown, d.pop.popping, d.clockTap, d.styleSwipeSw, d.volumeSwipeSw, d.nightTapSw, d.nightInfoSw, d.fontSel, d.textSizeSel, d.meals.list, d.meals.awake}, d.lookEnts...)
 	if !screen.CanTint {
 		// Night warmth tints the frame on its way to the panel, which a tablet's screen does not take.
 		ents = slices.DeleteFunc(ents, func(e esphome.Entity) bool { return e == esphome.Entity(d.warmthSw) })
@@ -732,7 +735,10 @@ func (d *Display) Entities() []esphome.Entity {
 	if nightAlarmHere() {
 		ents = append(ents, d.nightAlarmSw)
 	}
-	if len(offeredScreens()) > 0 {
+	// Listed on any build that has a custom screen, offered or not: the entities are announced once, when
+	// Home Assistant connects, and a screen that becomes offered later (Mealie set up on the setup page)
+	// has to find the select already there. Its options follow the offer (refreshIdleScreen).
+	if len(customScreens) > 0 {
 		ents = append(ents, d.idleScreenSel)
 	}
 	return ents
@@ -785,6 +791,7 @@ func (d *Display) Restore(c config.Config) {
 	d.liftSw.Set(c.Screen.AdaptiveBacklight)
 	d.popupSettingsChanged()
 	d.lookChanged()
+	d.mealsChanged()
 	d.glowLevel.Set(float32(d.glowSetting()))
 	d.dimmestNum.Set(float32(dimmestSetting()))
 	d.restoreLightOff(c.Alarms.HeldDark, time.Now())
