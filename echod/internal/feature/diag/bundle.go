@@ -151,7 +151,7 @@ func otherDevices(c config.Config) []string {
 // and show where the word is.
 func secrets(c config.Config) []string {
 	all := []string{c.CamStream.Pass, c.Remote.Secret, c.Home.HouseWord, c.Home.Immich.Key, c.Wake.Send.Token, c.Home.Reolink.Pass,
-		c.Brain.Key, c.Dashboard.Key, c.MusicAssistant.Token, c.Deck.OBS.Password, c.Realtime.Key, c.Realtime.MCPToken,
+		c.Brain.Key, c.Dashboard.Key, c.MusicAssistant.Token, c.Mealie.Token, c.Deck.OBS.Password, c.Realtime.Key, c.Realtime.MCPToken,
 		c.Security.ScreenKey, c.Security.BabyKey, c.Security.LockPIN, c.TalkBack.Pass}
 	for _, pc := range c.Deck.Computers {
 		all = append(all, pc.Key) // each computer's pairing key
