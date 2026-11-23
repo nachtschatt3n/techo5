@@ -363,6 +363,12 @@ func (e *Engine) Loaded(n int) (wake.Model, bool) {
 // mwwfront), "zserge" (its approximation) or "oww" (openWakeWord), or "" with nothing loaded there. All
 // of them read the same frame here (mic.Listen); a run of wake word takes says which one its word is
 // on (feature/takes run.go).
+//
+// While the microphones are cut there are no backends (Quiet), and the answer is the front end the
+// word is scored on once they come back, so a threshold changed while muted still logs where the word
+// is. That follows what Quiet(false) does: it loads the slots in order, and the backend keeps one
+// detector per ID, so of the slots holding this word's ID the last one decides (exactFor). The takes
+// recorder's list of words reads this too (slotWords), muted or not.
 func (e *Engine) FrontOf(n int) string {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -370,6 +376,21 @@ func (e *Engine) FrontOf(n int) string {
 		return ""
 	}
 	m := e.slots[n].model
+	if e.quiet {
+		if m.Kind == wake.KindOpenWakeWord {
+			return "oww"
+		}
+		for i := len(e.slots) - 1; i > n; i-- {
+			if s := e.slots[i]; s.loaded && s.model.Kind == m.Kind && s.model.ID == m.ID {
+				m = s.model
+				break
+			}
+		}
+		if exactFor(m, ExactFrontEnd) {
+			return "tflm"
+		}
+		return "zserge"
+	}
 	switch b := e.backends[m.Kind].(type) {
 	case *microBackend:
 		k, ok := b.step[m.ID]

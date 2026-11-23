@@ -56,9 +56,21 @@ func newBackend(k wake.Kind) (backend, error) {
 // makes, and a model of one's own has no tuned sensitivity on the approximate one to keep. Some score
 // next to nothing on it while the exact one wakes them at full score (#352). One from Home Assistant's
 // custom_wake_words is nearly always somebody's own too, and the same file that woke a Dot uploaded
-// stayed silent from there. The image's words follow ExactFrontEnd, so their sensitivity settings
-// keep meaning what they did.
-func exactFor(m wake.Model, exact bool) bool { return exact || m.Uploaded || m.FromHomeAssistant }
+// stayed silent from there. So does a model that asks for it (wake.Model.Exact), which is the stop
+// word: its threshold cannot go below the 0.50 its model was published with, and that cutoff was set
+// on the exact features, so on the approximation a "stop" that scores under it has no setting that
+// gets it heard. The image's words follow ExactFrontEnd, so their sensitivity settings keep meaning
+// what they did.
+//
+// The backend keeps one detector per model ID, and a slot is not something it knows about. So a wake
+// word chosen with the stop word's ID, "stop", is the same detector as the stop word, and the front end
+// is the one the model loaded last asked for: the stop word's on its own, the approximate one once that
+// wake word loads after it, and the stop word's again after the microphones come back from a mute (Quiet
+// loads the slots in order). That is the same rule as for the model file itself, which two slots with
+// one ID also share.
+func exactFor(m wake.Model, exact bool) bool {
+	return exact || m.Uploaded || m.FromHomeAssistant || m.Exact
+}
 
 // frontKey is one feature front end: its step in ms, and whether it is the exact one.
 type frontKey struct {
@@ -66,19 +78,22 @@ type frontKey struct {
 	exact bool
 }
 
-// ExactFrontEnd picks microWakeWord's feature front end. False, the default, is
-// github.com/zserge/microwakeword's: a float approximation of TensorFlow Lite Micro's front end, which
-// is what has always run. True is mwwfront, the reference's own integer arithmetic, bit for bit the
-// features the models were trained on. They score differently enough that the sensitivity settings
-// mean different things on each, so it is a switch for now: TECHO5_WAKE_FRONTEND=exact in the daemon's
-// environment, read when it starts. A backend keeps the one it was made with.
+// ExactFrontEnd picks microWakeWord's feature front end for the image's and Home Assistant's words. A
+// model sent from the setup page and the stop word are on the exact one whatever it says (exactFor).
+// False, the default, is github.com/zserge/microwakeword's: a float approximation of TensorFlow Lite
+// Micro's front end, which is what has always run. True is mwwfront, the reference's own integer
+// arithmetic, bit for bit the features the models were trained on. They score differently enough that
+// the sensitivity settings mean different things on each, so it is a switch for now:
+// TECHO5_WAKE_FRONTEND=exact in the daemon's environment, read when it starts. A backend keeps the one
+// it was made with.
 var ExactFrontEnd = os.Getenv("TECHO5_WAKE_FRONTEND") == "exact"
 
 // microBackend is microWakeWord. Each wake word is its own streaming model, but they all read the same
-// features of the same audio, so the feature front end runs once per step size and every model is fed
-// what it made: another wake word, or the stop word, costs its inference and not a second front end.
-// A model of one's own on the exact front end next to the image's on the approximate one is the
-// exception: those are two front ends (exactFor).
+// features of the same audio, so a feature front end runs once per step size and every model on it is
+// fed what it made: another wake word costs its inference and not a second front end. There are two
+// kinds of front end, though (exactFor): the stop word and a model of one's own are on the exact one,
+// the image's and Home Assistant's wake words on the approximate one, so the usual device, one of those
+// wake words and the stop word, runs both.
 type microBackend struct {
 	dets   map[string]microDetector
 	step   map[string]frontKey // each model's front end

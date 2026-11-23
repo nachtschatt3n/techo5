@@ -61,6 +61,12 @@ type Model struct {
 	// FromHomeAssistant is whether it came from Home Assistant's custom_wake_words (Adopt), which is
 	// nearly always somebody's own trained model and so runs on the exact front end, like an upload.
 	FromHomeAssistant bool
+
+	// Exact is whether it is scored on the exact feature front end whatever the daemon's switch says
+	// (feature/detect backends.go). Whoever builds the model sets it, as the stop word does; it is never
+	// read from a manifest. The engine keeps one detector per ID, so a second model under the same ID
+	// shares the first one's, front end included: the one loaded last decides.
+	Exact bool
 }
 
 // manifest is the JSON that ships beside a model, as Home Assistant serves it from

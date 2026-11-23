@@ -241,7 +241,9 @@ word do it, and every wake word the device has but the ones chosen as wake words
 - With **Stop**, an alarm or timer ringing during the call is stopped first, and the next "stop" hangs
   up. "Stop" comes up in conversation, so it can hang up by mistake; a word of your own that does not
   come up is less likely to. It is heard at **Stop word threshold**, and does nothing with the stop word
-  turned off (that threshold at its top).
+  turned off (that threshold at its top). The stop word is scored on the exact features its model was
+  trained on, rather than the wake words' approximation, so words that sound like it are taken for it
+  more often, even at a higher threshold ([the stop word](setup.md#two-wake-words-two-assistants)).
 - Another word is listened for only while a call rings or is up, or while a call by voice waits to
   be dialed, at **Hang-up word threshold**, a wake word's 0.85 until set. Higher hears it less often,
   by mistake or not.
