@@ -7,8 +7,8 @@ import (
 )
 
 // PeakKeeper keeps each slot's highest score from a MarkPeaks to the Peaks after it. Each keeper is its
-// own (Engine.NewPeaks), one for calls and one for replies, so a reply said during a call has its peaks
-// and the call has its own. The engine's one set, which reading cleared, had the calls as its only
+// own (Engine.NewPeaks), one for calls, one for replies and one for announcements, so a reply said
+// during a call has its peaks and the call has its own. The engine's one set, which reading cleared, had the calls as its only
 // user: a second user of it would start the call's peaks over with each reply, and take them as the
 // reply ended.
 //

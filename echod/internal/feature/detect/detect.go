@@ -330,6 +330,8 @@ func newDetect() *Detect {
 	})
 	// And what the stop word scored over each reply, said as the turn ends (replyscores.go).
 	followReplies(e, slog.Info)
+	// And over each announcement, from a keeper of its own (replyscores.go).
+	followAnnouncements(e, slog.Info)
 	for _, k := range commandKinds {
 		c := newCommand(d, k)
 		c.watch()
