@@ -218,4 +218,8 @@ show/meals-shopping-show5.png
 show/meals-shopping-show8.png
 show/meals-plan-show5.png
 show/meals-plan-show8.png
+show/meals-cook-0-show5.png
+show/meals-cook-0-show8.png
+show/meals-cook-2-show5.png
+show/meals-cook-2-show8.png
 spot/saver-spot-countdown.png
