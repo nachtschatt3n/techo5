@@ -3,9 +3,11 @@ package detect
 import (
 	"fmt"
 	"math"
+	"sync"
 	"time"
 
 	"github.com/HuskerMinion/techo5/echod/internal/config"
+	"github.com/HuskerMinion/techo5/echod/internal/feature/media"
 	"github.com/HuskerMinion/techo5/echod/internal/feature/voice"
 )
 
@@ -42,14 +44,23 @@ import (
 //
 // The other words' peaks follow as a call's line has them (callscores.go). What a reply by itself scores
 // on a wake word is what that word's threshold for playing has to stay over.
+//
+// An announcement gets the same line from a keeper of its own, so one said over a reply, or a reply over
+// one, keeps its own peaks. Its window runs from taking the speaker, before Home Assistant's media is
+// fetched and the cushion fills, so a peak with canceling=false there came before its sound, to the end
+// of its claim. Its ended is played, stopped, taken or failed (media.AnnouncementEnd).
 type replyScores struct {
 	marks   peakMarker
 	dropped func() uint64
 	// stops is whether the stop word is listened for at all: with it off there is nothing to say.
 	stops func() bool
 	say   func(msg string, args ...any)
+	// over is what the scores are over, "reply" or "announcement", as the line says it.
+	over string
 
-	// Only the conversation's goroutine calls follow, so these need no lock.
+	// A reply is told from the conversation's goroutine alone, but an announcement starts on its claim's
+	// goroutine and ends on the one waiting for the claim, so these are held under a lock.
+	mu      sync.Mutex
 	began   time.Time // when the reply being said began, zero with none
 	missing uint64    // frames missed before it did
 }
@@ -58,18 +69,32 @@ type replyScores struct {
 // conversation's goroutine, which the keeper never holds up (PeakKeeper). A reply whose end is never told
 // leaves its keeper marking until the next reply starts it over, a lock and a compare a scored frame
 // meanwhile.
-func (r *replyScores) follow(v voice.Reply) {
-	if v.Ended.IsZero() {
+func (r *replyScores) follow(v voice.Reply) { r.told(v.Began, v.Ended, v.Why) }
+
+// followAnnouncement is an announcement taking the speaker, or its claim ending (media.Announcing).
+func (r *replyScores) followAnnouncement(a media.Announcement) { r.told(a.Began, a.Ended, a.Why) }
+
+// told is the start of a reply or an announcement (ended zero) or its end. It holds the lock throughout:
+// marking and reading the keeper, and saying, do not block.
+func (r *replyScores) told(began, ended time.Time, why string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if ended.IsZero() {
 		// voice tells one start a turn, a reply taken over by its url included. A second start with no
 		// end between still starts the scores over, so a lost end never runs one reply into the next.
-		r.began, r.missing = v.Began, r.dropped()
+		r.began, r.missing = began, r.dropped()
 		r.marks.MarkPeaks()
 		return
 	}
 	if r.began.IsZero() {
 		return
 	}
-	began := r.began
+	// An end for an announcement that the next one took over: its start already started the scores over,
+	// and reading them now would stop the next one's. A reply always ends with the Began it started with
+	// (voice), so its line is never dropped here.
+	if !began.Equal(r.began) {
+		return
+	}
 	r.began = time.Time{}
 	peaks := r.marks.Peaks()
 	if !r.stops() {
@@ -78,7 +103,7 @@ func (r *replyScores) follow(v voice.Reply) {
 
 	// window_s is the time the scores were kept over, from the first audio arriving to the turn's end:
 	// not how long the reply sounded, which "reply played" has as seconds.
-	args := []any{"window_s", tenths(v.Ended.Sub(began)), "ended", v.Why, "frames_dropped", r.dropped() - r.missing}
+	args := []any{"window_s", tenths(ended.Sub(began)), "ended", why, "frames_dropped", r.dropped() - r.missing}
 	var others []any
 	scored := false
 	for _, p := range peaks {
@@ -94,10 +119,10 @@ func (r *replyScores) follow(v voice.Reply) {
 	}
 	if !scored {
 		// Listened for and never scored: the microphones were cut, or the loop was not running.
-		r.say("stop word not scored over the reply", append(args, others...)...)
+		r.say("stop word not scored over the "+r.over, append(args, others...)...)
 		return
 	}
-	r.say("stop word over the reply", append(args, others...)...)
+	r.say("stop word over the "+r.over, append(args, others...)...)
 }
 
 // tenths is d in seconds, to a tenth; hundredths is a score to two places, as the scores view has it.
@@ -120,6 +145,20 @@ func followReplies(e *Engine, say func(msg string, args ...any)) func() {
 		dropped: e.source.Dropped,
 		stops:   func() bool { return config.Get().Wake.Stop.Listening() },
 		say:     say,
+		over:    "reply",
 	}
 	return voice.Replying.Listen(r.follow)
+}
+
+// followAnnouncements keeps the engine's scores over each announcement, from a keeper of its own, and
+// says them with say as its claim ends. It returns what stops it.
+func followAnnouncements(e *Engine, say func(msg string, args ...any)) func() {
+	r := &replyScores{
+		marks:   e.NewPeaks(),
+		dropped: e.source.Dropped,
+		stops:   func() bool { return config.Get().Wake.Stop.Listening() },
+		say:     say,
+		over:    "announcement",
+	}
+	return media.Announcing.Listen(r.followAnnouncement)
 }

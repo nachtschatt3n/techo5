@@ -1565,8 +1565,12 @@ a sound from just before it. After an alarm it also lets go of a wake light held
 spoken. Otherwise, with nothing playing, it does nothing, so "stop the timer" said to Home Assistant
 isn't cut off. **Stop word threshold** (on the device's microphone in Home Assistant, 0.70 until set;
 where to start is below) sets how sure it has to be. At the top of its range, the stop word is off.
-How close a "stop" said over an answer came is in the device's log, one line an answer (see
-[Watching the wake word scores](#watching-the-wake-word-scores)). A "stop" that came close and wasn't
+How close a "stop" said over an answer or an announcement came is in the device's log, one line each
+(`stop word over the reply` and `stop word over the announcement`, see
+[Watching the wake word scores](#watching-the-wake-word-scores)). The announcement's line also says how it
+ended (`ended=played`, `stopped`, `taken` or `failed`) and what the wake words scored over it. When the
+stop word, or anything else, silences a sound outside a request, the log says `sound silenced` with what
+was playing (`holder=announce` for an announcement). A "stop" that came close and wasn't
 heard also leaves a `wake near miss` line with `slot=101` in the device's log, and shows in the setup
 page's [scores](#watching-the-wake-word-scores). Said over an answer or music with echo cancellation
 active, it counts as close from further under the threshold than other words do: how close it came
@@ -1589,7 +1593,9 @@ something stops by itself. Go lower a step at a time only while "stop" over an a
 heard, watching it on the setup page's [wake word scores](#watching-the-wake-word-scores), and higher
 if something stops by itself.
 
-A stop by mistake cuts an answer, an announcement or the music short. While the device waits on an
+A stop by mistake cuts an answer, an announcement or the music short. An announcement cut short that way
+shows `heard=true ended=stopped` in its line, and its peak says how far over the cutoff the device's own
+voice went. While the device waits on an
 answer, it calls the request off. Said over the music, a request with a word like it in it pauses the
 music and isn't asked. With **Stop** as the [hang-up word](phone.md#a-hang-up-word), it can end a
 call. Something that comes close to "stop" without being taken for it is a near miss, and those come

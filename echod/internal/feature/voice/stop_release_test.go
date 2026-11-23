@@ -1,7 +1,11 @@
 package voice
 
 import (
+	"bytes"
+	"context"
+	"log/slog"
 	"path/filepath"
+	"strings"
 	"sync/atomic"
 	"testing"
 
@@ -9,6 +13,7 @@ import (
 
 	"github.com/HuskerMinion/techo5/echod/internal/config"
 	"github.com/HuskerMinion/techo5/echod/internal/feature/ring"
+	"github.com/HuskerMinion/techo5/echod/internal/hardware/speaker"
 )
 
 // ringing stands in for an alarm sounding: ring.IsSounding says so and ring.End stops it.
@@ -70,5 +75,26 @@ func TestStopWithNothingSoundingLetsGoOfTheHeldLight(t *testing.T) {
 				t.Error("the alarm was not stopped")
 			}
 		})
+	}
+}
+
+// Stopping an announcement says what it silenced, which is how a log tells the stop word having cut an
+// announcement off from the announcement ending by itself.
+func TestStopOverAnAnnouncementSaysWhatItSilenced(t *testing.T) {
+	v, _, _ := stopRoom(t, false)
+	var buf bytes.Buffer
+	was := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&buf, nil)))
+	t.Cleanup(func() { slog.SetDefault(was) })
+
+	d := speaker.Sound()
+	t.Cleanup(d.Silence)
+	d.ClaimSpeech("announce", func(ctx context.Context, _ *speaker.Player) error { <-ctx.Done(); return ctx.Err() })
+
+	if !v.Stop() {
+		t.Fatal("Stop with an announcement playing returned false")
+	}
+	if out := buf.String(); !strings.Contains(out, "sound silenced") || !strings.Contains(out, "holder=announce") {
+		t.Errorf("logged %q, want sound silenced holder=announce", out)
 	}
 }
