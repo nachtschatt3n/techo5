@@ -207,16 +207,26 @@ the daemon's own linear filter, and WebRTC's canceller in `techo5-aec`
 (tools/aec, C++ against Alpine's `webrtc-audio-processing-1`), which the
 daemon feeds 20 ms blocks of microphone and loopback over pipes. The loopback
 channels of the FPGA capture stream are sample-aligned with the microphones,
-so the reported delay is 0 and the plain filter converges. `build-aec.sh`
-compiles the helper for armv7 in WSL inside an Alpine root under QEMU
-(`~/alpine-armv7-sdk`, made on first run); `deploy-rootfs.sh` ships it when
-it is there and the rootfs carries the runtime library. Without the helper the
-select settles on the built-in filter. Measured on the bench: about a third
-of a core on worst-case noise, nothing while nothing plays. Either engine
-cancels one channel: one microphone (the middle one on the Echo Dot 2nd gen
-and the Echo 2nd gen, the first one elsewhere), or the mix with the **Echo
-cancellation on all microphones** switch on (on by default on the Echo Dot
-2nd gen and the Echo 2nd gen, off elsewhere; docs/setup.md).
+so the reported delay is 0 and the plain filter converges when the echo trails
+them by more than about 2 ms. Sample aligned is not the same as that, though:
+the echo trails the loopback only by the speaker-to-microphone path, and
+offline AEC3's linear filter did not converge with that lag under about 32
+samples. `--delay-ms N` holds the microphone back N ms behind the loopback
+with a ring buffer (still one block out per block in, emptied after a pause in
+playback), set from Home Assistant as
+`number.*_microphone_echo_canceller_delay` (0-20 ms, default 0, the helper
+restarted on a change). `python3 tools/test_aec_helper.py` builds the helper
+against a stand-in for the library (tools/aec/stub) and checks its arguments
+and timing. `build-aec.sh` compiles the helper for armv7 in WSL inside an
+Alpine root under QEMU (`~/alpine-armv7-sdk`, made on first run);
+`deploy-rootfs.sh` ships it when it is there and the rootfs carries the
+runtime library. Without the helper the select settles on the built-in filter.
+Measured on the bench: about a third of a core on worst-case noise, nothing
+while nothing plays. Either engine cancels one channel: one microphone (the
+middle one on the Echo Dot 2nd gen and the Echo 2nd gen, the first one
+elsewhere), or the mix with the **Echo cancellation on all microphones**
+switch on (on by default on the Echo Dot 2nd gen and the Echo 2nd gen, off
+elsewhere; docs/setup.md).
 
 ## Screen
 

@@ -28,7 +28,8 @@ import (
 var listeningObjects = map[string]bool{
 	// feature/microphone
 	"microphone_mixing": true, "microphone_leveling": true, "microphone_noise_reduction": true,
-	"microphone_cancel_echo": true, "microphone_cancel_echo_all_mics": true, "microphone_echo_canceller": true, "microphone_end_of_speech": true,
+	"microphone_cancel_echo": true, "microphone_cancel_echo_all_mics": true, "microphone_echo_canceller": true,
+	"microphone_echo_canceller_delay": true, "microphone_end_of_speech": true,
 	"microphone_gain": true, "microphone_sensitivity": true, "microphone_end_of_speech_pause": true,
 	"microphone_preroll_with_sound": true,
 	// feature/detect
