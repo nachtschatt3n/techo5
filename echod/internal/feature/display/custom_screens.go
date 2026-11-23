@@ -478,8 +478,19 @@ func (d *Display) setIdleScreen(i int) {
 	d.wake()
 }
 
+// refreshIdleScreen shows in Home Assistant which screens are offered now and which one is the idle
+// screen, for when the offer changes while the daemon runs (the setup page saved a Mealie address).
+func (d *Display) refreshIdleScreen() {
+	if d.idleScreenSel == nil {
+		return
+	}
+	opts := idleScreenOptions()
+	d.idleScreenSel.SetOptions(opts)
+	d.idleScreenSel.Set(opts[idleScreenIndex()])
+}
+
 // idleScreenSelect is Idle screen in Home Assistant: the clock, or a custom screen in its place while
-// nothing else is on the screen. Offered only on a device that has a custom screen (Entities).
+// nothing else is on the screen. Listed only on a device that has a custom screen (Entities).
 func idleScreenSelect(d *Display) *esphome.Select {
 	s := &esphome.Select{
 		Base: esphome.Base{
