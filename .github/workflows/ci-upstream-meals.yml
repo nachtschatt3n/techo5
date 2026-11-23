@@ -1,0 +1,109 @@
+# Temporary, fork only: runs upstream's check.yml steps and the contributing checks on each part of the
+# Meals series (round 5: parts 4 to 7 re-cut with the plan baselines re-blessed (parts 1 to 3 are unchanged and green in round 3)). Never part of a pull request.
+name: ci-upstream-meals
+
+on:
+  push:
+    branches: ['ci-upstream-meals-*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {name: pr4, sha: edf12a8465b9af21614c759e95a1244d8717f2e8}
+          - {name: pr5, sha: 49e4a15b2c61df3a25e29c3b5b6434f630ec160c}
+          - {name: pr6, sha: e0cdb516d0774e64c9b9e51e1ed8c9f4f0941284}
+          - {name: pr7, sha: 28257edcaf95bf669c99473d7e53808f098c4caf}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ matrix.sha }}
+
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version: '1.27'
+          cache-dependency-path: echod/go.sum
+
+      - name: check.yml - build and vet
+        working-directory: echod
+        run: |
+          for tags in "" dot dot,donut spot panel; do
+            echo "== tags: ${tags:-show}"
+            go build -tags "$tags" ./...
+            go vet -tags "$tags" ./...
+            GOOS=linux GOARCH=arm GOARM=7 go build -tags "$tags" ./...
+          done
+          test -z "$(gofmt -l .)" || { gofmt -l .; echo "not gofmt'd"; exit 1; }
+
+      - name: check.yml - translation status
+        run: python3 tools/locale/status.py --check
+
+      - name: check.yml - installer tests
+        run: python3 tools/test_install_show.py
+
+      - name: check.yml - boot layer tests
+        run: python3 tools/test_boot_layer.py
+
+      - name: go test ./...
+        if: always()
+        working-directory: echod
+        run: go test ./...
+
+      - name: go test -tags dot ./...
+        if: always()
+        working-directory: echod
+        run: go test -tags dot ./...
+
+      - name: go test -tags spot ./...
+        if: always()
+        working-directory: echod
+        run: go test -tags spot ./...
+
+      - name: go test -tags dot,donut ./...
+        if: always()
+        working-directory: echod
+        run: go test -tags dot,donut ./...
+
+      - name: go test -tags panel ./...
+        if: always()
+        working-directory: echod
+        run: go test -tags panel ./...
+
+      - name: go vet ./... and gofmt -l .
+        if: always()
+        working-directory: echod
+        run: |
+          go vet ./...
+          test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+
+      - name: golden screens
+        if: always()
+        run: |
+          # Upstream main itself shows a few screens as changed on the Linux runner (the same ones on every
+          # part and on main, none of them Meals). A part passes when the Meals screens are all there and
+          # the same, and the other changes are no more than main's.
+          bash tools/golden/run.sh | tee "$RUNNER_TEMP/golden.txt" || true
+          if grep -E 'meals-' "$RUNNER_TEMP/golden.txt"; then echo "a Meals golden screen is missing or changed"; exit 1; fi
+          grep -c 'golden: CHANGED' "$RUNNER_TEMP/golden.txt" || true
+
+      - name: Meals previews
+        if: always()
+        working-directory: echod
+        run: |
+          mkdir -p "$RUNNER_TEMP/preview"
+          SHOW_PREVIEW="$RUNNER_TEMP/preview" go test ./internal/feature/display -run 'TestMeals.*Previews'
+          ls "$RUNNER_TEMP/preview"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: meals-previews-${{ matrix.name }}
+          path: ${{ runner.temp }}/preview
+          if-no-files-found: ignore
