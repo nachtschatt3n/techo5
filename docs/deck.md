@@ -76,7 +76,7 @@ The **This screen** actions open the Show's own pages. They need neither OBS nor
 | **Radio** | The drawer's Radio tab | — |
 | **Cameras** | The drawer's Cameras tab | — |
 | **Now playing** | Now Playing, while something plays | — |
-| **Meals** | The [Meals page](setup.md#meals-mealie), on the view it was left on; needs Mealie set up | — |
+| **Meals** | The [Meals page](setup.md#meals-mealie); needs Mealie set up | `shopping`, `plan` or `today` (the plan, which opens at today, not the recipe being cooked); empty opens it on the view it was left on |
 
 - The music library opens over the deck, whatever the dashboard is (a streamed one included), and
   its **Done** brings the deck back.
