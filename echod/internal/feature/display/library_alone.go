@@ -17,7 +17,7 @@ import (
 // into it and every finger sent to the browser, and with no dashboard at all there is no page to be
 // over. Yet the library never needed the page under it: it is drawn over the whole panel, in its own
 // card, from Music Assistant, and plays through Home Assistant. So there it comes up on its own, over
-// whatever was on the screen (the clock or Now Playing), and Done goes back to that.
+// whatever was on the screen (the clock, Now Playing, the deck), and Done goes back to that.
 //
 // The library itself is the same one: the same librarySheet in dashLibrary, drawn by librarySheet and
 // driven by the same taps, holds and drags as over the drawn dashboard (drawnHold, drawnMove,
@@ -31,16 +31,42 @@ func libraryOverDashboard() bool {
 	return m == config.DashboardDrawn || m == config.DashboardTessera
 }
 
+// Where Done takes a library up on its own back to.
+const (
+	libBackNone = iota // what was under it: the clock, or Now Playing
+	libBackDeck        // the deck, which opened it
+)
+
+// openLibraryAlone puts the library up on its own, a fresh one on this device's player, and back
+// says where Done returns to. Without Music Assistant set up the library says how to set it up, as
+// it does over the dashboard.
+func (d *Display) openLibraryAlone(back int) {
+	d.mu.Lock()
+	d.libAlone, d.libBack, d.libTouched = true, back, time.Now()
+	d.dash, d.deckUp = false, false
+	d.closeAlert()
+	d.calUntil, d.weatherUntil = time.Time{}, time.Time{}
+	d.sheet, d.drawer, d.appsPop = false, false, false
+	d.mu.Unlock()
+	slog.Info("music library on its own", "back", back)
+	d.openLibrary("", "", true)
+}
+
 // libGoneLocked takes the library away, on its own or over the dashboard. With mu held.
 func (d *Display) libGoneLocked() {
 	d.dashLibrary = nil
-	d.libAlone = false
+	d.libAlone, d.libBack = false, libBackNone
 }
 
-// libDone is the library's Done: away it goes, and what was under it is back.
+// libDone is the library's Done: away it goes, and one up on its own goes back to the deck it was
+// opened from, on the page it was left on.
 func (d *Display) libDone() {
 	d.mu.Lock()
+	back := d.libAlone && d.libBack == libBackDeck
 	d.libGoneLocked()
+	if back {
+		d.deckUp, d.deckOnScreen = true, true
+	}
 	d.mu.Unlock()
 	d.wake()
 }
