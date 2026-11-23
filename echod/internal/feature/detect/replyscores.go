@@ -24,9 +24,11 @@ import (
 //
 // The peak's own canceling and cutoff are those of the frame that scored it, and of equal scores the one
 // judged against the lower cutoff counts. canceling_from_s and canceling_to_s say when, in the window,
-// the cutoff for playing was in force: they normally start a moment after at_s 0, the streamed reply's
-// cushion, and end about a second after the reply's last sound. "none" is a reply the canceller never ran
-// over: one on another media player, in a call, or with cancellation switched off.
+// the echo canceller ran, which is when the stop word took the cutoff for playing: they normally start a
+// moment after at_s 0, the streamed reply's cushion, and end about a second after the reply's last sound.
+// "none" is a reply the canceller never ran over: one on another media player, or with cancellation
+// switched off. In a call the canceller runs throughout, but the stop word keeps its own cutoff unless
+// a ring sounds, so there the span is when the canceller ran, not when the cutoff was lowered.
 //
 // The window is from the reply's first audio arriving to the turn's end, which is a little longer than
 // the reply sounded: a streamed reply waits for its cushion before it plays, and the canceller only

@@ -40,9 +40,10 @@ type Peak struct {
 	Canceling bool
 
 	// CancelFrom and CancelTo are the first and last scores of the slot, since MarkPeaks, that came with
-	// the echo canceller running, zero when none did: the span the cutoff for playing was in force over.
-	// It runs a second past the last sound the speaker made, which the canceller holds on for. A word
-	// swapped into the slot since the mark starts the span over with its peak.
+	// the echo canceller running, zero when none did: the span the canceller ran over, which is where the
+	// stop word took the cutoff for playing. In a call the stop word keeps its own cutoff unless a ring
+	// sounds. It runs a second past the last sound the speaker made, which the canceller holds on for. A
+	// word swapped into the slot since the mark starts the span over with its peak.
 	CancelFrom, CancelTo time.Time
 
 	// Held is that score having come while the word could not fire whatever it reached: settling
