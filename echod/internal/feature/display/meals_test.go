@@ -294,6 +294,7 @@ func TestMealsBackoff(t *testing.T) {
 	}
 	// While one is due a frame starts it, and not before.
 	meals.mu.Lock()
+	meals.seen = time.Now() // the page is open: a frame is not a reopening
 	meals.feed("shopping").nextAt = time.Now().Add(time.Hour)
 	meals.mu.Unlock()
 	if f := mealsFrameOf(t); f.pane.Loading {
@@ -343,18 +344,22 @@ func TestMealsStaleLoadIgnored(t *testing.T) {
 	}
 	var v customView
 	mealsFill(nil, &v)
-	third <- answer{data: "from the old server"}
-	meals.wg.Wait()
-	if got := meals.paneData("shopping"); got == "from the old server" {
-		t.Fatal("an answer from the old server was kept")
-	}
-	// What the frame started for the new server is answered at once.
+	// The frame started a fetch for the new server; the old server's answer lands first, then the new one's.
+	var fresh chan answer
 	select {
-	case ch := <-calls:
-		ch <- answer{data: "from the new server"}
+	case fresh = <-calls:
 	case <-time.After(5 * time.Second):
 		t.Fatal("no fetch for the new server")
 	}
+	third <- answer{data: "from the old server"}
+	waitFor := time.Now().Add(100 * time.Millisecond)
+	for time.Now().Before(waitFor) {
+		if got := meals.paneData("shopping"); got == "from the old server" {
+			t.Fatal("an answer from the old server was kept")
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	fresh <- answer{data: "from the new server"}
 	meals.wg.Wait()
 	if got := meals.paneData("shopping"); got != "from the new server" {
 		t.Fatalf("data %v", got)

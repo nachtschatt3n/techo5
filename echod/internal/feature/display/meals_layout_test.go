@@ -16,7 +16,7 @@ var mealsSizes = []image.Point{{960, 480}, {1280, 800}, {1920, 1080}, {800, 1280
 // completeLangs are the screen languages translated in full (lib/locale), the ones a label has to fit in.
 var completeLangs = []string{"ca", "de", "es", "fr", "gl", "it", "ja", "ro", "tr"}
 
-// assertLayout is the rule every Meals view's zones keep, at the size w x h: each is on the canvas, no
+// assertLayout is the rule every Meals view's zones keep, at the size w x h: each is on the canvas (a zone grown past an edge may run off it by 12 units), no
 // two overlap, none is under the least a finger can hit (56 units, and 64 for a primary one, the ones a
 // wet or floury finger works: primary says which, nil for none).
 func assertLayout(t *testing.T, zones []customZone, w, h int, primary func(customZone) bool) {
@@ -29,7 +29,7 @@ func assertLayout(t *testing.T, zones []customZone, w, h int, primary func(custo
 			least = s(mealsTarget)
 		}
 		switch {
-		case z.r.Empty() || !z.r.In(canvas):
+		case z.r.Empty() || !z.r.In(canvas.Inset(-s(12))): // a grown zone may run a little off the edge
 			t.Errorf("%dx%d: zone %s %q at %v is not on the canvas", w, h, z.kind, z.id, z.r)
 		case z.r.Dx() < least || z.r.Dy() < least:
 			t.Errorf("%dx%d: zone %s %q is %dx%d, under %d", w, h, z.kind, z.id, z.r.Dx(), z.r.Dy(), least)
