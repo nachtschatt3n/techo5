@@ -1172,6 +1172,26 @@ var uiEnglish = map[string]string{
 	"meals_hours_minutes": "%d h %d min",
 
 	// meals (T4b): the Cooking view.
+	// the Cooking view's heading over a step's ingredients on a tall screen.
+	"meals_ingredients": "Ingredients",
+	// the Cooking view's button that opens the ingredients on a screen held upright: %d is how many there are.
+	"meals_ingredients_n": "Ingredients (%d)",
+	// the Cooking view's servings: %s is the number, as in 4 servings.
+	"meals_servings": "%s servings",
+	// the Cooking view's place in the recipe: the step, then how many there are.
+	"meals_step_of": "Step %d of %d",
+	// the Cooking view's button on the overview that goes to the first step.
+	"meals_start": "Start",
+	// the Cooking view's button that goes to the next step.
+	"meals_next": "Next",
+	// the Cooking view's button that goes back a step, and from a recipe that is gone.
+	"meals_back": "Back",
+	// the Cooking view's button on the last step, which puts the recipe away.
+	"meals_finish": "Finish",
+	// the Cooking view when the server no longer has the recipe.
+	"meals_recipe_gone": "This recipe is no longer in Mealie",
+	// the Cooking view's note when some amounts are left as written at another number of servings.
+	"meals_not_scaled": "Some amounts aren't scaled",
 
 	// meals (T5c): the deck's Meals button.
 }
@@ -2311,6 +2331,26 @@ var uiTranslations = map[string]map[string]string{
 		"meals_hours_minutes": "%d h %d min",
 
 		// meals (T4b): the Cooking view.
+		// the Cooking view's heading over a step's ingredients on a tall screen.
+		"meals_ingredients": "Ingredients",
+		// the Cooking view's button that opens the ingredients on a screen held upright: %d is how many there are.
+		"meals_ingredients_n": "Ingredients (%d)",
+		// the Cooking view's servings: %s is the number, as in 4 servings.
+		"meals_servings": "%s racions",
+		// the Cooking view's place in the recipe: the step, then how many there are.
+		"meals_step_of": "Pas %d de %d",
+		// the Cooking view's button on the overview that goes to the first step.
+		"meals_start": "Comença",
+		// the Cooking view's button that goes to the next step.
+		"meals_next": "Següent",
+		// the Cooking view's button that goes back a step, and from a recipe that is gone.
+		"meals_back": "Enrere",
+		// the Cooking view's button on the last step, which puts the recipe away.
+		"meals_finish": "Acaba",
+		// the Cooking view when the server no longer has the recipe.
+		"meals_recipe_gone": "Aquesta recepta ja no és a Mealie",
+		// the Cooking view's note when some amounts are left as written at another number of servings.
+		"meals_not_scaled": "Algunes quantitats no s'ajusten",
 
 		// meals (T5c): the deck's Meals button.
 	},
@@ -3467,6 +3507,26 @@ var uiTranslations = map[string]map[string]string{
 		"meals_hours_minutes": "%d h %d min",
 
 		// meals (T4b): the Cooking view.
+		// the Cooking view's heading over a step's ingredients on a tall screen.
+		"meals_ingredients": "Ingredientes",
+		// the Cooking view's button that opens the ingredients on a screen held upright: %d is how many there are.
+		"meals_ingredients_n": "Ingredientes (%d)",
+		// the Cooking view's servings: %s is the number, as in 4 servings.
+		"meals_servings": "%s raciones",
+		// the Cooking view's place in the recipe: the step, then how many there are.
+		"meals_step_of": "Paso %d de %d",
+		// the Cooking view's button on the overview that goes to the first step.
+		"meals_start": "Empezar",
+		// the Cooking view's button that goes to the next step.
+		"meals_next": "Siguiente",
+		// the Cooking view's button that goes back a step, and from a recipe that is gone.
+		"meals_back": "Atrás",
+		// the Cooking view's button on the last step, which puts the recipe away.
+		"meals_finish": "Terminar",
+		// the Cooking view when the server no longer has the recipe.
+		"meals_recipe_gone": "Esta receta ya no está en Mealie",
+		// the Cooking view's note when some amounts are left as written at another number of servings.
+		"meals_not_scaled": "Algunas cantidades no se ajustan",
 
 		// meals (T5c): the deck's Meals button.
 	},
@@ -4618,6 +4678,26 @@ var uiTranslations = map[string]map[string]string{
 		"meals_hours_minutes": "%d h %d min",
 
 		// meals (T4b): the Cooking view.
+		// the Cooking view's heading over a step's ingredients on a tall screen.
+		"meals_ingredients": "Ingrédients",
+		// the Cooking view's button that opens the ingredients on a screen held upright: %d is how many there are.
+		"meals_ingredients_n": "Ingrédients (%d)",
+		// the Cooking view's servings: %s is the number, as in 4 servings.
+		"meals_servings": "%s portions",
+		// the Cooking view's place in the recipe: the step, then how many there are.
+		"meals_step_of": "Étape %d sur %d",
+		// the Cooking view's button on the overview that goes to the first step.
+		"meals_start": "Démarrer",
+		// the Cooking view's button that goes to the next step.
+		"meals_next": "Suivant",
+		// the Cooking view's button that goes back a step, and from a recipe that is gone.
+		"meals_back": "Retour",
+		// the Cooking view's button on the last step, which puts the recipe away.
+		"meals_finish": "Terminer",
+		// the Cooking view when the server no longer has the recipe.
+		"meals_recipe_gone": "Cette recette n'est plus dans Mealie",
+		// the Cooking view's note when some amounts are left as written at another number of servings.
+		"meals_not_scaled": "Certaines quantités ne sont pas ajustées",
 
 		// meals (T5c): the deck's Meals button.
 	},
@@ -5765,6 +5845,26 @@ var uiTranslations = map[string]map[string]string{
 		"meals_hours_minutes": "%d h %d min",
 
 		// meals (T4b): the Cooking view.
+		// the Cooking view's heading over a step's ingredients on a tall screen.
+		"meals_ingredients": "Ingredientes",
+		// the Cooking view's button that opens the ingredients on a screen held upright: %d is how many there are.
+		"meals_ingredients_n": "Ingredientes (%d)",
+		// the Cooking view's servings: %s is the number, as in 4 servings.
+		"meals_servings": "%s racións",
+		// the Cooking view's place in the recipe: the step, then how many there are.
+		"meals_step_of": "Paso %d de %d",
+		// the Cooking view's button on the overview that goes to the first step.
+		"meals_start": "Comezar",
+		// the Cooking view's button that goes to the next step.
+		"meals_next": "Seguinte",
+		// the Cooking view's button that goes back a step, and from a recipe that is gone.
+		"meals_back": "Atrás",
+		// the Cooking view's button on the last step, which puts the recipe away.
+		"meals_finish": "Rematar",
+		// the Cooking view when the server no longer has the recipe.
+		"meals_recipe_gone": "Esta receita xa non está en Mealie",
+		// the Cooking view's note when some amounts are left as written at another number of servings.
+		"meals_not_scaled": "Algunhas cantidades non se axustan",
 
 		// meals (T5c): the deck's Meals button.
 	},
@@ -6916,6 +7016,26 @@ var uiTranslations = map[string]map[string]string{
 		"meals_hours_minutes": "%d h %d min",
 
 		// meals (T4b): the Cooking view.
+		// the Cooking view's heading over a step's ingredients on a tall screen.
+		"meals_ingredients": "Ingredienti",
+		// the Cooking view's button that opens the ingredients on a screen held upright: %d is how many there are.
+		"meals_ingredients_n": "Ingredienti (%d)",
+		// the Cooking view's servings: %s is the number, as in 4 servings.
+		"meals_servings": "%s porzioni",
+		// the Cooking view's place in the recipe: the step, then how many there are.
+		"meals_step_of": "Passo %d di %d",
+		// the Cooking view's button on the overview that goes to the first step.
+		"meals_start": "Inizia",
+		// the Cooking view's button that goes to the next step.
+		"meals_next": "Avanti",
+		// the Cooking view's button that goes back a step, and from a recipe that is gone.
+		"meals_back": "Indietro",
+		// the Cooking view's button on the last step, which puts the recipe away.
+		"meals_finish": "Fine",
+		// the Cooking view when the server no longer has the recipe.
+		"meals_recipe_gone": "Questa ricetta non è più in Mealie",
+		// the Cooking view's note when some amounts are left as written at another number of servings.
+		"meals_not_scaled": "Alcune quantità non sono adattate",
 
 		// meals (T5c): the deck's Meals button.
 	},
@@ -9891,6 +10011,26 @@ var uiTranslations = map[string]map[string]string{
 		"meals_hours_minutes": "%d時間%d分",
 
 		// meals (T4b): the Cooking view.
+		// the Cooking view's heading over a step's ingredients on a tall screen.
+		"meals_ingredients": "材料",
+		// the Cooking view's button that opens the ingredients on a screen held upright: %d is how many there are.
+		"meals_ingredients_n": "材料 (%d)",
+		// the Cooking view's servings: %s is the number, as in 4 servings.
+		"meals_servings": "%s人分",
+		// the Cooking view's place in the recipe: the step, then how many there are.
+		"meals_step_of": "手順 %d/%d",
+		// the Cooking view's button on the overview that goes to the first step.
+		"meals_start": "開始",
+		// the Cooking view's button that goes to the next step.
+		"meals_next": "次へ",
+		// the Cooking view's button that goes back a step, and from a recipe that is gone.
+		"meals_back": "戻る",
+		// the Cooking view's button on the last step, which puts the recipe away.
+		"meals_finish": "完了",
+		// the Cooking view when the server no longer has the recipe.
+		"meals_recipe_gone": "このレシピはMealieにありません",
+		// the Cooking view's note when some amounts are left as written at another number of servings.
+		"meals_not_scaled": "一部の分量は調整されません",
 
 		// meals (T5c): the deck's Meals button.
 	},
@@ -11669,6 +11809,26 @@ var uiTranslations = map[string]map[string]string{
 		"meals_hours_minutes": "%d Std. %d Min.",
 
 		// meals (T4b): the Cooking view.
+		// the Cooking view's heading over a step's ingredients on a tall screen.
+		"meals_ingredients": "Zutaten",
+		// the Cooking view's button that opens the ingredients on a screen held upright: %d is how many there are.
+		"meals_ingredients_n": "Zutaten (%d)",
+		// the Cooking view's servings: %s is the number, as in 4 servings.
+		"meals_servings": "%s Portionen",
+		// the Cooking view's place in the recipe: the step, then how many there are.
+		"meals_step_of": "Schritt %d von %d",
+		// the Cooking view's button on the overview that goes to the first step.
+		"meals_start": "Start",
+		// the Cooking view's button that goes to the next step.
+		"meals_next": "Weiter",
+		// the Cooking view's button that goes back a step, and from a recipe that is gone.
+		"meals_back": "Zurück",
+		// the Cooking view's button on the last step, which puts the recipe away.
+		"meals_finish": "Fertig",
+		// the Cooking view when the server no longer has the recipe.
+		"meals_recipe_gone": "Dieses Rezept ist nicht mehr in Mealie",
+		// the Cooking view's note when some amounts are left as written at another number of servings.
+		"meals_not_scaled": "Manche Mengen werden nicht umgerechnet",
 
 		// meals (T5c): the deck's Meals button.
 	},
@@ -12806,6 +12966,26 @@ var uiTranslations = map[string]map[string]string{
 		"meals_hours_minutes": "%d h %d min",
 
 		// meals (T4b): the Cooking view.
+		// the Cooking view's heading over a step's ingredients on a tall screen.
+		"meals_ingredients": "Ingrediente",
+		// the Cooking view's button that opens the ingredients on a screen held upright: %d is how many there are.
+		"meals_ingredients_n": "Ingrediente (%d)",
+		// the Cooking view's servings: %s is the number, as in 4 servings.
+		"meals_servings": "%s porții",
+		// the Cooking view's place in the recipe: the step, then how many there are.
+		"meals_step_of": "Pasul %d din %d",
+		// the Cooking view's button on the overview that goes to the first step.
+		"meals_start": "Începe",
+		// the Cooking view's button that goes to the next step.
+		"meals_next": "Înainte",
+		// the Cooking view's button that goes back a step, and from a recipe that is gone.
+		"meals_back": "Înapoi",
+		// the Cooking view's button on the last step, which puts the recipe away.
+		"meals_finish": "Termină",
+		// the Cooking view when the server no longer has the recipe.
+		"meals_recipe_gone": "Această rețetă nu mai e în Mealie",
+		// the Cooking view's note when some amounts are left as written at another number of servings.
+		"meals_not_scaled": "Unele cantități nu se ajustează",
 
 		// meals (T5c): the deck's Meals button.
 	},
@@ -13958,6 +14138,26 @@ var uiTranslations = map[string]map[string]string{
 		"meals_hours_minutes": "%d sa %d dk",
 
 		// meals (T4b): the Cooking view.
+		// the Cooking view's heading over a step's ingredients on a tall screen.
+		"meals_ingredients": "Malzemeler",
+		// the Cooking view's button that opens the ingredients on a screen held upright: %d is how many there are.
+		"meals_ingredients_n": "Malzemeler (%d)",
+		// the Cooking view's servings: %s is the number, as in 4 servings.
+		"meals_servings": "%s porsiyon",
+		// the Cooking view's place in the recipe: the step, then how many there are.
+		"meals_step_of": "Adım %d / %d",
+		// the Cooking view's button on the overview that goes to the first step.
+		"meals_start": "Başla",
+		// the Cooking view's button that goes to the next step.
+		"meals_next": "İleri",
+		// the Cooking view's button that goes back a step, and from a recipe that is gone.
+		"meals_back": "Geri",
+		// the Cooking view's button on the last step, which puts the recipe away.
+		"meals_finish": "Bitir",
+		// the Cooking view when the server no longer has the recipe.
+		"meals_recipe_gone": "Bu tarif artık Mealie'de yok",
+		// the Cooking view's note when some amounts are left as written at another number of servings.
+		"meals_not_scaled": "Bazı miktarlar ölçeklenmez",
 
 		// meals (T5c): the deck's Meals button.
 	},
