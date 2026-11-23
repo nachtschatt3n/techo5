@@ -77,7 +77,8 @@ func (d *Display) toggleMusic() {
 // Music Assistant tile do while something plays.
 func (d *Display) showMusicPage() {
 	d.mu.Lock()
-	d.dashLibrary, d.dashMedia = nil, nil
+	d.libGoneLocked()
+	d.dashMedia = nil
 	d.away, d.awayTrack, d.awayStation, d.awayPlaying = false, "", "", false
 	d.musicQuiet.reopened(time.Now())
 	d.mu.Unlock()

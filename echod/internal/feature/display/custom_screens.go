@@ -202,6 +202,7 @@ func (d *Display) openCustom(name string) bool {
 	d.closeAlert()
 	d.calUntil, d.weatherUntil = time.Time{}, time.Time{}
 	d.sheet, d.dash, d.drawer, d.deckUp = false, false, false, false
+	d.libGoneLocked()
 	d.mu.Unlock()
 	slog.Info("custom screen up", "screen", name)
 	d.wake()
@@ -238,7 +239,7 @@ func (d *Display) customScene(s *scene, now time.Time) {
 		return
 	}
 	over := s.showSheet || s.showDrawer || s.showCamera || s.showWifi || s.showAlert || s.showCalendar ||
-		s.showWeather || s.showRadar || s.bt.Pairing || s.showDeck || s.redClock
+		s.showWeather || s.showRadar || s.bt.Pairing || s.showDeck || s.showLibrary || s.redClock
 	idle := idleScreen()
 	d.mu.Lock()
 	if d.customs.up != "" && dashForgotten(d.customs.touched) {

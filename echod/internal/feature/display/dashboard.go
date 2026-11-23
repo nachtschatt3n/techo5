@@ -54,6 +54,9 @@ func (d *Display) openDashboard() bool {
 	d.mu.Lock()
 	d.dash, d.dashHeld, d.dashTouched, d.dashNight = true, false, time.Now(), false
 	d.drawer, d.sheet, d.deckUp = false, false, false
+	if d.libAlone {
+		d.libGoneLocked() // the dashboard asked for comes first, as it does over the deck
+	}
 	// A custom screen opened by hand gives way too: the dashboard, asked for or opened, comes first.
 	d.customs.up = ""
 	d.mu.Unlock()
@@ -118,6 +121,9 @@ func (d *Display) dashboardAsked(up bool) {
 	if up {
 		d.dash, d.dashHeld, d.dashTouched, d.dashAwayUntil, d.dashNight = true, true, time.Now(), time.Time{}, false
 		d.deckUp = false
+		if d.libAlone {
+			d.libGoneLocked()
+		}
 		d.mu.Unlock()
 		d.wake()
 		return
@@ -151,7 +157,7 @@ func (d *Display) dashScene(s *scene, sheetOrDrawer bool) {
 	d.mu.Unlock()
 
 	want := mode != config.DashboardOff && s.phase == "idle" && !sheetOrDrawer && !hidden &&
-		!s.showCamera && !s.showWeather && !s.showRadar && !s.showCalendar && !s.showDeck && s.custom.name == "" && !s.showWifi && !s.bt.Pairing &&
+		!s.showCamera && !s.showWeather && !s.showRadar && !s.showCalendar && !s.showDeck && !s.showLibrary && s.custom.name == "" && !s.showWifi && !s.bt.Pairing &&
 		(asked || (f.Idle() && !away && !s.nowPlaying))
 	s.showDash, s.dashMode, s.dashAsked = want, mode, want && overNight
 	s.dashHide = config.Get().Dashboard.HideHandle
@@ -186,6 +192,14 @@ func (d *Display) dashScene(s *scene, sheetOrDrawer bool) {
 		s.dashLibrary = d.libraryViewNow()
 	}
 
+	d.mu.Lock()
+	if want && d.libAlone {
+		// The library up on its own is not this page's sheet: with the drawer in over this page, it
+		// waits under both, and is not drawn over this page in the meantime.
+		s.dashLibrary = nil
+	}
+	d.mu.Unlock()
+
 	over := d.overDashboard(s)
 	d.mu.Lock()
 	d.dashShowing = want
@@ -193,7 +207,12 @@ func (d *Display) dashScene(s *scene, sheetOrDrawer bool) {
 	// drawn, to scroll and to slide a tile's level. The rest of the screen wants swipes.
 	// Not while the keyboard is over the streamed page: a key pressed with a finger that slid a little
 	// is still a tap on it.
-	follow := want && !d.dashKbd.up && !s.showDrawer
+	// The music library up on its own (library_alone.go) is followed and held the same way as over the
+	// drawn page: it is the same library. Not while a timer or an alarm rings or a call's page is drawn
+	// over it, as the page is not then wanted: those take only a tap, and a slow press on Stop or
+	// Answer would otherwise be a hold and a release, which they do not answer.
+	lib := s.showLibrary && !sheetOrDrawer
+	follow := want && !d.dashKbd.up && !s.showDrawer || lib
 	changed := follow != d.dashFollow
 	d.dashFollow = follow
 	// Drawn, a finger held still on a light is a long press for its colors (color_sheet.go), which
@@ -202,11 +221,14 @@ func (d *Display) dashScene(s *scene, sheetOrDrawer bool) {
 	// and a release, which it does not answer, and which the page under it would.
 	// The Tessera page's long press opens the same sheets.
 	sheeted := want && (mode == config.DashboardDrawn || mode == config.DashboardTessera)
-	holds := sheeted && !over && !s.showDrawer
+	holds := sheeted && !over && !s.showDrawer || lib && !over
 	holdsChanged := holds != d.dashHolds
 	d.dashHolds = holds
 	if !sheeted {
-		d.dashColor, d.dashMedia, d.dashClimate, d.dashFan, d.dashLibrary = nil, nil, nil, nil, nil
+		d.dashColor, d.dashMedia, d.dashClimate, d.dashFan = nil, nil, nil, nil
+		if !d.libAlone {
+			d.dashLibrary = nil // the library over the page goes with it; one up on its own stays
+		}
 	}
 	d.mu.Unlock()
 	if changed {
