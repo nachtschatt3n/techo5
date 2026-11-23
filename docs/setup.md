@@ -1002,7 +1002,8 @@ other Shows don't have the switches.
   the screen's own pages: the music library, the dashboard, the calendar, the weather, the radio and
   the cameras), or *Nothing*, for a panel you only talk to. On a TECHO5 Panel tablet there is also
   *Apps*, which opens the list of the tablet's other apps over the clock (behind the settings lock
-  when it's on).
+  when it's on). On a Show, *Meals* opens the [Meals page](#meals-mealie); until Mealie is set up,
+  a tap on the clock does what *Assist* does, and nothing is asked of a server.
   A voice request under way still takes the tap. On the Spot, a long press still opens the ring
   menu, whichever you pick. Also on the setup page's Screen tab. See
   [Dashboards](dashboards.md) for the rest of a panel setup.
