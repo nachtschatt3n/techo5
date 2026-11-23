@@ -27,9 +27,9 @@ const (
 	// somebody is waiting for the answer, so less than a page's own fetch is given (mealsLoadMost).
 	mealsActionMost = 10 * time.Second
 
-	// errMealsOff is what an action says on a device the setup page has not given a Mealie address and
+	// mealsActionOff is what an action says on a device the setup page has not given a Mealie address and
 	// token. It is said before anything is asked of the network.
-	errMealsOff = "meals: Mealie is not set up on this device"
+	mealsActionOff = "meals: Mealie is not set up on this device"
 )
 
 // mealsAnswer is what meals_show says: the view it put up, and the name of the recipe or the list on it.
@@ -78,7 +78,7 @@ func (d *Display) mealsActions() []*esphome.Action {
 //   - cooking returns to the recipe cooked last, else is today.
 func (d *Display) mealsShow(page, recipe string) (any, error) {
 	if !config.Get().Mealie.Set() {
-		return nil, errors.New(errMealsOff)
+		return nil, errors.New(mealsActionOff)
 	}
 	page = strings.ToLower(strings.TrimSpace(page))
 	recipe = strings.TrimSpace(recipe)
@@ -115,13 +115,13 @@ func (d *Display) mealsShow(page, recipe string) (any, error) {
 			slog.Warn("meals: a recipe's name could not be read", "kind", mealsKind(err))
 		}
 		if !d.openRecipe(recipe, 1) {
-			return nil, errors.New(errMealsOff)
+			return nil, errors.New(mealsActionOff)
 		}
 		ans = mealsAnswer{Page: "cooking", Title: r.Name}
 	case "cooking":
 		if slug, scale, ok := mealsOpenRecipe(); ok {
 			if !d.openRecipe(slug, scale) {
-				return nil, errors.New(errMealsOff)
+				return nil, errors.New(mealsActionOff)
 			}
 			ans = mealsAnswer{Page: "cooking", Title: mealsRecipeName(ctx, c, slug)}
 			break
@@ -166,7 +166,7 @@ func (d *Display) mealsToday(ctx context.Context, c mealie.Client) (mealsAnswer,
 		return mealsAnswer{Page: "plan"}, nil
 	}
 	if !d.openRecipe(pick.Recipe.Slug, pick.StartScale()) {
-		return mealsAnswer{}, errors.New(errMealsOff)
+		return mealsAnswer{}, errors.New(mealsActionOff)
 	}
 	return mealsAnswer{Page: "cooking", Title: pick.Name()}, nil
 }
@@ -221,7 +221,7 @@ func mealsListName(ctx context.Context, c mealie.Client) string {
 // view on the screen, whether the screen is lit or not, and the recipe is the one the cook asked for.
 func (d *Display) mealsStep(step string) (any, error) {
 	if !config.Get().Mealie.Set() {
-		return nil, errors.New(errMealsOff)
+		return nil, errors.New(mealsActionOff)
 	}
 	c := d.mealsCooked()
 	if c == nil {
