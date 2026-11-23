@@ -97,11 +97,16 @@ func (c *mealsCook) clamp(s float64) float64 {
 	if s <= 0 || math.IsNaN(s) || math.IsInf(s, 0) {
 		s = 1
 	}
-	lo := 0.5
+	return min(max(s, c.floor()), cookMaxScale)
+}
+
+// floor is the least the scale goes to: one serving when the recipe says how many it makes, else half
+// the recipe.
+func (c *mealsCook) floor() float64 {
 	if b := c.recipe.Base(); b > 0 {
-		lo = min(1/b, 1)
+		return min(1/b, 1)
 	}
-	return min(max(s, lo), cookMaxScale)
+	return 0.5
 }
 
 // Steps is the number of steps; the overview is not one of them.
@@ -200,9 +205,10 @@ func (c *mealsCook) rescale(dir float64) bool {
 	var next float64
 	if b := c.recipe.Base(); b > 0 {
 		// Whole servings, from the one the scale is at: a recipe for 4 asked for 6 and then lowered is 5.
-		next = c.clamp((math.Round(b*c.scale) + dir) / b)
+		// Lowered past the last serving it stays there: clamp would take a scale of 0 for 1.
+		next = c.clamp(max((math.Round(b*c.scale)+dir)/b, c.floor()))
 	} else {
-		next = c.clamp(c.scale + dir/2)
+		next = c.clamp(max(c.scale+dir/2, c.floor()))
 	}
 	if next == c.scale {
 		return false
@@ -384,15 +390,23 @@ func mealsCookOpen(r mealie.Recipe, scale float64) *mealsCook {
 	return cooking.now
 }
 
-// mealsCooking is the recipe being cooked, nil when there is none or it was put away more than
-// mealsKeep ago.
+// mealsCooking is the recipe being cooked, nil when there is none. It does not expire by itself: the
+// keep-awake cap (cookAwakeMost) ends the hold of a screen nobody touches, and mealsKeep is only asked
+// when a recipe is opened again.
 func mealsCooking() *mealsCook {
 	cooking.mu.Lock()
 	defer cooking.mu.Unlock()
-	if c := cooking.now; c != nil && mealsNow().Sub(c.lastTouched()) > mealsKeep {
-		cooking.now = nil
-	}
 	return cooking.now
+}
+
+// mealsCookKept is the recipe being cooked if it was touched within mealsKeep, else nil: what an action
+// that moves a step on a page that was put away may still reach.
+func mealsCookKept() *mealsCook {
+	c := mealsCooking()
+	if c == nil || mealsNow().Sub(c.lastTouched()) > mealsKeep {
+		return nil
+	}
+	return c
 }
 
 // mealsCookClose forgets the recipe being cooked.

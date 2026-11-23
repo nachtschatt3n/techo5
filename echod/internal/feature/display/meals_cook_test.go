@@ -380,7 +380,7 @@ func TestCookStateKept30Min(t *testing.T) {
 	if again != c || again.Step() != 2 || again.Scale() != 1.25 {
 		t.Fatalf("reopened within 30 minutes: step %d scale %v", again.Step(), again.Scale())
 	}
-	if mealsCooking() != c {
+	if mealsCooking() != c || mealsCookKept() != c {
 		t.Fatal("the cook is not the one kept")
 	}
 	// Another recipe starts over.
@@ -390,11 +390,12 @@ func TestCookStateKept30Min(t *testing.T) {
 		t.Fatal("another recipe took the first one's state")
 	}
 	// After the time is up it is gone.
+	mealsCooking().Go(1)
 	*now = now.Add(mealsKeep + time.Minute)
-	if mealsCooking() != nil {
+	if mealsCookKept() != nil {
 		t.Fatal("the state outlived 30 minutes")
 	}
-	if n := mealsCookOpen(other, 1); n.Step() != 0 {
+	if n := mealsCookOpen(other, 1); n.Step() != 0 || n.Scale() != 1 {
 		t.Fatal("a reopening after 30 minutes kept the step")
 	}
 }
