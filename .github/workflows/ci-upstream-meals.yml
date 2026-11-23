@@ -1,0 +1,106 @@
+# Temporary, fork only: runs upstream's check.yml steps and the contributing checks on each part of the
+# Meals series. Never part of a pull request.
+name: ci-upstream-meals
+
+on:
+  push:
+    branches: ['ci-upstream-meals-*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {name: pr1, sha: 4aabe41d4d7c1adee4f80389621dcf554b69a6db}
+          - {name: pr2, sha: c5e29bcaae5dd300d740c86edf44840b4c47e7b7}
+          - {name: pr3, sha: 2e54971e4dac298b79c22b2bbe2244dc26fa5038}
+          - {name: pr4, sha: 2d39b7e14e9b42d9ce2467edaaeee295794e1ad6}
+          - {name: pr5, sha: 557dc6c51952933544f9478848ce28405c1115c0}
+          - {name: pr6, sha: 93498b9178cd01f8f05cb6663d22c15e43298c8c}
+          - {name: pr7, sha: d2cb1302ded1ae0c70d95ef885966c9bb0be1a21}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ matrix.sha }}
+
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version: '1.27'
+          cache-dependency-path: echod/go.sum
+
+      - name: check.yml - build and vet
+        working-directory: echod
+        run: |
+          for tags in "" dot dot,donut spot panel; do
+            echo "== tags: ${tags:-show}"
+            go build -tags "$tags" ./...
+            go vet -tags "$tags" ./...
+            GOOS=linux GOARCH=arm GOARM=7 go build -tags "$tags" ./...
+          done
+          test -z "$(gofmt -l .)" || { gofmt -l .; echo "not gofmt'd"; exit 1; }
+
+      - name: check.yml - translation status
+        run: python3 tools/locale/status.py --check
+
+      - name: check.yml - installer tests
+        run: python3 tools/test_install_show.py
+
+      - name: check.yml - boot layer tests
+        run: python3 tools/test_boot_layer.py
+
+      - name: go test ./...
+        if: always()
+        working-directory: echod
+        run: go test ./...
+
+      - name: go test -tags dot ./...
+        if: always()
+        working-directory: echod
+        run: go test -tags dot ./...
+
+      - name: go test -tags spot ./...
+        if: always()
+        working-directory: echod
+        run: go test -tags spot ./...
+
+      - name: go test -tags dot,donut ./...
+        if: always()
+        working-directory: echod
+        run: go test -tags dot,donut ./...
+
+      - name: go test -tags panel ./...
+        if: always()
+        working-directory: echod
+        run: go test -tags panel ./...
+
+      - name: go vet ./... and gofmt -l .
+        if: always()
+        working-directory: echod
+        run: |
+          go vet ./...
+          test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+
+      - name: golden screens
+        if: always()
+        run: bash tools/golden/run.sh
+
+      - name: Meals previews
+        if: always()
+        working-directory: echod
+        run: |
+          mkdir -p "$RUNNER_TEMP/preview"
+          SHOW_PREVIEW="$RUNNER_TEMP/preview" go test ./internal/feature/display -run 'TestMeals.*Previews'
+          ls "$RUNNER_TEMP/preview"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: meals-previews-${{ matrix.name }}
+          path: ${{ runner.temp }}/preview
+          if-no-files-found: ignore
