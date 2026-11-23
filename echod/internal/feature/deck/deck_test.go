@@ -81,6 +81,14 @@ func TestScreenButtonsAreAlwaysKnown(t *testing.T) {
 	}
 }
 
+// The Meals button has its own icon and the action's name for a label.
+func TestMealsButtonLooks(t *testing.T) {
+	b := config.DeckButton{Action: config.DeckScreenMeals}
+	if Label(b) != "Meals" || Icon(b, false) != "silverware-fork-knife" {
+		t.Errorf("Meals button: %q %q", Label(b), Icon(b, false))
+	}
+}
+
 // A press of a button for one of the screen's pages goes to the screen, from the deck's own Press as
 // from deck_press; with no screen to take it, it says so.
 func TestScreenButtonsGoToTheScreen(t *testing.T) {
