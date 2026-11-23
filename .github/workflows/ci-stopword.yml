@@ -1,10 +1,10 @@
 # Temporary, fork only: runs the contributing checks (and upstream's check.yml steps) on each PR
 # branch. Never part of a pull request.
-name: ci-stopword
+name: ci-tap-stop
 
 on:
   push:
-    branches: [ci-stopword]
+    branches: [ci-tap-stop]
   workflow_dispatch:
 
 permissions:
@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         branch:
-          - house-build-v4
+          - display-tap-stops-the-reply
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
