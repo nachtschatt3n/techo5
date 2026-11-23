@@ -164,3 +164,117 @@ func TestTheDashboardComesFirst(t *testing.T) {
 		t.Fatalf("%q still over the dashboard", s.custom.name)
 	}
 }
+
+// holdScreen registers one custom screen with the two hooks a test turns on and off, and takes it away
+// after the test.
+func holdScreen(t *testing.T, awake, night *bool) {
+	was := customScreens
+	t.Cleanup(func() { customScreens = was })
+	customScreens = nil
+	registerScreen(customScreen{id: "hold", label: "Hold", rank: 10,
+		awake: func() bool { return *awake },
+		night: func() bool { return *night },
+	})
+	registerScreen(customScreen{id: "plain", label: "Plain", rank: 20})
+}
+
+// A screen that wants the device awake is not closed by the Dashboard returns time, and one that does
+// not want it still is.
+func TestCustomScreenAwakeSkipsReturn(t *testing.T) {
+	config.Use(filepath.Join(t.TempDir(), "state.json"))
+	awake, night := true, false
+	holdScreen(t, &awake, &night)
+	d := &Display{poke: make(chan struct{}, 1)}
+	if !d.openCustom("hold") {
+		t.Fatal("hold did not open")
+	}
+	forget := func() {
+		d.mu.Lock()
+		d.customs.touched = time.Now().Add(-24 * time.Hour)
+		d.mu.Unlock()
+	}
+	forget()
+	s := scene{now: time.Now(), phase: "idle"}
+	d.customScene(&s, s.now)
+	if s.custom.name != "hold" {
+		t.Fatalf("%q shown, want the awake screen kept past the return time", s.custom.name)
+	}
+	awake = false
+	d.customScene(&s, s.now)
+	d.mu.Lock()
+	up := d.customs.up
+	d.mu.Unlock()
+	if up != "" {
+		t.Fatalf("%q still up after the return time with the hook saying no", up)
+	}
+}
+
+// A screen that wants the device awake counts as busy, and only while it is the one up.
+func TestCustomScreenAwakeIsBusy(t *testing.T) {
+	config.Use(filepath.Join(t.TempDir(), "state.json"))
+	awake, night := true, false
+	holdScreen(t, &awake, &night)
+	d := &Display{poke: make(chan struct{}, 1)}
+	if d.customAwake() {
+		t.Fatal("busy with no screen up")
+	}
+	d.openCustom("hold")
+	if !d.customAwake() {
+		t.Fatal("not busy with the awake screen up")
+	}
+	awake = false
+	if d.customAwake() {
+		t.Fatal("busy with the hook saying no")
+	}
+	awake = true
+	d.openCustom("plain")
+	if d.customAwake() {
+		t.Fatal("busy with a screen that has no hook")
+	}
+}
+
+// A page asked for at night stays lit while the screen that asks for the hold is up, and the hold ends
+// the first time it is found closed.
+func TestCustomScreenNightHold(t *testing.T) {
+	config.Use(filepath.Join(t.TempDir(), "state.json"))
+	awake, night := false, true
+	holdScreen(t, &awake, &night)
+	d := &Display{poke: make(chan struct{}, 1), askedNight: true}
+	d.openCustom("hold")
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if !d.askedUp(time.Now()) || !d.askedNight {
+		t.Fatal("the hold did not last while the screen was up")
+	}
+	night = false
+	if d.askedUp(time.Now()) {
+		t.Fatal("the hold lasted with the hook saying no")
+	}
+	if d.askedNight {
+		t.Fatal("the hold was not ended once found closed")
+	}
+}
+
+// With neither hook set nothing changes: not busy, the return time closes the screen, and a page asked
+// for at night is let go as before.
+func TestCustomScreenHooksNilChangeNothing(t *testing.T) {
+	config.Use(filepath.Join(t.TempDir(), "state.json"))
+	fakeScreens(t)
+	d := &Display{poke: make(chan struct{}, 1), askedNight: true}
+	d.openCustom("maps")
+	if d.customAwake() {
+		t.Fatal("busy with no hook")
+	}
+	d.mu.Lock()
+	held := d.askedUp(time.Now())
+	d.customs.touched = time.Now().Add(-24 * time.Hour)
+	d.mu.Unlock()
+	if held {
+		t.Fatal("a night hold with no hook")
+	}
+	s := scene{now: time.Now(), phase: "idle"}
+	d.customScene(&s, s.now)
+	if s.custom.name != "" {
+		t.Fatalf("%q shown past the return time with no hook", s.custom.name)
+	}
+}
