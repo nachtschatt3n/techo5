@@ -185,7 +185,10 @@ func (u *cookUIState) reset() {
 	if u.timer != nil {
 		u.timer.Stop()
 	}
-	*u = cookUIState{}
+	u.pane, u.text, u.ing = image.Rectangle{}, image.Rectangle{}, image.Rectangle{}
+	u.textScroll, u.textMax, u.ingScroll, u.ingMax = 0, 0, 0, 0
+	u.sheet, u.jump, u.forCook, u.forStep = false, false, nil, 0
+	u.deb, u.lastVert, u.hero, u.timer = nil, time.Time{}, cookHero{}, nil
 	u.mu.Unlock()
 }
 
