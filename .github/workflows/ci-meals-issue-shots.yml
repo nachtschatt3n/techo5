@@ -1,0 +1,28 @@
+# Fork only: renders the issue screenshots of the Meals screens. Never part of a pull request.
+name: ci-meals-issue-shots
+on:
+  push:
+    branches: ['ci-meals-issue-shots*']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  shots:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version: '1.27'
+          cache-dependency-path: echod/go.sum
+      - name: Render
+        working-directory: echod
+        run: |
+          mkdir -p "$RUNNER_TEMP/shots"
+          SHOW_PREVIEW="$RUNNER_TEMP/shots" go test -run TestMealsIssueScreenshots -count=1 -v ./internal/feature/display
+          ls "$RUNNER_TEMP/shots"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: meals-issue-shots
+          path: ${{ runner.temp }}/shots
