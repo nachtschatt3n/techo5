@@ -236,7 +236,8 @@ func (v *Voice) HomeAssistant() bool { return v.vs.Subscribed() }
 //
 // A wake word said over a ringing alarm or timer silences it first, the way a button press does:
 // whoever says it at a ringing alarm wants it quiet, and should not have to know the one word that
-// stops it. The turn goes on, over a quiet room, and "stop" in it ends the ring (see stopsRing).
+// stops it. The turn goes on, over a quiet room. The stop word heard while it listens ends the ring and
+// the turn (Interrupt), and a transcript asking to stop still ends the ring (see stopsRing).
 func (v *Voice) Start(slot int) { v.open(slot, false, time.Time{}) }
 
 // CancelRequest is the Cancel request button: it ends a request that is running, whichever
@@ -361,7 +362,15 @@ var (
 	musicPlaying = func() bool { return media.Get().Audible() }
 	pauseMusic   = func() { media.Get().PauseAudible() }
 	releaseRing  = ring.Release
+	// ringNear is whether a ring sounds or stopped a moment ago (stopAfterRing).
+	ringNear = func() bool { return ring.SoundingWithin(stopAfterRing) }
 )
+
+// stopAfterRing is how long after a ring stopped a stop word heard while a turn listens still means
+// the ring. It covers the snooze offer a wake word starts (ring.OfferFor) running out, a ring ended
+// another way (a tap, Home Assistant's Stop) just before the wake word, and the second or so it takes
+// to say "stop" after it.
+const stopAfterRing = 10 * time.Second
 
 // Interrupt is the stop word.
 //
@@ -387,6 +396,19 @@ func (v *Voice) Interrupt() {
 			pauseMusic()
 			return
 		}
+	}
+	// "<wake word>, stop" at a ring: the wake word silenced it, and the stop word hears "stop" while that
+	// turn is still listening. The ring is what was meant, not a question nobody has asked: it ends, and
+	// so does the turn, before what was said reaches the assistant. Without this the ring ended and the
+	// turn went on, and speech-to-text sent "stop" on as a request.
+	//
+	// The music is left alone: under a ring it is ducked, and "stop" almost always meant the ring. "Stop
+	// the music" said then ends the ring and the turn, and is said again for the music.
+	if v.turn.Phase() == phaseListening && ringNear() {
+		ended := ring.IsSounding() && ring.End()
+		slog.Info("stop word after the wake word at a ring: ending the turn", "ring_ended", ended)
+		v.turn.Cancel()
+		return
 	}
 	if !speaker.Sound().Busy() && !ring.IsSounding() {
 		if !musicPlaying() {

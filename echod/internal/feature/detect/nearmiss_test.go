@@ -26,6 +26,7 @@ type deck struct {
 	on      bool
 	ringing bool
 	hushes  int
+	began   time.Time
 }
 
 func newDeck() *deck {
@@ -37,6 +38,7 @@ func newDeck() *deck {
 		duck:    func(on bool) { k.ducked = append(k.ducked, on) },
 		ringing: func() bool { return k.ringing },
 		hush:    func() { k.hushes++ },
+		began:   func() time.Time { return k.began },
 		now:     func() time.Time { return k.clock },
 		after: func(_ time.Duration, f func()) interface{ Reset(time.Duration) bool } {
 			k.timer = &fakeTimer{fire: f}
@@ -50,7 +52,7 @@ func (k *deck) tick(d time.Duration) { k.clock = k.clock.Add(d) }
 
 func TestNearMissDucksWhileSomethingIsPlaying(t *testing.T) {
 	k := newDeck()
-	k.d.heard(0, 0.7)
+	k.d.heard(0, 0.7, k.clock)
 
 	if len(k.ducked) != 1 || !k.ducked[0] {
 		t.Fatalf("a near miss over playback should duck once, got %v", k.ducked)
@@ -67,7 +69,7 @@ func TestNearMissDucksWhileSomethingIsPlaying(t *testing.T) {
 func TestNearMissDoesNothingWithNothingPlaying(t *testing.T) {
 	k := newDeck()
 	k.playing = false
-	k.d.heard(0, 0.9)
+	k.d.heard(0, 0.9, k.clock)
 
 	if len(k.ducked) != 0 {
 		t.Fatalf("nothing is playing, so nothing should be ducked, got %v", k.ducked)
@@ -79,7 +81,7 @@ func TestNearMissDoesNothingWithNothingPlaying(t *testing.T) {
 func TestNearMissOfACommandWordDoesNotDuck(t *testing.T) {
 	for _, slot := range []int{CommandSlot, VolumeUpSlot, NextSongSlot} {
 		k := newDeck()
-		k.d.heard(slot, 0.8)
+		k.d.heard(slot, 0.8, k.clock)
 		if len(k.ducked) != 0 {
 			t.Fatalf("a near miss of the command word in slot %d ducked the music: %v", slot, k.ducked)
 		}
@@ -89,7 +91,7 @@ func TestNearMissOfACommandWordDoesNotDuck(t *testing.T) {
 func TestNearMissRespectsTheSetting(t *testing.T) {
 	k := newDeck()
 	k.on = false
-	k.d.heard(0, 0.9)
+	k.d.heard(0, 0.9, k.clock)
 
 	if len(k.ducked) != 0 {
 		t.Fatalf("the setting is off, so nothing should be ducked, got %v", k.ducked)
@@ -98,9 +100,9 @@ func TestNearMissRespectsTheSetting(t *testing.T) {
 
 func TestSecondNearMissExtendsRatherThanDucksAgain(t *testing.T) {
 	k := newDeck()
-	k.d.heard(0, 0.7)
+	k.d.heard(0, 0.7, k.clock)
 	k.tick(time.Second)
-	k.d.heard(0, 0.6)
+	k.d.heard(0, 0.6, k.clock)
 
 	if len(k.ducked) != 1 {
 		t.Fatalf("a near miss inside a duck should not duck again, got %v", k.ducked)
@@ -112,18 +114,18 @@ func TestSecondNearMissExtendsRatherThanDucksAgain(t *testing.T) {
 
 func TestADuckIsFollowedByAQuietPeriod(t *testing.T) {
 	k := newDeck()
-	k.d.heard(0, 0.7)
+	k.d.heard(0, 0.7, k.clock)
 	k.tick(nearMissDuck)
 	k.timer.fire()
 
 	// Straight away: still inside the quiet period.
-	k.d.heard(0, 0.7)
+	k.d.heard(0, 0.7, k.clock)
 	if len(k.ducked) != 2 {
 		t.Fatalf("a near miss inside the quiet period should not duck, got %v", k.ducked)
 	}
 
 	k.tick(nearMissQuiet)
-	k.d.heard(0, 0.7)
+	k.d.heard(0, 0.7, k.clock)
 	if len(k.ducked) != 3 || !k.ducked[2] {
 		t.Fatalf("after the quiet period it should duck again, got %v", k.ducked)
 	}
@@ -131,7 +133,7 @@ func TestADuckIsFollowedByAQuietPeriod(t *testing.T) {
 
 func TestAnExpiredDuckLeavesATurnAlone(t *testing.T) {
 	k := newDeck()
-	k.d.heard(0, 0.7)
+	k.d.heard(0, 0.7, k.clock)
 
 	// The repeat was heard: a turn is running and has ducked the music itself.
 	k.busy = true

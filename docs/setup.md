@@ -1555,8 +1555,12 @@ listening, even after a question. Said with more, like "thanks, and what time is
 ordinary turn.
 
 **The stop word.** Say "stop", with no wake word, while the device is making a sound: it stops a
-ringing alarm or timer, an answer, an announcement or the music. After an alarm it also lets go of a
-wake light held on. While the device waits on an answer, it calls the request off, so the answer isn't
+ringing alarm or timer, an answer, an announcement or the music. Said after the wake word at a ringing alarm or timer
+("Okay Nabu, stop"), or within 10 seconds of one stopping, it ends the ring and the request too, so
+nothing goes on to the assistant. "Okay Nabu, stop the music" said while an alarm rings ends the alarm:
+say it again for the music. In the first 0.6 seconds of a ring it
+doesn't stop the ring, and a near miss doesn't hush it: what it hears then may be the chime itself, or
+a sound from just before it. After an alarm it also lets go of a wake light held on. While the device waits on an answer, it calls the request off, so the answer isn't
 spoken. Otherwise, with nothing playing, it does nothing, so "stop the timer" said to Home Assistant
 isn't cut off. **Stop word threshold** (on the device's microphone in Home Assistant, 0.70 until set;
 where to start is below) sets how sure it has to be. At the top of its range, the stop word is off.
@@ -2061,7 +2065,8 @@ your own**, on a device with microphones.
   the floor they were judged by at the end of the log line (`floor=0.35`), and the cutoff in force when
   the word peaked (for a "stop" said just as an answer ends, the one for playback). They are only
   listed and logged: they don't duck the music, hush a ringing alarm or get kept as a wake clip, as a
-  near miss from 0.5 up still does.
+  near miss from 0.5 up still does. A near miss that peaked in the first 0.6 seconds of a ring, or
+  before it began, doesn't hush it either, at any score.
 - **Watch** draws each word's highest score in the last two seconds as a bar, with a line where its
   cutoff is, and adds what is heard as it happens. Scores just after a wake or an unmute, while the device
   holds detections back, don't count toward the bar. Without script, **Refresh** brings the table and the
