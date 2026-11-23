@@ -429,6 +429,9 @@ type Display struct {
 	// what that frame showed, so an unchanged deck isn't drawn again every second.
 	deckOnScreen bool
 	deckDrawn    string
+	// deckLauncher is the deck up on its built-in page (deckLauncherPage), for a Tap on the clock set to
+	// Deck on a device with no buttons of its own.
+	deckLauncher bool
 	tintShown    screen.Tint // the night tint last given to the screen (night_warmth.go)
 
 	// popup is an event popped up on the screen (calendar_popup.go), until popupUntil or a tap;
@@ -689,6 +692,7 @@ func build() *Display {
 	tessCams.mu.Unlock()
 	dashboard.Get().Asked.Listen(d.dashboardAsked)
 	deck.Get().Changed.Listen(d.deckChanged)
+	deck.Get().SetScreen(d.screenPress)
 	video.Get().Changed.Listen(func(struct{}) { d.wake() })
 	assistant.SetScreen(d.showPage)
 	return d
@@ -1787,7 +1791,7 @@ func (d *Display) gesture(g touch.Gesture) {
 					return
 				}
 			case "deck":
-				if d.openDeck() {
+				if d.openLauncher() {
 					return
 				}
 			case "apps":

@@ -3,6 +3,8 @@
 package deck
 
 import (
+	"context"
+	"errors"
 	"testing"
 
 	"github.com/HuskerMinion/techo5/echod/internal/config"
@@ -61,5 +63,38 @@ func TestTrackedItemsOnce(t *testing.T) {
 	}}
 	if got := trackedItems(d); len(got) != 1 || got[0] != (obsws.Item{Scene: "Main", Source: "Webcam"}) {
 		t.Errorf("tracked %v", got)
+	}
+}
+
+// A button for one of the screen's pages is never grayed out: it needs neither OBS nor a computer,
+// so OBS being away says nothing about it.
+func TestScreenButtonsAreAlwaysKnown(t *testing.T) {
+	for _, st := range []obsws.State{{}, {Connected: true}} {
+		b := config.DeckButton{Action: config.DeckScreenLibrary}
+		if lit, known := Lit(b, st, nil); lit || !known {
+			t.Errorf("OBS connected %v: lit %v, known %v", st.Connected, lit, known)
+		}
+	}
+	b := config.DeckButton{Action: config.DeckScreenDashboard, Path: "dashboard-energy/today"}
+	if Label(b) != "Dashboard" || Icon(b, false) != "view-dashboard" {
+		t.Errorf("dashboard button: %q %q", Label(b), Icon(b, false))
+	}
+}
+
+// A press of a button for one of the screen's pages goes to the screen, from the deck's own Press as
+// from deck_press; with no screen to take it, it says so.
+func TestScreenButtonsGoToTheScreen(t *testing.T) {
+	f := &Feature{}
+	b := config.DeckButton{Action: config.DeckScreenCalendar}
+	if err := f.do(context.Background(), b); !errors.Is(err, ErrNoScreen) {
+		t.Errorf("with no screen: %v", err)
+	}
+	var got []config.DeckButton
+	f.SetScreen(func(b config.DeckButton) error { got = append(got, b); return nil })
+	if err := f.do(context.Background(), b); err != nil || len(got) != 1 || got[0] != b {
+		t.Errorf("err %v, screen got %+v", err, got)
+	}
+	if err := f.do(context.Background(), config.DeckButton{}); !errors.Is(err, ErrEmpty) || len(got) != 1 {
+		t.Errorf("an empty button: %v, screen got %d", err, len(got))
 	}
 }

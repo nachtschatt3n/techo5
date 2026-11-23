@@ -6,6 +6,11 @@ that press shortcuts, type, open apps and websites and run scripts on your compu
 talk to OBS and the computer directly, so they work without Home Assistant, and they show what OBS
 is doing: the live scene lit, the stream button lit while you're live, a muted input crossed out.
 
+The same buttons can open the Show's own pages: the music library, the dashboard (at a dashboard
+and view you choose), the calendar, the weather, the radio, the cameras and Now Playing. A deck of
+those is a launcher, a page of large buttons that **Tap on the clock** opens
+([below](#a-launcher-for-the-screens-own-pages)).
+
 Show only (the Echo Show 5 and Show 8). OBS 28 and later has what the OBS buttons need built in;
 the computer buttons need the small TECHO5 Deck agent on the computer
 ([below](#computer-buttons)).
@@ -34,6 +39,7 @@ On the device's setup page, **Screen → Deck**:
    - **Stream on/off** and **Record on/off**: nothing more.
    - **Mute/unmute**: the input (your microphone, Desktop Audio) in **Scene or input**.
    - **Show/hide a source**: the scene in **Scene or input**, and the source in **Source**.
+   - The **This screen** actions: see [below](#a-launcher-for-the-screens-own-pages).
 
    A **label**, a **color** and an **icon** are optional; each action has its own. Icons are
    [Material Design icon](https://pictogrammers.com/library/mdi/) names, like `microphone-off`.
@@ -50,10 +56,60 @@ On the device's setup page, **Screen → Deck**:
   it failed.
 - **Swipe left and right** for the pages, and **down** to put the deck away. It stays up until you
   do.
-- When OBS isn't running, the buttons gray out and the foot of the deck says why.
+- When OBS isn't running, its buttons gray out and the foot of the deck says why. Buttons for the
+  screen's own pages never gray out, and a page without OBS buttons says nothing about OBS.
 
 Home Assistant can press a button too, with the `deck_press` action
 ([Actions](actions.md#press-a-deck-button)).
+
+## A launcher for the screen's own pages
+
+The **This screen** actions open the Show's own pages. They need neither OBS nor a computer:
+
+| Action | Opens | Scene, input or dashboard path |
+|---|---|---|
+| **Music library** | Music Assistant's library, to play on this device ([Music library](dashboards.md#music-library)) | — |
+| **Dashboard** | The dashboard, drawn or streamed | A dashboard and view, like `dashboard-energy/today`; empty opens it as it was left |
+| **Calendar** | The calendar, as it opens from the clock | — |
+| **Weather** | The forecast | — |
+| **Radio** | The drawer's Radio tab | — |
+| **Cameras** | The drawer's Cameras tab | — |
+| **Now playing** | Now Playing, while something plays | — |
+
+- The music library opens over the dashboard, so it needs a drawn one (*Drawn* or *Tessera*), as
+  the library does everywhere ([Music library](dashboards.md#music-library)).
+- The calendar, the weather and the drawer come up over the deck, and the deck is there again when
+  they go. The dashboard, the music library and Now Playing take the screen, and the deck goes.
+- A **Dashboard** button with a path makes that the dashboard shown from then on, as the
+  `dashboard_path` action does: swiping in from the left edge later opens it there too. If you have
+  more than one dashboard button, give each its path (`lovelace/0` for the default dashboard's first
+  view). The button always opens that view, even after you tapped your way to another view on the
+  dashboard itself. A streamed dashboard connects again for each press, which takes a moment. For a
+  streamed one, update the dashcast server too: an older one shows the dashboard where you left it.
+- A button whose page isn't there says so at the foot of the deck: no weather entity, no calendar
+  shown on this device, the dashboard off (or not drawn, for the music library), or nothing playing.
+
+**Without any buttons:** set **Tap on the clock** to **Deck**, and a tap on the clock opens a
+built-in page of the screen's own pages: one large button each for the music library (with Music
+Assistant set up and a drawn dashboard), the dashboard (when one is set up), the calendar (when
+this device shows one), the weather, the radio and the cameras. The swipe up from the bottom edge
+stays the volume until the deck has buttons of its own. Once it has, they replace the built-in
+page.
+
+**An example launcher page.** On the setup page, **Screen → Deck**: **Buttons across** 3 and **Rows**
+2, **Save**; then on **Page 1**:
+
+| Button | Label | Action | Scene, input or dashboard path |
+|---|---|---|---|
+| Row 1, button 1 | Music | Music library | |
+| Row 1, button 2 | Home | Dashboard | `lovelace/0` |
+| Row 1, button 3 | Energy | Dashboard | `dashboard-energy/today` |
+| Row 2, button 1 | Calendar | Calendar | |
+| Row 2, button 2 | Weather | Weather | |
+| Row 2, button 3 | Radio | Radio | |
+
+**Save page**, and set **Tap on the clock** to **Deck**. Pick colors and icons if you like
+(`lightning-bolt` suits Energy). An OBS page can follow as page 2, a swipe left away.
 
 ## Computer buttons
 

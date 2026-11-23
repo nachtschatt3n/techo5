@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/HuskerMinion/techo5/echod/internal/config"
+	"github.com/HuskerMinion/techo5/echod/internal/feature/dashboard"
 	"github.com/HuskerMinion/techo5/echod/internal/feature/deck"
 	"github.com/HuskerMinion/techo5/echod/internal/hardware/touch"
 	"github.com/HuskerMinion/techo5/echod/internal/lib/fonts"
@@ -56,6 +57,15 @@ var deckDo = func(page, i int) error { return deck.Get().Press(page, i) }
 // deckReason is why a press of b failed, in a line for the foot of the page: the kind of failure and
 // whose it was, never the error's own words.
 func deckReason(b config.DeckButton, err error) string {
+	if b.Action.OnScreen() {
+		switch {
+		case errors.Is(err, errNothingPlaying):
+			return tr("deck_nothing_playing")
+		case errors.Is(err, errScreenOff):
+			return tr("deck_screen_off")
+		}
+		return tr("deck_failed")
+	}
 	switch deck.Why(b, err) {
 	case deck.FailedOBSAway:
 		return tr("deck_obs_away")
@@ -83,7 +93,26 @@ func (d *Display) openDeck() bool {
 	if !deck.Get().Set() {
 		return false
 	}
+	return d.putDeckUp(false)
+}
+
+// openLauncher is Tap on the clock set to Deck: the deck when it has buttons, and on a device with
+// none, the deck's built-in page of the screen's own pages (deckLauncherPage), when there is anything
+// to put on it.
+func (d *Display) openLauncher() bool {
+	if d.openDeck() {
+		return true
+	}
+	if !deckLauncherPage().Set() {
+		return false
+	}
+	return d.putDeckUp(true)
+}
+
+// putDeckUp puts the deck up, on its built-in page when launcher is set.
+func (d *Display) putDeckUp(launcher bool) bool {
 	d.mu.Lock()
+	d.deckLauncher = launcher
 	// On the screen from now, not from the next frame: the swipe that opened it is still sending its
 	// steps up, and they are the deck's to ignore, not the volume's.
 	// A press still going out from before stays what it is, its page and button with it: its answer is
@@ -99,12 +128,12 @@ func (d *Display) openDeck() bool {
 	if d.libAlone {
 		d.libGoneLocked() // the deck asked for comes first, as it does over the dashboard
 	}
-	pages := len(config.Get().Deck.Pages)
+	pages := len(d.deckNowLocked().Pages)
 	if d.deckPage >= pages {
 		d.deckPage = 0
 	}
 	d.mu.Unlock()
-	slog.Info("deck up")
+	slog.Info("deck up", "launcher", launcher)
 	d.wake()
 	return true
 }
@@ -162,10 +191,10 @@ func (d *Display) deckScene(s *scene, now time.Time) {
 	if !up {
 		return
 	}
-	cfg := config.Get().Deck
+	d.mu.Lock()
+	cfg := d.deckNowLocked()
 	// Pages taken away on the setup page while the deck was up on one of them.
 	pages := max(len(cfg.Pages), 1)
-	d.mu.Lock()
 	if d.deckPage >= pages {
 		d.deckPage = pages - 1
 	}
@@ -179,7 +208,7 @@ func (d *Display) deckScene(s *scene, now time.Time) {
 	cols, rows := cfg.Grid()
 	st := deck.Get().OBS()
 	pcs := deck.Get().Computers()
-	v := deckView{cols: cols, rows: rows, page: page, pages: pages,
+	v := deckView{cols: cols, rows: rows, page: page, pages: pages, obs: deckPageOBS(cfg, page),
 		connected: st.Connected, problem: st.Problem, obsSet: cfg.OBS.Addr != "", away: deck.Away(cfg, page, pcs)}
 	if press.failedAt(now) && press.page == page {
 		v.reason = press.reason
@@ -216,8 +245,8 @@ func (d *Display) deckGesture(g touch.Gesture) {
 		}
 		d.pressDeck(i)
 	case touch.SwipeLeft, touch.SwipeRight:
-		pages := max(len(config.Get().Deck.Pages), 1)
 		d.mu.Lock()
+		pages := max(len(d.deckNowLocked().Pages), 1)
 		if g.Kind == touch.SwipeLeft {
 			d.deckPage = min(d.deckPage+1, pages-1)
 		} else {
@@ -242,14 +271,22 @@ func (d *Display) pressDeck(i int) {
 	}
 	seq := d.deckPress.seq + 1
 	d.deckPress = deckPress{page: page, button: i, seq: seq, going: true, shown: now.Add(deckPressMin)}
+	b := d.deckNowLocked().Button(page, i)
 	d.mu.Unlock()
 	d.wake()
 	go func() {
-		err := deckDo(page, i)
+		var err error
+		if b.Action.OnScreen() {
+			// The screen's own pages are opened here, the built-in page's buttons included, which
+			// are not in the settings for the deck to look up.
+			err = deckScreenDo(d, b)
+		} else {
+			err = deckDo(page, i)
+		}
 		failed := err != nil && !errors.Is(err, deck.ErrEmpty)
 		var reason string
 		if failed {
-			reason = deckReason(config.Get().Deck.Button(page, i), err)
+			reason = deckReason(b, err)
 		}
 		answered := time.Now()
 		d.mu.Lock()
@@ -282,4 +319,123 @@ func (d *Display) deckChanged(struct{}) {
 	if d.deckShowing() {
 		d.wake()
 	}
+}
+
+// deckNowLocked is the deck as it is up: the settings', or the built-in page while that is what is up.
+// With mu held.
+func (d *Display) deckNowLocked() config.Deck {
+	cfg := config.Get().Deck
+	if d.deckLauncher && !cfg.Set() {
+		return deckLauncherPage()
+	}
+	return cfg
+}
+
+// deckPageOBS is whether page p has an OBS button: only then does its foot say how OBS is.
+func deckPageOBS(cfg config.Deck, p int) bool {
+	cols, rows := cfg.Grid()
+	for i := range cols * rows {
+		if cfg.Button(p, i).Action.OnOBS() {
+			return true
+		}
+	}
+	return false
+}
+
+// deckLauncherPage is the deck's built-in page, for a device whose deck has no buttons of its own: one
+// large button for each of the screen's pages that is there to open, three by two. A deck with
+// buttons of its own is never this page; one made on the setup page can have these buttons and more.
+// Its labels are in the screen's language, as nobody wrote them.
+func deckLauncherPage() config.Deck {
+	var bs []config.DeckButton
+	add := func(a config.DeckAction, label string, on bool) {
+		if on {
+			bs = append(bs, config.DeckButton{Action: a, Label: label})
+		}
+	}
+	_, music := libClient()
+	add(config.DeckScreenLibrary, tr("music"), music && deckLibraryDrawn())
+	add(config.DeckScreenDashboard, tr("dashboard"), dashboard.Get().Mode() != config.DashboardOff)
+	add(config.DeckScreenCalendar, tr("ui_calendar"), calendarsShown())
+	add(config.DeckScreenWeather, tr("weather"), config.Get().Home.WeatherEntity() != "")
+	add(config.DeckScreenRadio, tr("drawer_radio"), true)
+	add(config.DeckScreenCameras, tr("cameras"), true)
+	return config.Deck{Cols: 3, Rows: 2, Pages: []config.DeckPage{{Buttons: bs}}}
+}
+
+// What a press of a button for one of the screen's pages can fail with, for the foot of the deck.
+var (
+	errScreenOff      = errors.New("deck: that page is not set up on this screen")
+	errNothingPlaying = errors.New("deck: nothing is playing")
+)
+
+// deckScreenDo opens the page a button for one of the screen's pages is for; a variable for the tests.
+var deckScreenDo = func(d *Display, b config.DeckButton) error { return d.screenPress(b) }
+
+// deckLibraryDrawn is whether the music library has a drawn dashboard (Drawn or Tessera) to open over,
+// which it needs.
+func deckLibraryDrawn() bool {
+	m := dashboard.Get().Mode()
+	return m == config.DashboardDrawn || m == config.DashboardTessera
+}
+
+// screenPress opens the page b is for, from the deck on the screen or from Home Assistant's
+// deck_press. The calendar, the forecast and the drawer come up over the deck, which is there again
+// when they go, as it is under a camera. The dashboard, the music library over it and Now Playing are
+// pages the deck gives way to.
+func (d *Display) screenPress(b config.DeckButton) error {
+	d.mu.Lock()
+	fromDeck := d.deckUp && d.deckOnScreen
+	d.mu.Unlock()
+	slog.Info("deck: screen page", "action", b.Action, "from deck", fromDeck)
+	switch b.Action {
+	case config.DeckScreenLibrary:
+		// A fresh library on this device's player, over the drawn dashboard, as a card navigating to
+		// #techo5-library opens it.
+		if !deckLibraryDrawn() || !d.openDashboard() {
+			return errScreenOff
+		}
+		d.openLibrary("", "", true)
+		return nil
+	case config.DeckScreenDashboard:
+		if dashboard.Get().Mode() == config.DashboardOff {
+			return errScreenOff
+		}
+		if b.Path != "" {
+			if err := dashboard.Get().GoTo(b.Path); err != nil {
+				return err
+			}
+		}
+		if !d.openDashboard() {
+			return errScreenOff
+		}
+		return nil
+	case config.DeckScreenCalendar:
+		if !d.OpenCalendar() {
+			return errScreenOff
+		}
+		return nil
+	case config.DeckScreenWeather:
+		if config.Get().Home.WeatherEntity() == "" {
+			return errScreenOff
+		}
+		d.ShowWeather(false)
+		return nil
+	case config.DeckScreenRadio:
+		d.openDrawer(drawerRadio)
+		return nil
+	case config.DeckScreenCameras:
+		d.openDrawer(drawerCameras)
+		return nil
+	case config.DeckScreenNowPlaying:
+		if !d.nowPlaying() {
+			return errNothingPlaying
+		}
+		d.mu.Lock()
+		d.deckUp = false
+		d.mu.Unlock()
+		d.showMusicPage()
+		return nil
+	}
+	return deck.ErrEmpty
 }
