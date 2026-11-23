@@ -1,0 +1,41 @@
+# Temporary, fork only: renders the Meals golden screens and previews on Linux and uploads them, so the
+# baselines can be committed with the parts that draw them. Never part of a pull request.
+name: ci-upstream-meals-bless
+
+on:
+  push:
+    branches: ['ci-upstream-meals-2']
+
+permissions:
+  contents: read
+
+jobs:
+  bless:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: 76fdbe8d
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version: '1.27'
+          cache-dependency-path: echod/go.sum
+      - name: golden check before blessing (informational)
+        continue-on-error: true
+        run: bash tools/golden/run.sh
+      - name: bless
+        run: BLESS_GOLDEN=1 bash tools/golden/run.sh
+      - name: previews
+        working-directory: echod
+        run: |
+          mkdir -p "$RUNNER_TEMP/preview"
+          SHOW_PREVIEW="$RUNNER_TEMP/preview" go test ./internal/feature/display -run 'TestMeals.*Previews'
+      - name: display tests for the idle screen select
+        working-directory: echod
+        run: go test ./internal/feature/display -run 'IdleScreen|Meals'
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: meals-golden
+          path: |
+            tools/golden/images/show/meals-*.png
+            ${{ runner.temp }}/preview
