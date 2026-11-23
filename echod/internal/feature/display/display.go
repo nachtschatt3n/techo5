@@ -443,6 +443,7 @@ type Display struct {
 	popupQueue []hass.Event         // due while another was up: shown next
 	popupGone  map[string]time.Time // events tapped away on another device (popupMatch), and when; kept in the config too
 	pop        popupEntities        // the pop-ups' settings in Home Assistant
+	meals      mealsEntities        // the Meals page's two choices in Home Assistant (meals_entities.go)
 
 	// The alert page (alerts.go): up until alertUntil, on alertIdx of the alerts at home, scrolled
 	// alertScroll lines.
@@ -620,6 +621,8 @@ func build() *Display {
 	d.liftSw = adaptiveBacklightSwitch(d)
 	d.buildPopupEntities()
 	d.buildLookEntities()
+	d.buildMealsEntities()
+	d.listenMeals()
 	d.atNight = atNightSelect(d)
 	d.nightMode = nightModeSwitch(d)
 	d.glowLevel = glowNumber(d)
@@ -723,7 +726,7 @@ func (d *Display) clockTapSel() *esphome.Select { return d.clockTap }
 
 func (d *Display) Entities() []esphome.Entity {
 	ents := append([]esphome.Entity{d.light, d.power, d.roomSw, d.auto, d.clock, d.clockStyleSel, d.clockPos, d.dateCol, d.weatherPos, d.glanceSz, d.glanceMus, d.camTime, cameraFitSel, cameraBandsSel, cameraShadeSel, d.answerTime, d.turnStyle, d.timerStyle, d.skinSl, d.callBtn, d.saverBtn, d.callScreenSel, d.weatherFx, d.warmthSw, d.lang, d.strip, d.themeSel, d.lightThemeSel, d.themeModeSel, d.nightHours, d.nightStart, d.nightEnd, d.weekendStart, d.weekendEnd, d.nightMode, d.atNight, d.nightStyle, d.glowLevel, d.dimmestNum, d.idleDimSel, d.dimBtn, d.dimSensor,
-		d.pop.on, d.pop.lead, d.pop.chime, d.pop.allDay, d.pop.shown, d.pop.popping, d.clockTap, d.styleSwipeSw, d.volumeSwipeSw, d.nightTapSw, d.nightInfoSw, d.fontSel, d.textSizeSel}, d.lookEnts...)
+		d.pop.on, d.pop.lead, d.pop.chime, d.pop.allDay, d.pop.shown, d.pop.popping, d.clockTap, d.styleSwipeSw, d.volumeSwipeSw, d.nightTapSw, d.nightInfoSw, d.fontSel, d.textSizeSel, d.meals.list, d.meals.awake}, d.lookEnts...)
 	if !screen.CanTint {
 		// Night warmth tints the frame on its way to the panel, which a tablet's screen does not take.
 		ents = slices.DeleteFunc(ents, func(e esphome.Entity) bool { return e == esphome.Entity(d.warmthSw) })
@@ -786,6 +789,7 @@ func (d *Display) Restore(c config.Config) {
 	d.liftSw.Set(c.Screen.AdaptiveBacklight)
 	d.popupSettingsChanged()
 	d.lookChanged()
+	d.mealsChanged()
 	d.glowLevel.Set(float32(d.glowSetting()))
 	d.dimmestNum.Set(float32(dimmestSetting()))
 	d.restoreLightOff(c.Alarms.HeldDark, time.Now())
@@ -1779,9 +1783,9 @@ func (d *Display) gesture(g touch.Gesture) {
 			return
 		}
 		// The clock itself: a voice turn, unless the Tap on the clock setting says the dashboard, the
-		// deck, a panel's apps, or nothing. A turn under way still takes the tap either way, as the way to
-		// stop or answer it, and with no dashboard set up a tap meant for one starts a turn rather than
-		// doing nothing.
+		// deck, a panel's apps, Meals, or nothing. A turn under way still takes the tap either way, as
+		// the way to stop or answer it, and with no dashboard set up a tap meant for one starts a turn
+		// rather than doing nothing.
 		if idle {
 			switch config.Get().Screen.ClockTap {
 			case "nothing":
@@ -1797,6 +1801,13 @@ func (d *Display) gesture(g touch.Gesture) {
 				}
 			case "apps":
 				if d.openTabletApps() {
+					return
+				}
+			case "meals":
+				// Without Mealie set up there is no page to open, and nothing is asked of a server: the
+				// tap falls through to the voice turn, as Assist does.
+				if config.Get().Mealie.Set() && d.openCustom(mealsID) {
+					slog.Info("screen: Meals by a tap on the clock")
 					return
 				}
 			}
@@ -2794,7 +2805,7 @@ func (d *Display) frame() (next time.Duration) {
 	updateVisible := d.updateShown(now)
 	d.mu.Unlock()
 	busy := updateVisible || view.Phase != "idle" || call.Phase != phone.Idle || ring.any() || reminding || sheetUp || pinIsOpen() ||
-		d.wakeLight(now) > 0 || d.popupUp() != nil || asksAtDevice() || wifiUp || camUp || video.Get().State().Active()
+		d.wakeLight(now) > 0 || d.popupUp() != nil || asksAtDevice() || wifiUp || camUp || video.Get().State().Active() || d.customAwake()
 	if d.coverTick(on) { // the night may have lit the panel under a closed cover
 		d.mu.Lock()
 		on = d.on

@@ -999,10 +999,11 @@ other Shows don't have the switches.
   theme it is wearing. The night clock keeps its own look.
 - **Tap on the clock** (Show and Spot): *Assist*, as it always was, *Dashboard* to open the
   dashboard, *Deck* to open TECHO5 Deck (Show only; until a deck has buttons of its own, a page of
-  the screen's own pages: the music library, the dashboard, the calendar, the weather, the radio and
-  the cameras), or *Nothing*, for a panel you only talk to. On a TECHO5 Panel tablet there is also
+  the screen's own pages: the music library, the dashboard, the calendar, the weather, the radio, the
+  cameras and Meals, once Mealie is set up), or *Nothing*, for a panel you only talk to. On a TECHO5 Panel tablet there is also
   *Apps*, which opens the list of the tablet's other apps over the clock (behind the settings lock
-  when it's on).
+  when it's on). On a Show, *Meals* opens the [Meals page](#meals-mealie); until Mealie is set up,
+  a tap on the clock does what *Assist* does, and nothing is asked of a server.
   A voice request under way still takes the tap. On the Spot, a long press still opens the ring
   menu, whichever you pick. Also on the setup page's Screen tab. See
   [Dashboards](dashboards.md) for the rest of a panel setup.
@@ -1141,6 +1142,45 @@ its lists itself, and nothing here is needed. With the
 requests of its own, for the lists chosen here: "add milk to the shopping list", and "what's on the
 shopping list". Name the list as Home Assistant does ("shopping" finds "Shopping List"); with one list
 chosen the name can be left out.
+
+### Meals (Mealie)
+
+A Show, the Skylight and the Panel app can show a [Mealie](https://mealie.io) server's shopping list,
+its meal plan and its recipes on a **Meals** page, to cook from. Set it up on the setup page's
+**Screen** tab, under **Meals (Mealie)**:
+
+- **Address.** Where Mealie is, like `https://mealie.example.com` or `http://192.168.1.20:9925`. A
+  reverse proxy's sub-path is kept. Use the address Mealie answers on: an `http` address that Mealie
+  sends on to `https` is reported as "use the https address", since the token is never sent over a
+  connection it was not meant for.
+- **API token.** In Mealie, open your profile, **API Tokens**, and make one. It is written to the
+  device and never shown again. Leave the field empty to keep the saved one, or tick **Remove the saved
+  one**. A token belongs to one Mealie user, and so to one household: the lists and the plan on the
+  screen are that household's.
+- **Shopping list.** Which of Mealie's shopping lists the page shows. The first one is the default, and
+  the page can switch between lists when there is more than one. A list Mealie no longer offers stays
+  chosen until you change it.
+- **Keep the screen on while cooking.** On by default: while a recipe is open the screen does not dim or
+  go dark, for up to three hours. Untick it and the screen sleeps as it does elsewhere.
+
+Under the card's heading a line says what Mealie answered: its version and "signed in", "reachable, but
+it refused the token", "not reachable", or "use the https address". It is asked in the background, so a
+Mealie that is down never holds the page up; reload for its answer. This was tested with Mealie 3.x; the
+page needs Mealie 2.0 or later, and says so when the server is older.
+
+The page is offered only once an address and a token are saved, and only on the Show, the Skylight and
+the Panel app (not the Spot or the Echo Dot). Nothing is written to Mealie except ticking and unticking
+shopping items. The two choices are also entities in Home Assistant: **Meals shopping list**
+(`meals_shopping_list`, a select of the list names) and **Meals keep the screen on**
+(`meals_keep_awake`, a switch). The select lists the names Mealie gave when the page or this card last
+asked it; until then, or when Mealie cannot be reached, it offers only **The first list** and the saved
+choice. The address and the token are set only on this page, like Music Assistant's.
+
+**Troubleshooting Meals.** "Refused the token": Mealie did not accept it, or it was made for another
+user; make a new one and save it. "Use the https address": put the `https` address in. Not the lists
+you expected: the token's household is the one shown, so make the token while signed in to the other
+household. "Not reachable": the device has to reach Mealie itself, so check the address from the same
+network as the device.
 
 ### Fonts of your own
 

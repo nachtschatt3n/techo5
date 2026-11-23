@@ -102,7 +102,9 @@ func deckSection(w http.ResponseWriter, token string) {
 	}
 	fmt.Fprint(w, `<p class="note"><strong>Scene, input or dashboard path</strong> is the scene to switch to, the input
 	 to mute, or the scene a source is in; for a Dashboard button, the dashboard to go to, like
-	 <code>dashboard-energy/today</code> (empty opens it as it was left). <strong>This screen</strong>'s buttons need
+	 <code>dashboard-energy/today</code> (empty opens it as it was left); for a Meals button, the view to open:
+	 <code>shopping</code>, <code>plan</code> or <code>today</code> (the plan, which opens at today), and empty opens
+	 it as it was left. <strong>This screen</strong>'s buttons need
 	 neither OBS nor a computer. <strong>Icon</strong> is a Material Design icon name (pictogrammers.com/library/mdi),
 	 like <code>microphone-off</code>; empty uses the button's own. Home Assistant can press a button with the
 	 <code>deck_press</code> action.</p>`)
@@ -125,7 +127,7 @@ func deckButtonRow(w http.ResponseWriter, i, cols int, b config.DeckButton, pcs 
 	switch b.Action {
 	case config.DeckOBSMute:
 		target, list = b.Input, "deck-inputs"
-	case config.DeckScreenDashboard:
+	case config.DeckScreenDashboard, config.DeckScreenMeals:
 		target = b.Path
 	}
 	n := strconv.Itoa(i)
@@ -243,6 +245,8 @@ func saveDeckPage(r *http.Request) string {
 			b.Scene = target
 		case config.DeckScreenDashboard:
 			b.Path = strings.Trim(target, "/")
+		case config.DeckScreenMeals:
+			b.Path = strings.ToLower(strings.Trim(target, "/ "))
 		}
 		if a == config.DeckOBSSource {
 			b.Source = strings.TrimSpace(r.PostFormValue("source" + n))
@@ -285,6 +289,8 @@ func deckButtonProblem(i, cols int, b config.DeckButton) string {
 		return where + ": which input?"
 	case b.Action == config.DeckOBSSource && (b.Scene == "" || b.Source == ""):
 		return where + ": which scene and source?"
+	case b.Action == config.DeckScreenMeals && !slices.Contains([]string{"", "shopping", "plan", "today"}, b.Path):
+		return where + ": the Meals view is shopping, plan or today"
 	case b.Action.OnComputer() && b.Computer == "":
 		return where + ": which computer?"
 	case b.Action.OnComputer() && b.Value == "":

@@ -93,6 +93,7 @@ var findKeywords = map[string][]string{
 	"screen":    {"clock", "display", "slideshow", "screensaver"},
 	"themes":    {"night", "dim", "dark", "light", "color", "brightness"},
 	"photos":    {"pictures", "slideshow"},
+	"mealie":    {"meals", "recipes", "shopping", "cooking", "mealie"},
 	"immich":    {"photos", "pictures", "album", "slideshow"},
 	"dashpanel": {"panel"},
 

@@ -54,6 +54,7 @@ var fakeSecrets = map[string]string{
 	"realtime voice's key":          "walnut-fake-realtime-key",
 	"realtime voice's token":        "walnut-fake-mcp-token",
 	"Music Assistant's token":       "walnut-fake-music-token",
+	"Mealie's token":                "walnut-fake-mealie-token",
 	"the Reolink password":          "walnut-fake-recorder-pass",
 	"the cameras' talk password":    "walnut-fake-talk-pass",
 	"the camera stream's password":  "walnut-fake-stream-pass",
@@ -69,11 +70,13 @@ func saveFakeSecrets(t *testing.T) {
 	config.Use(filepath.Join(t.TempDir(), "state.json"))
 	nowhere := "http://127.0.0.1:9"
 	music, talk := fakeSecrets["Music Assistant's token"], fakeSecrets["the cameras' talk password"]
+	meals := fakeSecrets["Mealie's token"]
 	for what, err := range map[string]error{
 		"brain":     config.Set().Brain().SetKey(fakeSecrets["the voice assistant's key"]),
 		"realtime":  config.Set().Realtime().SetKey(fakeSecrets["realtime voice's key"]),
 		"mcp":       config.Set().Realtime().SetMCPToken(fakeSecrets["realtime voice's token"]),
 		"music":     config.Set().MusicAssistant().Server(nowhere, &music),
+		"mealie":    config.Set().Mealie().Server(nowhere, &meals),
 		"reolink":   config.Set().Home().Reolink(config.Reolink{Base: "http://192.168.1.30", User: "admin", Pass: fakeSecrets["the Reolink password"]}),
 		"talkback":  config.Set().TalkBack().Save("admin", &talk, nil),
 		"camstream": config.Set().CamStream().Login("recorder", fakeSecrets["the camera stream's password"]),
@@ -99,7 +102,7 @@ func TestNoSectionShowsASavedSecret(t *testing.T) {
 	c := config.Get()
 	for what, got := range map[string]string{
 		"the voice assistant's key": c.Brain.Key, "realtime voice's key": c.Realtime.Key, "realtime voice's token": c.Realtime.MCPToken,
-		"Music Assistant's token": c.MusicAssistant.Token, "the Reolink password": c.Home.Reolink.Pass,
+		"Music Assistant's token": c.MusicAssistant.Token, "Mealie's token": c.Mealie.Token, "the Reolink password": c.Home.Reolink.Pass,
 		"the cameras' talk password": c.TalkBack.Pass, "the camera stream's password": c.CamStream.Pass,
 		"the dashboard server's key": c.Dashboard.Key, "the OBS password": c.Deck.OBS.Password, "the Immich key": c.Home.Immich.Key,
 		"the wake clip token": c.Wake.Send.Token,
@@ -113,6 +116,7 @@ func TestNoSectionShowsASavedSecret(t *testing.T) {
 		"voice assistant":      func(w http.ResponseWriter) { brainSection(w, "tok") },
 		"realtime voice":       func(w http.ResponseWriter) { realtimeSection(w, "tok") },
 		"Music Assistant":      func(w http.ResponseWriter) { musicSection(context.Background(), w, "tok") },
+		"Mealie":               func(w http.ResponseWriter) { mealieSection(context.Background(), w, "tok") },
 		"Reolink cameras":      func(w http.ResponseWriter) { reolinkSection(w, "tok") },
 		"talk through cameras": func(w http.ResponseWriter) { talkBackSection(w, "tok") },
 		"camera streaming":     func(w http.ResponseWriter) { camStreamSection(w, "tok") },

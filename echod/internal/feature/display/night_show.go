@@ -24,9 +24,10 @@ const nightNever = ""
 
 // Actions: screen_night_hours sets the night to any start and end, "19:00" and "09:30"; both empty is
 // no night. screen_weekend_night_hours sets the weekend's the same way; both empty is the same as every
-// other night. The rest put a page up from an automation: the calendar, the forecast, the rain map.
+// other night. The rest put a page up from an automation: the calendar, the forecast, the rain map,
+// and the Meals page (mealsActions, in meals_actions.go).
 func (d *Display) Actions() []*esphome.Action {
-	return []*esphome.Action{{
+	return append([]*esphome.Action{{
 		Name: "screen_night_hours",
 		Args: []esphome.Arg{{Name: "start", Type: esphome.ArgString}, {Name: "end", Type: esphome.ArgString}},
 		Run:  func(c esphome.Call) (any, error) { return nil, d.setNightHours(c.String("start"), c.String("end")) },
@@ -64,7 +65,7 @@ func (d *Display) Actions() []*esphome.Action {
 	}, {
 		Name: "radar_show",
 		Run:  func(esphome.Call) (any, error) { return nil, d.weatherShown(true) },
-	}}
+	}}, d.mealsActions()...)
 }
 
 // weatherShown is the weather_show and radar_show actions: the forecast or the rain map, as a tap on
@@ -109,7 +110,8 @@ func (d *Display) askedAtNight(now time.Time) {
 }
 
 // askedUp is whether a page Home Assistant asked for at night is still up: the hold lasts while the
-// page does, the Radar button or a tap on the calendar keeping it up keeping the hold too, and ends
+// page does, the Radar button or a tap on the calendar keeping it up keeping the hold too, as does a
+// custom screen that asks for it (customScreen.night), and ends
 // the first time the page is found closed, so a page put up later is not held for it. Called with
 // d.mu held.
 func (d *Display) askedUp(now time.Time) bool {
@@ -117,6 +119,9 @@ func (d *Display) askedUp(now time.Time) bool {
 		return false
 	}
 	if now.Before(d.weatherUntil) || now.Before(d.calUntil) || (d.drawer && d.drawerTab == drawerTodo) {
+		return true
+	}
+	if d.customHold(func(c customScreen) func() bool { return c.night }) {
 		return true
 	}
 	d.askedNight = false

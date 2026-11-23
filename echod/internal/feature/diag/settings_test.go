@@ -31,6 +31,7 @@ func TestTheSecretsAreTakenOut(t *testing.T) {
 	var c config.Config
 	c.CamStream.Pass, c.Remote.Secret, c.Home.HouseWord = "camera-password-value", "remote-secret-value", "our long house word"
 	c.Home.Immich.Key = "immich-key-value"
+	c.Mealie.Token = "mealie-token-value"
 	c.Security.ScreenKey, c.Security.BabyKey = "screen-key-value", "baby-key-value"
 	c.Home.Go2RTC.Base = "http://admin:go2rtc-password@go2rtc.example:1984"
 	c.TalkBack.Pass = "talk-back-password"
@@ -39,7 +40,7 @@ func TestTheSecretsAreTakenOut(t *testing.T) {
 	c.Security.LockPIN = "salted-hash-of-the-pin"
 	c.Deck.Computers = []config.DeckComputer{{Name: "Desk", Addr: "desk.example", Key: "deck-pairing-key"}}
 	got := secrets(c)
-	for _, want := range []string{"camera-password-value", "remote-secret-value", "our long house word", "immich-key-value", "screen-key-value", "baby-key-value", "go2rtc-password",
+	for _, want := range []string{"camera-password-value", "remote-secret-value", "our long house word", "immich-key-value", "mealie-token-value", "screen-key-value", "baby-key-value", "go2rtc-password",
 		"talk-back-password", "porch-camera-password", "porch-picture-password", "salted-hash-of-the-pin", "deck-pairing-key"} {
 		if !slices.Contains(got, want) {
 			t.Errorf("%q is not among the secrets", want)
@@ -48,5 +49,18 @@ func TestTheSecretsAreTakenOut(t *testing.T) {
 	// A short one would take a common word out all over the bundle.
 	if slices.Contains(got, "admin") {
 		t.Error("a short user name is among the secrets")
+	}
+}
+
+// The Mealie token is one of the secrets the redactor is told of, so a line that carries it, a log or the
+// settings, comes out without it.
+func TestDiagBundleHasNoMealieToken(t *testing.T) {
+	var c config.Config
+	c.Mealie = config.Mealie{URL: "http://mealie.example:9925", Token: "a-long-mealie-api-token"}
+	if !slices.Contains(secrets(c), "a-long-mealie-api-token") {
+		t.Error("the Mealie token is not among the secrets")
+	}
+	if got := settingsSummary(c); strings.Contains(got, "a-long-mealie-api-token") {
+		t.Errorf("the settings summary carries the token: %s", got)
 	}
 }

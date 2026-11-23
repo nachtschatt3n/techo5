@@ -1098,6 +1098,104 @@ var uiEnglish = map[string]string{
 	"ui_this_tablet_has_no_settings_screen_to_open": "This tablet has no settings screen to open",
 	"tablet_apps":                        "Apps",
 	"ui_open_another_app_on_this_tablet": "Open another app on this tablet",
+
+	// meals (T3b): the Meals page, its switcher and its states.
+	// the Meals page's tab, and the deck's and the launcher's Meals button.
+	"meals": "Meals",
+	// the Meals page's Shopping view, in its switcher.
+	"meals_shopping": "Shopping",
+	// the Meals page's Plan view, in its switcher.
+	"meals_plan": "Plan",
+	// the Meals page's Cooking view, in its switcher.
+	"meals_cooking": "Cooking",
+	// the Meals page while its data comes in.
+	"meals_loading": "Loading…",
+	// the Meals page when Mealie does not answer.
+	"meals_unreachable": "Mealie isn't reachable",
+	// the Meals page when Mealie refuses the token.
+	"meals_token_refused": "Mealie refused the token. Check it on the setup page.",
+	// the Meals page when Mealie wants the https address.
+	"meals_use_https": "Use the https address on the setup page.",
+	// the note over Meals data that could not be refreshed: %s is the time it is from.
+	"meals_offline_as_of": "Offline, as of %s",
+	// the Retry button on the Meals page.
+	"meals_retry": "Retry",
+	// the Shopping view's header: %s is the time of its last refresh.
+	"meals_updated": "updated %s",
+	// the Shopping view's header, for a list that has no name.
+	"meals_shopping_list": "Shopping list",
+	// the deck's foot when its Meals button is pressed before Mealie is set up.
+	"meals_not_set_up": "Meals isn't set up",
+
+	// meals (T3c): the Shopping view.
+	// the Shopping view's strip: how many items are left to buy.
+	"meals_to_buy": "%d to buy",
+	// the Shopping view's heading of the folded block of checked items.
+	"meals_done_count": "Done (%d)",
+	// the Shopping view over a list with nothing left on it.
+	"meals_nothing_to_buy": "Nothing to buy",
+	// the Shopping view's strip when checking an item did not reach the server.
+	"meals_save_failed": "Couldn't save, try again",
+	// the Shopping view's pill that unchecks the item checked last.
+	"meals_undo": "Undo",
+
+	// meals (T3d): the Plan view.
+	// the Plan view's card for what is planned for the whole week.
+	"meals_this_week": "This week",
+	// the Plan view's card for today.
+	"meals_today": "Today",
+	// the Plan view's card for tomorrow.
+	"meals_tomorrow": "Tomorrow",
+	// a Plan entry's meal type.
+	"meals_breakfast": "Breakfast",
+	// a Plan entry's meal type.
+	"meals_lunch": "Lunch",
+	// a Plan entry's meal type.
+	"meals_dinner": "Dinner",
+	// a Plan entry's meal type: a side dish.
+	"meals_side": "Side",
+	// a Plan entry's meal type.
+	"meals_snack": "Snack",
+	// a Plan entry's meal type.
+	"meals_drink": "Drink",
+	// a Plan entry's meal type.
+	"meals_dessert": "Dessert",
+	// a day's card in the Plan view when nothing is planned for it.
+	"meals_nothing_planned": "Nothing planned",
+	// the Plan view when nothing is planned for the next 7 days.
+	"meals_nothing_week": "Nothing planned for the next 7 days",
+	// how long a recipe takes, under an hour: %d is the minutes.
+	"meals_minutes": "%d min",
+	// how long a recipe takes, in whole hours: %d is the hours.
+	"meals_hours": "%d h",
+	// how long a recipe takes, an hour or more: the hours, then the minutes.
+	"meals_hours_minutes": "%d h %d min",
+
+	// meals (T4b): the Cooking view.
+	// the Cooking view's heading over a step's ingredients on a tall screen.
+	"meals_ingredients": "Ingredients",
+	// the Cooking view's button that opens the ingredients on a screen held upright: %d is how many there are.
+	"meals_ingredients_n": "Ingredients (%d)",
+	// the Cooking view's servings: %s is the number, as in 4 servings.
+	"meals_servings": "%s servings",
+	// the Cooking view's servings when it is the one: %s is the number, as in 1 serving.
+	"meals_serving": "%s serving",
+	// the Cooking view's place in the recipe: the step, then how many there are.
+	"meals_step_of": "Step %d of %d",
+	// the Cooking view's button on the overview that goes to the first step.
+	"meals_start": "Start",
+	// the Cooking view's button that goes to the next step.
+	"meals_next": "Next",
+	// the Cooking view's button that goes back a step, and from a recipe that is gone.
+	"meals_back": "Back",
+	// the Cooking view's button on the last step, which puts the recipe away.
+	"meals_finish": "Finish",
+	// the Cooking view when the server no longer has the recipe.
+	"meals_recipe_gone": "This recipe is no longer in Mealie",
+	// the Cooking view's note when some amounts are left as written at another number of servings.
+	"meals_not_scaled": "Some amounts aren't scaled",
+
+	// meals (T5c): the deck's Meals button.
 }
 
 var uiTranslations = map[string]map[string]string{
@@ -2161,6 +2259,103 @@ var uiTranslations = map[string]map[string]string{
 		"ui_this_tablet_has_no_settings_screen_to_open": "Esta tauleta no té cap pantalla d'ajustos per a obrir",
 		"tablet_apps":                                   "Aplicacions",
 		"ui_open_another_app_on_this_tablet":            "Obri una altra aplicació d'esta tauleta",
+
+		// meals (T3b): the Meals page, its switcher and its states.
+		// the Meals page's tab, and the deck's and the launcher's Meals button.
+		"meals": "Menjars",
+		// the Meals page's Shopping view, in its switcher.
+		"meals_shopping": "Compra",
+		// the Meals page's Plan view, in its switcher.
+		"meals_plan": "Pla",
+		// the Meals page's Cooking view, in its switcher.
+		"meals_cooking": "Cuinar",
+		// the Meals page while its data comes in.
+		"meals_loading": "Carregant…",
+		// the Meals page when Mealie does not answer.
+		"meals_unreachable": "No s'arriba a Mealie",
+		// the Meals page when Mealie refuses the token.
+		"meals_token_refused": "Mealie ha rebutjat el token. Comprova'l a la pàgina de configuració.",
+		// the Meals page when Mealie wants the https address.
+		"meals_use_https": "Usa l'adreça https a la pàgina de configuració.",
+		// the note over Meals data that could not be refreshed: %s is the time it is from.
+		"meals_offline_as_of": "Sense connexió, des de les %s",
+		// the Retry button on the Meals page.
+		"meals_retry": "Reintenta",
+		// the Shopping view's header: %s is the time of its last refresh.
+		"meals_updated": "actualitzat a les %s",
+		// the Shopping view's header, for a list that has no name.
+		"meals_shopping_list": "Llista de la compra",
+		// the deck's foot when its Meals button is pressed before Mealie is set up.
+		"meals_not_set_up": "Menjars no està configurat",
+
+		// meals (T3c): the Shopping view.
+		// the Shopping view's strip: how many items are left to buy.
+		"meals_to_buy": "%d per comprar",
+		// the Shopping view's heading of the folded block of checked items.
+		"meals_done_count": "Fet (%d)",
+		// the Shopping view over a list with nothing left on it.
+		"meals_nothing_to_buy": "No hi ha res per comprar",
+		// the Shopping view's strip when checking an item did not reach the server.
+		"meals_save_failed": "No s'ha pogut desar, torna-ho a provar",
+		// the Shopping view's pill that unchecks the item checked last.
+		"meals_undo": "Desfés",
+
+		// meals (T3d): the Plan view.
+		// the Plan view's card for what is planned for the whole week.
+		"meals_this_week": "Esta setmana",
+		// the Plan view's card for today.
+		"meals_today": "Hui",
+		// the Plan view's card for tomorrow.
+		"meals_tomorrow": "Demà",
+		// a Plan entry's meal type.
+		"meals_breakfast": "Esmorzar",
+		// a Plan entry's meal type.
+		"meals_lunch": "Dinar",
+		// a Plan entry's meal type.
+		"meals_dinner": "Sopar",
+		// a Plan entry's meal type: a side dish.
+		"meals_side": "Acompanyament",
+		// a Plan entry's meal type.
+		"meals_snack": "Berenar",
+		// a Plan entry's meal type.
+		"meals_drink": "Beguda",
+		// a Plan entry's meal type.
+		"meals_dessert": "Postres",
+		// a day's card in the Plan view when nothing is planned for it.
+		"meals_nothing_planned": "Res planificat",
+		// the Plan view when nothing is planned for the next 7 days.
+		"meals_nothing_week": "Res planificat els pròxims 7 dies",
+		// how long a recipe takes, under an hour: %d is the minutes.
+		"meals_minutes": "%d min",
+		// how long a recipe takes, in whole hours: %d is the hours.
+		"meals_hours": "%d h",
+		// how long a recipe takes, an hour or more: the hours, then the minutes.
+		"meals_hours_minutes": "%d h %d min",
+
+		// meals (T4b): the Cooking view.
+		// the Cooking view's heading over a step's ingredients on a tall screen.
+		"meals_ingredients": "Ingredients",
+		// the Cooking view's button that opens the ingredients on a screen held upright: %d is how many there are.
+		"meals_ingredients_n": "Ingredients (%d)",
+		// the Cooking view's servings: %s is the number, as in 4 servings.
+		"meals_servings": "%s racions",
+		"meals_serving":  "%s ració",
+		// the Cooking view's place in the recipe: the step, then how many there are.
+		"meals_step_of": "Pas %d de %d",
+		// the Cooking view's button on the overview that goes to the first step.
+		"meals_start": "Comença",
+		// the Cooking view's button that goes to the next step.
+		"meals_next": "Següent",
+		// the Cooking view's button that goes back a step, and from a recipe that is gone.
+		"meals_back": "Enrere",
+		// the Cooking view's button on the last step, which puts the recipe away.
+		"meals_finish": "Acaba",
+		// the Cooking view when the server no longer has the recipe.
+		"meals_recipe_gone": "Aquesta recepta ja no és a Mealie",
+		// the Cooking view's note when some amounts are left as written at another number of servings.
+		"meals_not_scaled": "Algunes quantitats no s'ajusten",
+
+		// meals (T5c): the deck's Meals button.
 	},
 	"es": {
 		// Words that were written into the drawing code and the features behind it: the calendar
@@ -3241,6 +3436,103 @@ var uiTranslations = map[string]map[string]string{
 		"ui_this_tablet_has_no_settings_screen_to_open": "Esta tableta no tiene una pantalla de ajustes que abrir",
 		"tablet_apps":                        "Aplicaciones",
 		"ui_open_another_app_on_this_tablet": "Abre otra aplicación de esta tableta",
+
+		// meals (T3b): the Meals page, its switcher and its states.
+		// the Meals page's tab, and the deck's and the launcher's Meals button.
+		"meals": "Comidas",
+		// the Meals page's Shopping view, in its switcher.
+		"meals_shopping": "Compra",
+		// the Meals page's Plan view, in its switcher.
+		"meals_plan": "Plan",
+		// the Meals page's Cooking view, in its switcher.
+		"meals_cooking": "Cocinar",
+		// the Meals page while its data comes in.
+		"meals_loading": "Cargando…",
+		// the Meals page when Mealie does not answer.
+		"meals_unreachable": "No se puede llegar a Mealie",
+		// the Meals page when Mealie refuses the token.
+		"meals_token_refused": "Mealie rechazó el token. Revísalo en la página de configuración.",
+		// the Meals page when Mealie wants the https address.
+		"meals_use_https": "Usa la dirección https en la página de configuración.",
+		// the note over Meals data that could not be refreshed: %s is the time it is from.
+		"meals_offline_as_of": "Sin conexión, a las %s",
+		// the Retry button on the Meals page.
+		"meals_retry": "Reintentar",
+		// the Shopping view's header: %s is the time of its last refresh.
+		"meals_updated": "actualizado a las %s",
+		// the Shopping view's header, for a list that has no name.
+		"meals_shopping_list": "Lista de la compra",
+		// the deck's foot when its Meals button is pressed before Mealie is set up.
+		"meals_not_set_up": "Comidas no está configurado",
+
+		// meals (T3c): the Shopping view.
+		// the Shopping view's strip: how many items are left to buy.
+		"meals_to_buy": "%d por comprar",
+		// the Shopping view's heading of the folded block of checked items.
+		"meals_done_count": "Hecho (%d)",
+		// the Shopping view over a list with nothing left on it.
+		"meals_nothing_to_buy": "Nada por comprar",
+		// the Shopping view's strip when checking an item did not reach the server.
+		"meals_save_failed": "No se pudo guardar, inténtalo de nuevo",
+		// the Shopping view's pill that unchecks the item checked last.
+		"meals_undo": "Deshacer",
+
+		// meals (T3d): the Plan view.
+		// the Plan view's card for what is planned for the whole week.
+		"meals_this_week": "Esta semana",
+		// the Plan view's card for today.
+		"meals_today": "Hoy",
+		// the Plan view's card for tomorrow.
+		"meals_tomorrow": "Mañana",
+		// a Plan entry's meal type.
+		"meals_breakfast": "Desayuno",
+		// a Plan entry's meal type.
+		"meals_lunch": "Almuerzo",
+		// a Plan entry's meal type.
+		"meals_dinner": "Cena",
+		// a Plan entry's meal type: a side dish.
+		"meals_side": "Guarnición",
+		// a Plan entry's meal type.
+		"meals_snack": "Tentempié",
+		// a Plan entry's meal type.
+		"meals_drink": "Bebida",
+		// a Plan entry's meal type.
+		"meals_dessert": "Postre",
+		// a day's card in the Plan view when nothing is planned for it.
+		"meals_nothing_planned": "Nada planeado",
+		// the Plan view when nothing is planned for the next 7 days.
+		"meals_nothing_week": "Nada planeado para los próximos 7 días",
+		// how long a recipe takes, under an hour: %d is the minutes.
+		"meals_minutes": "%d min",
+		// how long a recipe takes, in whole hours: %d is the hours.
+		"meals_hours": "%d h",
+		// how long a recipe takes, an hour or more: the hours, then the minutes.
+		"meals_hours_minutes": "%d h %d min",
+
+		// meals (T4b): the Cooking view.
+		// the Cooking view's heading over a step's ingredients on a tall screen.
+		"meals_ingredients": "Ingredientes",
+		// the Cooking view's button that opens the ingredients on a screen held upright: %d is how many there are.
+		"meals_ingredients_n": "Ingredientes (%d)",
+		// the Cooking view's servings: %s is the number, as in 4 servings.
+		"meals_servings": "%s raciones",
+		"meals_serving":  "%s ración",
+		// the Cooking view's place in the recipe: the step, then how many there are.
+		"meals_step_of": "Paso %d de %d",
+		// the Cooking view's button on the overview that goes to the first step.
+		"meals_start": "Empezar",
+		// the Cooking view's button that goes to the next step.
+		"meals_next": "Siguiente",
+		// the Cooking view's button that goes back a step, and from a recipe that is gone.
+		"meals_back": "Atrás",
+		// the Cooking view's button on the last step, which puts the recipe away.
+		"meals_finish": "Terminar",
+		// the Cooking view when the server no longer has the recipe.
+		"meals_recipe_gone": "Esta receta ya no está en Mealie",
+		// the Cooking view's note when some amounts are left as written at another number of servings.
+		"meals_not_scaled": "Algunas cantidades no se ajustan",
+
+		// meals (T5c): the deck's Meals button.
 	},
 	"fr": {
 		// First run on the screen (feature/display/render_firstrun.go, firstrun_spot.go): its steps, buttons
@@ -4316,6 +4608,103 @@ var uiTranslations = map[string]map[string]string{
 		"ui_this_tablet_has_no_settings_screen_to_open": "Cette tablette n'a pas d'écran de paramètres à ouvrir",
 		"tablet_apps":                        "Applications",
 		"ui_open_another_app_on_this_tablet": "Ouvrir une autre application de cette tablette",
+
+		// meals (T3b): the Meals page, its switcher and its states.
+		// the Meals page's tab, and the deck's and the launcher's Meals button.
+		"meals": "Repas",
+		// the Meals page's Shopping view, in its switcher.
+		"meals_shopping": "Courses",
+		// the Meals page's Plan view, in its switcher.
+		"meals_plan": "Plan",
+		// the Meals page's Cooking view, in its switcher.
+		"meals_cooking": "Cuisine",
+		// the Meals page while its data comes in.
+		"meals_loading": "Chargement…",
+		// the Meals page when Mealie does not answer.
+		"meals_unreachable": "Mealie est injoignable",
+		// the Meals page when Mealie refuses the token.
+		"meals_token_refused": "Jeton refusé par Mealie. À vérifier sur la page de réglages.",
+		// the Meals page when Mealie wants the https address.
+		"meals_use_https": "Adresse https à saisir sur la page de réglages.",
+		// the note over Meals data that could not be refreshed: %s is the time it is from.
+		"meals_offline_as_of": "Hors ligne, à %s",
+		// the Retry button on the Meals page.
+		"meals_retry": "Réessayer",
+		// the Shopping view's header: %s is the time of its last refresh.
+		"meals_updated": "à jour à %s",
+		// the Shopping view's header, for a list that has no name.
+		"meals_shopping_list": "Liste de courses",
+		// the deck's foot when its Meals button is pressed before Mealie is set up.
+		"meals_not_set_up": "Repas n'est pas configuré",
+
+		// meals (T3c): the Shopping view.
+		// the Shopping view's strip: how many items are left to buy.
+		"meals_to_buy": "%d à acheter",
+		// the Shopping view's heading of the folded block of checked items.
+		"meals_done_count": "Fait (%d)",
+		// the Shopping view over a list with nothing left on it.
+		"meals_nothing_to_buy": "Rien à acheter",
+		// the Shopping view's strip when checking an item did not reach the server.
+		"meals_save_failed": "Échec de l'enregistrement, réessayez",
+		// the Shopping view's pill that unchecks the item checked last.
+		"meals_undo": "Annuler",
+
+		// meals (T3d): the Plan view.
+		// the Plan view's card for what is planned for the whole week.
+		"meals_this_week": "Cette semaine",
+		// the Plan view's card for today.
+		"meals_today": "Aujourd'hui",
+		// the Plan view's card for tomorrow.
+		"meals_tomorrow": "Demain",
+		// a Plan entry's meal type.
+		"meals_breakfast": "Petit-déjeuner",
+		// a Plan entry's meal type.
+		"meals_lunch": "Déjeuner",
+		// a Plan entry's meal type.
+		"meals_dinner": "Dîner",
+		// a Plan entry's meal type: a side dish.
+		"meals_side": "Accompagnement",
+		// a Plan entry's meal type.
+		"meals_snack": "En-cas",
+		// a Plan entry's meal type.
+		"meals_drink": "Boisson",
+		// a Plan entry's meal type.
+		"meals_dessert": "Dessert",
+		// a day's card in the Plan view when nothing is planned for it.
+		"meals_nothing_planned": "Rien de prévu",
+		// the Plan view when nothing is planned for the next 7 days.
+		"meals_nothing_week": "Rien de prévu pour les 7 prochains jours",
+		// how long a recipe takes, under an hour: %d is the minutes.
+		"meals_minutes": "%d min",
+		// how long a recipe takes, in whole hours: %d is the hours.
+		"meals_hours": "%d h",
+		// how long a recipe takes, an hour or more: the hours, then the minutes.
+		"meals_hours_minutes": "%d h %d min",
+
+		// meals (T4b): the Cooking view.
+		// the Cooking view's heading over a step's ingredients on a tall screen.
+		"meals_ingredients": "Ingrédients",
+		// the Cooking view's button that opens the ingredients on a screen held upright: %d is how many there are.
+		"meals_ingredients_n": "Ingrédients (%d)",
+		// the Cooking view's servings: %s is the number, as in 4 servings.
+		"meals_servings": "%s portions",
+		"meals_serving":  "%s portion",
+		// the Cooking view's place in the recipe: the step, then how many there are.
+		"meals_step_of": "Étape %d sur %d",
+		// the Cooking view's button on the overview that goes to the first step.
+		"meals_start": "Démarrer",
+		// the Cooking view's button that goes to the next step.
+		"meals_next": "Suivant",
+		// the Cooking view's button that goes back a step, and from a recipe that is gone.
+		"meals_back": "Retour",
+		// the Cooking view's button on the last step, which puts the recipe away.
+		"meals_finish": "Terminer",
+		// the Cooking view when the server no longer has the recipe.
+		"meals_recipe_gone": "Cette recette n'est plus dans Mealie",
+		// the Cooking view's note when some amounts are left as written at another number of servings.
+		"meals_not_scaled": "Certaines quantités ne sont pas ajustées",
+
+		// meals (T5c): the deck's Meals button.
 	},
 	"gl": {
 		// First run on the screen (feature/display/render_firstrun.go, firstrun_spot.go): its steps, buttons
@@ -5387,6 +5776,103 @@ var uiTranslations = map[string]map[string]string{
 		"ui_this_tablet_has_no_settings_screen_to_open": "Esta tableta non ten unha pantalla de axustes que abrir",
 		"tablet_apps":                        "Aplicacións",
 		"ui_open_another_app_on_this_tablet": "Abre outra aplicación desta tableta",
+
+		// meals (T3b): the Meals page, its switcher and its states.
+		// the Meals page's tab, and the deck's and the launcher's Meals button.
+		"meals": "Comidas",
+		// the Meals page's Shopping view, in its switcher.
+		"meals_shopping": "Compra",
+		// the Meals page's Plan view, in its switcher.
+		"meals_plan": "Plan",
+		// the Meals page's Cooking view, in its switcher.
+		"meals_cooking": "Cociñar",
+		// the Meals page while its data comes in.
+		"meals_loading": "Cargando…",
+		// the Meals page when Mealie does not answer.
+		"meals_unreachable": "Non se pode chegar a Mealie",
+		// the Meals page when Mealie refuses the token.
+		"meals_token_refused": "Mealie rexeitou o token. Revísao na páxina de configuración.",
+		// the Meals page when Mealie wants the https address.
+		"meals_use_https": "Usa o enderezo https na páxina de configuración.",
+		// the note over Meals data that could not be refreshed: %s is the time it is from.
+		"meals_offline_as_of": "Sen conexión, ás %s",
+		// the Retry button on the Meals page.
+		"meals_retry": "Reintentar",
+		// the Shopping view's header: %s is the time of its last refresh.
+		"meals_updated": "actualizado ás %s",
+		// the Shopping view's header, for a list that has no name.
+		"meals_shopping_list": "Lista da compra",
+		// the deck's foot when its Meals button is pressed before Mealie is set up.
+		"meals_not_set_up": "Comidas non está configurado",
+
+		// meals (T3c): the Shopping view.
+		// the Shopping view's strip: how many items are left to buy.
+		"meals_to_buy": "%d por mercar",
+		// the Shopping view's heading of the folded block of checked items.
+		"meals_done_count": "Feito (%d)",
+		// the Shopping view over a list with nothing left on it.
+		"meals_nothing_to_buy": "Nada por mercar",
+		// the Shopping view's strip when checking an item did not reach the server.
+		"meals_save_failed": "Non se puido gardar, téntao de novo",
+		// the Shopping view's pill that unchecks the item checked last.
+		"meals_undo": "Desfacer",
+
+		// meals (T3d): the Plan view.
+		// the Plan view's card for what is planned for the whole week.
+		"meals_this_week": "Esta semana",
+		// the Plan view's card for today.
+		"meals_today": "Hoxe",
+		// the Plan view's card for tomorrow.
+		"meals_tomorrow": "Mañá",
+		// a Plan entry's meal type.
+		"meals_breakfast": "Almorzo",
+		// a Plan entry's meal type.
+		"meals_lunch": "Xantar",
+		// a Plan entry's meal type.
+		"meals_dinner": "Cea",
+		// a Plan entry's meal type: a side dish.
+		"meals_side": "Acompañamento",
+		// a Plan entry's meal type.
+		"meals_snack": "Merenda",
+		// a Plan entry's meal type.
+		"meals_drink": "Bebida",
+		// a Plan entry's meal type.
+		"meals_dessert": "Sobremesa",
+		// a day's card in the Plan view when nothing is planned for it.
+		"meals_nothing_planned": "Nada planeado",
+		// the Plan view when nothing is planned for the next 7 days.
+		"meals_nothing_week": "Nada planeado para os próximos 7 días",
+		// how long a recipe takes, under an hour: %d is the minutes.
+		"meals_minutes": "%d min",
+		// how long a recipe takes, in whole hours: %d is the hours.
+		"meals_hours": "%d h",
+		// how long a recipe takes, an hour or more: the hours, then the minutes.
+		"meals_hours_minutes": "%d h %d min",
+
+		// meals (T4b): the Cooking view.
+		// the Cooking view's heading over a step's ingredients on a tall screen.
+		"meals_ingredients": "Ingredientes",
+		// the Cooking view's button that opens the ingredients on a screen held upright: %d is how many there are.
+		"meals_ingredients_n": "Ingredientes (%d)",
+		// the Cooking view's servings: %s is the number, as in 4 servings.
+		"meals_servings": "%s racións",
+		"meals_serving":  "%s ración",
+		// the Cooking view's place in the recipe: the step, then how many there are.
+		"meals_step_of": "Paso %d de %d",
+		// the Cooking view's button on the overview that goes to the first step.
+		"meals_start": "Comezar",
+		// the Cooking view's button that goes to the next step.
+		"meals_next": "Seguinte",
+		// the Cooking view's button that goes back a step, and from a recipe that is gone.
+		"meals_back": "Atrás",
+		// the Cooking view's button on the last step, which puts the recipe away.
+		"meals_finish": "Rematar",
+		// the Cooking view when the server no longer has the recipe.
+		"meals_recipe_gone": "Esta receita xa non está en Mealie",
+		// the Cooking view's note when some amounts are left as written at another number of servings.
+		"meals_not_scaled": "Algunhas cantidades non se axustan",
+
+		// meals (T5c): the deck's Meals button.
 	},
 	"it": {
 		// First run on the screen (feature/display/render_firstrun.go, firstrun_spot.go): its steps, buttons
@@ -6462,6 +6948,103 @@ var uiTranslations = map[string]map[string]string{
 		"ui_this_tablet_has_no_settings_screen_to_open": "Questo tablet non ha una schermata di impostazioni da aprire",
 		"tablet_apps":                        "App",
 		"ui_open_another_app_on_this_tablet": "Apri un'altra app di questo tablet",
+
+		// meals (T3b): the Meals page, its switcher and its states.
+		// the Meals page's tab, and the deck's and the launcher's Meals button.
+		"meals": "Pasti",
+		// the Meals page's Shopping view, in its switcher.
+		"meals_shopping": "Spesa",
+		// the Meals page's Plan view, in its switcher.
+		"meals_plan": "Piano",
+		// the Meals page's Cooking view, in its switcher.
+		"meals_cooking": "Cucina",
+		// the Meals page while its data comes in.
+		"meals_loading": "Caricamento…",
+		// the Meals page when Mealie does not answer.
+		"meals_unreachable": "Mealie non è raggiungibile",
+		// the Meals page when Mealie refuses the token.
+		"meals_token_refused": "Mealie ha rifiutato il token. Controllalo nella pagina di configurazione.",
+		// the Meals page when Mealie wants the https address.
+		"meals_use_https": "Usa l'indirizzo https nella pagina di configurazione.",
+		// the note over Meals data that could not be refreshed: %s is the time it is from.
+		"meals_offline_as_of": "Offline, alle %s",
+		// the Retry button on the Meals page.
+		"meals_retry": "Riprova",
+		// the Shopping view's header: %s is the time of its last refresh.
+		"meals_updated": "aggiornato alle %s",
+		// the Shopping view's header, for a list that has no name.
+		"meals_shopping_list": "Lista della spesa",
+		// the deck's foot when its Meals button is pressed before Mealie is set up.
+		"meals_not_set_up": "Pasti non è configurato",
+
+		// meals (T3c): the Shopping view.
+		// the Shopping view's strip: how many items are left to buy.
+		"meals_to_buy": "%d da comprare",
+		// the Shopping view's heading of the folded block of checked items.
+		"meals_done_count": "Fatto (%d)",
+		// the Shopping view over a list with nothing left on it.
+		"meals_nothing_to_buy": "Niente da comprare",
+		// the Shopping view's strip when checking an item did not reach the server.
+		"meals_save_failed": "Impossibile salvare, riprova",
+		// the Shopping view's pill that unchecks the item checked last.
+		"meals_undo": "Annulla",
+
+		// meals (T3d): the Plan view.
+		// the Plan view's card for what is planned for the whole week.
+		"meals_this_week": "Questa settimana",
+		// the Plan view's card for today.
+		"meals_today": "Oggi",
+		// the Plan view's card for tomorrow.
+		"meals_tomorrow": "Domani",
+		// a Plan entry's meal type.
+		"meals_breakfast": "Colazione",
+		// a Plan entry's meal type.
+		"meals_lunch": "Pranzo",
+		// a Plan entry's meal type.
+		"meals_dinner": "Cena",
+		// a Plan entry's meal type: a side dish.
+		"meals_side": "Contorno",
+		// a Plan entry's meal type.
+		"meals_snack": "Spuntino",
+		// a Plan entry's meal type.
+		"meals_drink": "Bevanda",
+		// a Plan entry's meal type.
+		"meals_dessert": "Dolce",
+		// a day's card in the Plan view when nothing is planned for it.
+		"meals_nothing_planned": "Niente in programma",
+		// the Plan view when nothing is planned for the next 7 days.
+		"meals_nothing_week": "Niente in programma per i prossimi 7 giorni",
+		// how long a recipe takes, under an hour: %d is the minutes.
+		"meals_minutes": "%d min",
+		// how long a recipe takes, in whole hours: %d is the hours.
+		"meals_hours": "%d h",
+		// how long a recipe takes, an hour or more: the hours, then the minutes.
+		"meals_hours_minutes": "%d h %d min",
+
+		// meals (T4b): the Cooking view.
+		// the Cooking view's heading over a step's ingredients on a tall screen.
+		"meals_ingredients": "Ingredienti",
+		// the Cooking view's button that opens the ingredients on a screen held upright: %d is how many there are.
+		"meals_ingredients_n": "Ingredienti (%d)",
+		// the Cooking view's servings: %s is the number, as in 4 servings.
+		"meals_servings": "%s porzioni",
+		"meals_serving":  "%s porzione",
+		// the Cooking view's place in the recipe: the step, then how many there are.
+		"meals_step_of": "Passo %d di %d",
+		// the Cooking view's button on the overview that goes to the first step.
+		"meals_start": "Inizia",
+		// the Cooking view's button that goes to the next step.
+		"meals_next": "Avanti",
+		// the Cooking view's button that goes back a step, and from a recipe that is gone.
+		"meals_back": "Indietro",
+		// the Cooking view's button on the last step, which puts the recipe away.
+		"meals_finish": "Fine",
+		// the Cooking view when the server no longer has the recipe.
+		"meals_recipe_gone": "Questa ricetta non è più in Mealie",
+		// the Cooking view's note when some amounts are left as written at another number of servings.
+		"meals_not_scaled": "Alcune quantità non sono adattate",
+
+		// meals (T5c): the deck's Meals button.
 	},
 	"nl": {
 		// First run on the screen (feature/display/render_firstrun.go, firstrun_spot.go): its steps, buttons
@@ -9361,6 +9944,103 @@ var uiTranslations = map[string]map[string]string{
 		"ui_this_tablet_has_no_settings_screen_to_open": "このタブレットには開ける設定画面がありません",
 		"tablet_apps":                        "アプリ",
 		"ui_open_another_app_on_this_tablet": "このタブレットの別のアプリを開く",
+
+		// meals (T3b): the Meals page, its switcher and its states.
+		// the Meals page's tab, and the deck's and the launcher's Meals button.
+		"meals": "食事",
+		// the Meals page's Shopping view, in its switcher.
+		"meals_shopping": "買い物",
+		// the Meals page's Plan view, in its switcher.
+		"meals_plan": "予定",
+		// the Meals page's Cooking view, in its switcher.
+		"meals_cooking": "調理",
+		// the Meals page while its data comes in.
+		"meals_loading": "読み込み中…",
+		// the Meals page when Mealie does not answer.
+		"meals_unreachable": "Mealieに接続できません",
+		// the Meals page when Mealie refuses the token.
+		"meals_token_refused": "Mealieがトークンを拒否しました。設定ページで確認してください。",
+		// the Meals page when Mealie wants the https address.
+		"meals_use_https": "設定ページでhttpsのアドレスを使ってください。",
+		// the note over Meals data that could not be refreshed: %s is the time it is from.
+		"meals_offline_as_of": "オフライン（%s時点）",
+		// the Retry button on the Meals page.
+		"meals_retry": "再試行",
+		// the Shopping view's header: %s is the time of its last refresh.
+		"meals_updated": "%s に更新",
+		// the Shopping view's header, for a list that has no name.
+		"meals_shopping_list": "買い物リスト",
+		// the deck's foot when its Meals button is pressed before Mealie is set up.
+		"meals_not_set_up": "食事は設定されていません",
+
+		// meals (T3c): the Shopping view.
+		// the Shopping view's strip: how many items are left to buy.
+		"meals_to_buy": "残り %d 件",
+		// the Shopping view's heading of the folded block of checked items.
+		"meals_done_count": "完了 (%d)",
+		// the Shopping view over a list with nothing left on it.
+		"meals_nothing_to_buy": "買うものはありません",
+		// the Shopping view's strip when checking an item did not reach the server.
+		"meals_save_failed": "保存できませんでした。もう一度お試しください",
+		// the Shopping view's pill that unchecks the item checked last.
+		"meals_undo": "元に戻す",
+
+		// meals (T3d): the Plan view.
+		// the Plan view's card for what is planned for the whole week.
+		"meals_this_week": "今週",
+		// the Plan view's card for today.
+		"meals_today": "今日",
+		// the Plan view's card for tomorrow.
+		"meals_tomorrow": "明日",
+		// a Plan entry's meal type.
+		"meals_breakfast": "朝食",
+		// a Plan entry's meal type.
+		"meals_lunch": "昼食",
+		// a Plan entry's meal type.
+		"meals_dinner": "夕食",
+		// a Plan entry's meal type: a side dish.
+		"meals_side": "副菜",
+		// a Plan entry's meal type.
+		"meals_snack": "軽食",
+		// a Plan entry's meal type.
+		"meals_drink": "飲み物",
+		// a Plan entry's meal type.
+		"meals_dessert": "デザート",
+		// a day's card in the Plan view when nothing is planned for it.
+		"meals_nothing_planned": "予定なし",
+		// the Plan view when nothing is planned for the next 7 days.
+		"meals_nothing_week": "今後7日間の予定はありません",
+		// how long a recipe takes, under an hour: %d is the minutes.
+		"meals_minutes": "%d分",
+		// how long a recipe takes, in whole hours: %d is the hours.
+		"meals_hours": "%d時間",
+		// how long a recipe takes, an hour or more: the hours, then the minutes.
+		"meals_hours_minutes": "%d時間%d分",
+
+		// meals (T4b): the Cooking view.
+		// the Cooking view's heading over a step's ingredients on a tall screen.
+		"meals_ingredients": "材料",
+		// the Cooking view's button that opens the ingredients on a screen held upright: %d is how many there are.
+		"meals_ingredients_n": "材料 (%d)",
+		// the Cooking view's servings: %s is the number, as in 4 servings.
+		"meals_servings": "%s人分",
+		"meals_serving":  "%s人分",
+		// the Cooking view's place in the recipe: the step, then how many there are.
+		"meals_step_of": "手順 %d/%d",
+		// the Cooking view's button on the overview that goes to the first step.
+		"meals_start": "開始",
+		// the Cooking view's button that goes to the next step.
+		"meals_next": "次へ",
+		// the Cooking view's button that goes back a step, and from a recipe that is gone.
+		"meals_back": "戻る",
+		// the Cooking view's button on the last step, which puts the recipe away.
+		"meals_finish": "完了",
+		// the Cooking view when the server no longer has the recipe.
+		"meals_recipe_gone": "このレシピはMealieにありません",
+		// the Cooking view's note when some amounts are left as written at another number of servings.
+		"meals_not_scaled": "一部の分量は調整されません",
+
+		// meals (T5c): the deck's Meals button.
 	},
 
 	// de is the German catalog. The English of every entry is above it, so a
@@ -11063,6 +11743,103 @@ var uiTranslations = map[string]map[string]string{
 		"ui_this_tablet_has_no_settings_screen_to_open": "Dieses Tablet hat keinen Einstellungsbildschirm zum Öffnen",
 		"tablet_apps":                        "Apps",
 		"ui_open_another_app_on_this_tablet": "Eine andere App auf diesem Tablet öffnen",
+
+		// meals (T3b): the Meals page, its switcher and its states.
+		// the Meals page's tab, and the deck's and the launcher's Meals button.
+		"meals": "Essen",
+		// the Meals page's Shopping view, in its switcher.
+		"meals_shopping": "Einkauf",
+		// the Meals page's Plan view, in its switcher.
+		"meals_plan": "Plan",
+		// the Meals page's Cooking view, in its switcher.
+		"meals_cooking": "Kochen",
+		// the Meals page while its data comes in.
+		"meals_loading": "Lädt…",
+		// the Meals page when Mealie does not answer.
+		"meals_unreachable": "Mealie ist nicht erreichbar",
+		// the Meals page when Mealie refuses the token.
+		"meals_token_refused": "Mealie hat das Token abgelehnt. Prüfe es auf der Einrichtungsseite.",
+		// the Meals page when Mealie wants the https address.
+		"meals_use_https": "Auf der Einrichtungsseite die https-Adresse verwenden.",
+		// the note over Meals data that could not be refreshed: %s is the time it is from.
+		"meals_offline_as_of": "Offline, Stand %s",
+		// the Retry button on the Meals page.
+		"meals_retry": "Nochmal",
+		// the Shopping view's header: %s is the time of its last refresh.
+		"meals_updated": "Stand %s",
+		// the Shopping view's header, for a list that has no name.
+		"meals_shopping_list": "Einkaufsliste",
+		// the deck's foot when its Meals button is pressed before Mealie is set up.
+		"meals_not_set_up": "Essen ist nicht eingerichtet",
+
+		// meals (T3c): the Shopping view.
+		// the Shopping view's strip: how many items are left to buy.
+		"meals_to_buy": "%d zu kaufen",
+		// the Shopping view's heading of the folded block of checked items.
+		"meals_done_count": "Erledigt (%d)",
+		// the Shopping view over a list with nothing left on it.
+		"meals_nothing_to_buy": "Nichts zu kaufen",
+		// the Shopping view's strip when checking an item did not reach the server.
+		"meals_save_failed": "Speichern fehlgeschlagen, nochmal versuchen",
+		// the Shopping view's pill that unchecks the item checked last.
+		"meals_undo": "Rückgängig",
+
+		// meals (T3d): the Plan view.
+		// the Plan view's card for what is planned for the whole week.
+		"meals_this_week": "Diese Woche",
+		// the Plan view's card for today.
+		"meals_today": "Heute",
+		// the Plan view's card for tomorrow.
+		"meals_tomorrow": "Morgen",
+		// a Plan entry's meal type.
+		"meals_breakfast": "Frühstück",
+		// a Plan entry's meal type.
+		"meals_lunch": "Mittagessen",
+		// a Plan entry's meal type.
+		"meals_dinner": "Abendessen",
+		// a Plan entry's meal type: a side dish.
+		"meals_side": "Beilage",
+		// a Plan entry's meal type.
+		"meals_snack": "Snack",
+		// a Plan entry's meal type.
+		"meals_drink": "Getränk",
+		// a Plan entry's meal type.
+		"meals_dessert": "Dessert",
+		// a day's card in the Plan view when nothing is planned for it.
+		"meals_nothing_planned": "Nichts geplant",
+		// the Plan view when nothing is planned for the next 7 days.
+		"meals_nothing_week": "Nichts geplant für die nächsten 7 Tage",
+		// how long a recipe takes, under an hour: %d is the minutes.
+		"meals_minutes": "%d Min.",
+		// how long a recipe takes, in whole hours: %d is the hours.
+		"meals_hours": "%d Std.",
+		// how long a recipe takes, an hour or more: the hours, then the minutes.
+		"meals_hours_minutes": "%d Std. %d Min.",
+
+		// meals (T4b): the Cooking view.
+		// the Cooking view's heading over a step's ingredients on a tall screen.
+		"meals_ingredients": "Zutaten",
+		// the Cooking view's button that opens the ingredients on a screen held upright: %d is how many there are.
+		"meals_ingredients_n": "Zutaten (%d)",
+		// the Cooking view's servings: %s is the number, as in 4 servings.
+		"meals_servings": "%s Portionen",
+		"meals_serving":  "%s Portion",
+		// the Cooking view's place in the recipe: the step, then how many there are.
+		"meals_step_of": "Schritt %d von %d",
+		// the Cooking view's button on the overview that goes to the first step.
+		"meals_start": "Start",
+		// the Cooking view's button that goes to the next step.
+		"meals_next": "Weiter",
+		// the Cooking view's button that goes back a step, and from a recipe that is gone.
+		"meals_back": "Zurück",
+		// the Cooking view's button on the last step, which puts the recipe away.
+		"meals_finish": "Fertig",
+		// the Cooking view when the server no longer has the recipe.
+		"meals_recipe_gone": "Dieses Rezept ist nicht mehr in Mealie",
+		// the Cooking view's note when some amounts are left as written at another number of servings.
+		"meals_not_scaled": "Manche Mengen werden nicht umgerechnet",
+
+		// meals (T5c): the deck's Meals button.
 	},
 	"ro": {
 		// Romanian, with tu (the informal you, as Android and Home Assistant write it): "atinge" for the
@@ -12124,6 +12901,103 @@ var uiTranslations = map[string]map[string]string{
 		"ui_this_tablet_has_no_settings_screen_to_open": "Tableta nu are un ecran de setări de deschis",
 		"tablet_apps":                                   "Aplicații",
 		"ui_open_another_app_on_this_tablet":            "Deschide altă aplicație pe tabletă",
+
+		// meals (T3b): the Meals page, its switcher and its states.
+		// the Meals page's tab, and the deck's and the launcher's Meals button.
+		"meals": "Mese",
+		// the Meals page's Shopping view, in its switcher.
+		"meals_shopping": "Listă",
+		// the Meals page's Plan view, in its switcher.
+		"meals_plan": "Plan",
+		// the Meals page's Cooking view, in its switcher.
+		"meals_cooking": "Gătit",
+		// the Meals page while its data comes in.
+		"meals_loading": "Se încarcă…",
+		// the Meals page when Mealie does not answer.
+		"meals_unreachable": "Mealie nu poate fi contactat",
+		// the Meals page when Mealie refuses the token.
+		"meals_token_refused": "Mealie a refuzat tokenul. Verifică-l în pagina de configurare.",
+		// the Meals page when Mealie wants the https address.
+		"meals_use_https": "Folosește adresa https în pagina de configurare.",
+		// the note over Meals data that could not be refreshed: %s is the time it is from.
+		"meals_offline_as_of": "Offline, la %s",
+		// the Retry button on the Meals page.
+		"meals_retry": "Reîncearcă",
+		// the Shopping view's header: %s is the time of its last refresh.
+		"meals_updated": "actualizat la %s",
+		// the Shopping view's header, for a list that has no name.
+		"meals_shopping_list": "Lista de cumpărături",
+		// the deck's foot when its Meals button is pressed before Mealie is set up.
+		"meals_not_set_up": "Mese nu este configurat",
+
+		// meals (T3c): the Shopping view.
+		// the Shopping view's strip: how many items are left to buy.
+		"meals_to_buy": "%d de cumpărat",
+		// the Shopping view's heading of the folded block of checked items.
+		"meals_done_count": "Gata (%d)",
+		// the Shopping view over a list with nothing left on it.
+		"meals_nothing_to_buy": "Nimic de cumpărat",
+		// the Shopping view's strip when checking an item did not reach the server.
+		"meals_save_failed": "Nu s-a putut salva, încearcă din nou",
+		// the Shopping view's pill that unchecks the item checked last.
+		"meals_undo": "Anulează",
+
+		// meals (T3d): the Plan view.
+		// the Plan view's card for what is planned for the whole week.
+		"meals_this_week": "Săptămâna aceasta",
+		// the Plan view's card for today.
+		"meals_today": "Azi",
+		// the Plan view's card for tomorrow.
+		"meals_tomorrow": "Mâine",
+		// a Plan entry's meal type.
+		"meals_breakfast": "Mic dejun",
+		// a Plan entry's meal type.
+		"meals_lunch": "Prânz",
+		// a Plan entry's meal type.
+		"meals_dinner": "Cină",
+		// a Plan entry's meal type: a side dish.
+		"meals_side": "Garnitură",
+		// a Plan entry's meal type.
+		"meals_snack": "Gustare",
+		// a Plan entry's meal type.
+		"meals_drink": "Băutură",
+		// a Plan entry's meal type.
+		"meals_dessert": "Desert",
+		// a day's card in the Plan view when nothing is planned for it.
+		"meals_nothing_planned": "Nimic planificat",
+		// the Plan view when nothing is planned for the next 7 days.
+		"meals_nothing_week": "Nimic planificat pentru următoarele 7 zile",
+		// how long a recipe takes, under an hour: %d is the minutes.
+		"meals_minutes": "%d min",
+		// how long a recipe takes, in whole hours: %d is the hours.
+		"meals_hours": "%d h",
+		// how long a recipe takes, an hour or more: the hours, then the minutes.
+		"meals_hours_minutes": "%d h %d min",
+
+		// meals (T4b): the Cooking view.
+		// the Cooking view's heading over a step's ingredients on a tall screen.
+		"meals_ingredients": "Ingrediente",
+		// the Cooking view's button that opens the ingredients on a screen held upright: %d is how many there are.
+		"meals_ingredients_n": "Ingrediente (%d)",
+		// the Cooking view's servings: %s is the number, as in 4 servings.
+		"meals_servings": "%s porții",
+		"meals_serving":  "%s porție",
+		// the Cooking view's place in the recipe: the step, then how many there are.
+		"meals_step_of": "Pasul %d din %d",
+		// the Cooking view's button on the overview that goes to the first step.
+		"meals_start": "Începe",
+		// the Cooking view's button that goes to the next step.
+		"meals_next": "Înainte",
+		// the Cooking view's button that goes back a step, and from a recipe that is gone.
+		"meals_back": "Înapoi",
+		// the Cooking view's button on the last step, which puts the recipe away.
+		"meals_finish": "Termină",
+		// the Cooking view when the server no longer has the recipe.
+		"meals_recipe_gone": "Această rețetă nu mai e în Mealie",
+		// the Cooking view's note when some amounts are left as written at another number of servings.
+		"meals_not_scaled": "Unele cantități nu se ajustează",
+
+		// meals (T5c): the deck's Meals button.
 	},
 	"tr": {
 		// First run on the screen (feature/display/render_firstrun.go, firstrun_spot.go): its steps, buttons
@@ -13200,5 +14074,102 @@ var uiTranslations = map[string]map[string]string{
 		"ui_this_tablet_has_no_settings_screen_to_open": "Bu tablette açılacak bir ayarlar ekranı yok",
 		"tablet_apps":                        "Uygulamalar",
 		"ui_open_another_app_on_this_tablet": "Bu tabletteki başka bir uygulamayı aç",
+
+		// meals (T3b): the Meals page, its switcher and its states.
+		// the Meals page's tab, and the deck's and the launcher's Meals button.
+		"meals": "Yemek",
+		// the Meals page's Shopping view, in its switcher.
+		"meals_shopping": "Alışveriş",
+		// the Meals page's Plan view, in its switcher.
+		"meals_plan": "Plan",
+		// the Meals page's Cooking view, in its switcher.
+		"meals_cooking": "Pişirme",
+		// the Meals page while its data comes in.
+		"meals_loading": "Yükleniyor…",
+		// the Meals page when Mealie does not answer.
+		"meals_unreachable": "Mealie'ye ulaşılamıyor",
+		// the Meals page when Mealie refuses the token.
+		"meals_token_refused": "Mealie belirteci reddetti. Kurulum sayfasında kontrol edin.",
+		// the Meals page when Mealie wants the https address.
+		"meals_use_https": "Kurulum sayfasında https adresini kullanın.",
+		// the note over Meals data that could not be refreshed: %s is the time it is from.
+		"meals_offline_as_of": "Çevrimdışı, saat %s",
+		// the Retry button on the Meals page.
+		"meals_retry": "Tekrar dene",
+		// the Shopping view's header: %s is the time of its last refresh.
+		"meals_updated": "%s itibarıyla güncel",
+		// the Shopping view's header, for a list that has no name.
+		"meals_shopping_list": "Alışveriş listesi",
+		// the deck's foot when its Meals button is pressed before Mealie is set up.
+		"meals_not_set_up": "Yemek ayarlanmadı",
+
+		// meals (T3c): the Shopping view.
+		// the Shopping view's strip: how many items are left to buy.
+		"meals_to_buy": "%d alınacak",
+		// the Shopping view's heading of the folded block of checked items.
+		"meals_done_count": "Bitti (%d)",
+		// the Shopping view over a list with nothing left on it.
+		"meals_nothing_to_buy": "Alınacak bir şey yok",
+		// the Shopping view's strip when checking an item did not reach the server.
+		"meals_save_failed": "Kaydedilemedi, tekrar dene",
+		// the Shopping view's pill that unchecks the item checked last.
+		"meals_undo": "Geri al",
+
+		// meals (T3d): the Plan view.
+		// the Plan view's card for what is planned for the whole week.
+		"meals_this_week": "Bu hafta",
+		// the Plan view's card for today.
+		"meals_today": "Bugün",
+		// the Plan view's card for tomorrow.
+		"meals_tomorrow": "Yarın",
+		// a Plan entry's meal type.
+		"meals_breakfast": "Kahvaltı",
+		// a Plan entry's meal type.
+		"meals_lunch": "Öğle yemeği",
+		// a Plan entry's meal type.
+		"meals_dinner": "Akşam yemeği",
+		// a Plan entry's meal type: a side dish.
+		"meals_side": "Garnitür",
+		// a Plan entry's meal type.
+		"meals_snack": "Atıştırmalık",
+		// a Plan entry's meal type.
+		"meals_drink": "İçecek",
+		// a Plan entry's meal type.
+		"meals_dessert": "Tatlı",
+		// a day's card in the Plan view when nothing is planned for it.
+		"meals_nothing_planned": "Planlanmış bir şey yok",
+		// the Plan view when nothing is planned for the next 7 days.
+		"meals_nothing_week": "Önümüzdeki 7 gün için plan yok",
+		// how long a recipe takes, under an hour: %d is the minutes.
+		"meals_minutes": "%d dk",
+		// how long a recipe takes, in whole hours: %d is the hours.
+		"meals_hours": "%d sa",
+		// how long a recipe takes, an hour or more: the hours, then the minutes.
+		"meals_hours_minutes": "%d sa %d dk",
+
+		// meals (T4b): the Cooking view.
+		// the Cooking view's heading over a step's ingredients on a tall screen.
+		"meals_ingredients": "Malzemeler",
+		// the Cooking view's button that opens the ingredients on a screen held upright: %d is how many there are.
+		"meals_ingredients_n": "Malzemeler (%d)",
+		// the Cooking view's servings: %s is the number, as in 4 servings.
+		"meals_servings": "%s porsiyon",
+		"meals_serving":  "%s porsiyon",
+		// the Cooking view's place in the recipe: the step, then how many there are.
+		"meals_step_of": "Adım %d / %d",
+		// the Cooking view's button on the overview that goes to the first step.
+		"meals_start": "Başla",
+		// the Cooking view's button that goes to the next step.
+		"meals_next": "İleri",
+		// the Cooking view's button that goes back a step, and from a recipe that is gone.
+		"meals_back": "Geri",
+		// the Cooking view's button on the last step, which puts the recipe away.
+		"meals_finish": "Bitir",
+		// the Cooking view when the server no longer has the recipe.
+		"meals_recipe_gone": "Bu tarif artık Mealie'de yok",
+		// the Cooking view's note when some amounts are left as written at another number of servings.
+		"meals_not_scaled": "Bazı miktarlar ölçeklenmez",
+
+		// meals (T5c): the deck's Meals button.
 	},
 }

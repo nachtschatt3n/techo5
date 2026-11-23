@@ -103,7 +103,7 @@ func TestDeckComputers(t *testing.T) {
 // apart from OBS's and the computers', and enough for a deck to count as set up.
 func TestDeckScreenActions(t *testing.T) {
 	for _, a := range []DeckAction{DeckScreenLibrary, DeckScreenDashboard, DeckScreenCalendar, DeckScreenWeather,
-		DeckScreenRadio, DeckScreenCameras, DeckScreenNowPlaying} {
+		DeckScreenRadio, DeckScreenCameras, DeckScreenNowPlaying, DeckScreenMeals} {
 		if !a.OnScreen() || a.OnOBS() || a.OnComputer() || a.Label() == "Empty" {
 			t.Errorf("%s: on screen %v, OBS %v, computer %v, label %q", a, a.OnScreen(), a.OnOBS(), a.OnComputer(), a.Label())
 		}
@@ -128,5 +128,20 @@ func TestDeckScreenActions(t *testing.T) {
 	}
 	if !d.Set() {
 		t.Error("a deck of the screen's pages alone does not count as set up")
+	}
+}
+
+// A Meals button, with the view its Path names, is kept by a save as it is: tidy knows the action.
+func TestDeckMealsButtonSurvivesTidy(t *testing.T) {
+	b := DeckButton{Action: DeckScreenMeals, Path: "shopping"}.tidy()
+	if b.Action != DeckScreenMeals || b.Path != "shopping" {
+		t.Errorf("tidy gave %+v", b)
+	}
+	st := testStore(t)
+	if err := st.Set().Deck().Page(0, []DeckButton{{Action: DeckScreenMeals, Path: "plan"}}); err != nil {
+		t.Fatal(err)
+	}
+	if got := st.Get().Deck.Button(0, 0); got.Action != DeckScreenMeals || got.Path != "plan" {
+		t.Errorf("saved as %+v", got)
 	}
 }
