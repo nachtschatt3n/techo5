@@ -278,3 +278,23 @@ func TestCustomScreenHooksNilChangeNothing(t *testing.T) {
 		t.Fatalf("%q shown past the return time with no hook", s.custom.name)
 	}
 }
+
+// A screen's tab is its label, or its words in the screen's language when it has some; Idle screen's
+// choice stays the label either way.
+func TestCustomScreenTabWords(t *testing.T) {
+	config.Use(filepath.Join(t.TempDir(), "state.json"))
+	t.Cleanup(func() { _ = config.Set().Screen().Language("") })
+	c := customScreen{id: "maps", label: "Maps", title: func() string { return tr("ui_open") }}
+	if got := c.tab(); got != "Open" {
+		t.Fatalf("English tab %q", got)
+	}
+	if got := (customScreen{id: "maps", label: "Maps"}).tab(); got != "Maps" {
+		t.Fatalf("a screen with no words has tab %q", got)
+	}
+	if err := config.Set().Screen().Language("de"); err != nil {
+		t.Fatal(err)
+	}
+	if got := c.tab(); got == "Open" || got == "" {
+		t.Fatalf("German tab %q", got)
+	}
+}
