@@ -2365,8 +2365,10 @@ data:
 In YAML, refer to this action as `esphome.<node>_meals_step`.
 
 Moves the recipe on the Meals page's Cooking view: to its next or previous step, to its first step, back
-to the overview, to a step by its number, or to start that step's timer. It lights a dark screen, as
-`meals_show` does, so a voice assistant can say the next step to a cook whose hands are full. It fails
+to the overview, to a step by its number, or to start that step's timer. It counts as use of the
+screen, so a screen that dimmed while nobody touched it comes back up, and at night it lights a screen
+the night has put out, as `meals_show` does, so a voice assistant can say the next step to a cook whose
+hands are full. It fails
 with `meals: nothing is being cooked on this device` unless the Cooking view is the one on the screen, so
 a recipe the cook has walked away from is never moved from another room. It answers with the step now on
 the screen: `step` (0 for the overview), `of` (how many steps there are) and `text`, the step's words

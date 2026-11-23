@@ -263,6 +263,11 @@ func (d *Display) mealsStep(step string) (any, error) {
 		c.Go(n)
 	}
 	slog.Info("meals: asked to step", "step", step)
+	// A voice asking for the next step is somebody using the screen: one that dimmed while nobody
+	// touched it comes back up, as it does for a turn, and stays up for the wait again.
+	d.mu.Lock()
+	d.usedAt = time.Now()
+	d.mu.Unlock()
 	d.askedAtNight(time.Now())
 	d.wake()
 	return mealsStepAnswer{Step: c.Step(), Of: c.Steps(), Text: mealie.Plain(c.Text())}, nil

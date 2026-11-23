@@ -477,3 +477,29 @@ func TestMealsStepNotWhileAnotherRecipeLoads(t *testing.T) {
 		t.Fatalf("the open recipe: step %d, %v", c.Step(), err)
 	}
 }
+
+// A screen that dimmed because nobody touched it (by day, with the keep-awake setting off or its cap run
+// out) comes back up for a step asked for from Home Assistant, which is the cook's hands being full.
+func TestMealsStepUndimsIdleScreen(t *testing.T) {
+	_, d := mealsFake(t)
+	if err := config.Set().Screen().DimAfterMinutes(5); err != nil {
+		t.Fatal(err)
+	}
+	cooked(d, cookRecipe())
+	d.mu.Lock()
+	d.on, d.ceiling = true, 100
+	d.mu.Unlock()
+	start := time.Now().Add(-time.Hour)
+	d.idleDimTick(start, true, false, false)
+	d.idleDimTick(start.Add(6*time.Minute), true, false, false)
+	if !d.idleDimmed {
+		t.Fatal("the screen did not dim in the first place")
+	}
+	if _, err := mealsRun(t, d, "meals_step", map[string]any{"step": "next"}); err != nil {
+		t.Fatal(err)
+	}
+	d.idleDimTick(time.Now(), true, false, false)
+	if d.idleDimmed {
+		t.Fatal("the step left the idle screen dimmed")
+	}
+}
