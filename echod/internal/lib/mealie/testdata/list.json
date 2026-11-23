@@ -1,0 +1,18 @@
+{"id":"11111111-0000-0000-0000-000000000001","name":null,"createdAt":"2026-01-02T10:00:00",
+ "labelSettings":[
+  {"labelId":"lab-dairy","position":1,"label":{"id":"lab-dairy","name":"Dairy","color":"#2196f3"}},
+  {"labelId":"lab-produce","position":0,"label":{"id":"lab-produce","name":"Produce","color":null}}],
+ "listItems":[
+  {"id":"i1","shoppingListId":"11111111-0000-0000-0000-000000000001","checked":false,"position":2,"quantity":2,"note":"","display":"2 onions","foodId":"f1","unitId":null,"labelId":"lab-produce",
+   "food":{"id":"f1","name":"onion","pluralName":"onions"},"unit":null,"label":{"id":"lab-produce","name":"Produce","color":null},
+   "recipeReferences":[{"recipeId":"r1","recipeQuantity":1,"recipeScale":1,"recipeNote":""}],"extras":{"keep":"me"},"createdAt":"2026-01-03T10:00:00","updatedAt":"2026-01-03T10:00:00"},
+  {"id":"i2","shoppingListId":"11111111-0000-0000-0000-000000000001","checked":false,"position":1,"quantity":1,"note":"","display":"1 ¹/₂ kg potatoes","foodId":"f2","unitId":"u1","labelId":null,
+   "food":{"id":"f2","name":"potato","pluralName":"potatoes","labelId":"lab-produce","label":{"id":"lab-produce","name":"Produce","color":null}},"unit":{"id":"u1","name":"kilogram","abbreviation":"kg","useAbbreviation":true,"fraction":true},"label":null,
+   "recipeReferences":[],"extras":{},"createdAt":"2026-01-04T10:00:00"},
+  {"id":"i3","shoppingListId":"11111111-0000-0000-0000-000000000001","checked":false,"position":0,"quantity":0,"note":"butter","display":"butter","label":{"id":"lab-dairy","name":"Dairy","color":"#2196f3"},"recipeReferences":[],"extras":{},"createdAt":"2026-01-05T10:00:00"},
+  {"id":"i4","shoppingListId":"11111111-0000-0000-0000-000000000001","checked":false,"position":5,"quantity":1,"note":"gift wrap","display":"","label":null,"recipeReferences":[],"extras":{},"createdAt":"2026-01-06T10:00:00"},
+  {"id":"i5","shoppingListId":"11111111-0000-0000-0000-000000000001","checked":false,"position":0,"quantity":1,"note":"","display":"","label":null,"recipeReferences":[],"extras":{},"createdAt":"2026-01-07T10:00:00"},
+  {"id":"i6","shoppingListId":"11111111-0000-0000-0000-000000000001","checked":true,"position":0,"quantity":1,"note":"salt","display":"salt","label":{"id":"lab-other","name":"Baking","color":"#ff0000"},"recipeReferences":[],"extras":{},"createdAt":"2026-01-08T10:00:00"},
+  {"id":"i7","shoppingListId":"11111111-0000-0000-0000-000000000001","checked":false,"position":0,"quantity":1,"note":"","display":"tape","label":{"id":"lab-zeta","name":"Zeta","color":null},"recipeReferences":[],"extras":{},"createdAt":"2026-01-09T10:00:00"},
+  {"id":"i8","shoppingListId":"11111111-0000-0000-0000-000000000001","checked":false,"position":0,"quantity":1,"note":"","display":"glue","label":{"id":"lab-alpha","name":"alpha","color":null},"recipeReferences":[],"extras":{},"createdAt":"2026-01-10T10:00:00"}
+ ]}
