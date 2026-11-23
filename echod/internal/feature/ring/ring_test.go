@@ -177,3 +177,25 @@ func TestTheOnsetCoversWhatCameBeforeTheRing(t *testing.T) {
 		}
 	}
 }
+
+func TestSoundingWithinCountsAJustEndedRing(t *testing.T) {
+	now := time.Unix(1_000_000, 0)
+	at(t, &now)
+
+	if SoundingWithin(10 * time.Second) {
+		t.Fatal("within a ring before any")
+	}
+	done := Sounding()
+	if !SoundingWithin(10 * time.Second) {
+		t.Fatal("not within a ring that is sounding")
+	}
+	done()
+	now = now.Add(9 * time.Second)
+	if !SoundingWithin(10 * time.Second) {
+		t.Fatal("not within 10s of a ring that ended 9s ago")
+	}
+	now = now.Add(time.Second)
+	if SoundingWithin(10 * time.Second) {
+		t.Fatal("within 10s of a ring that ended 10s ago")
+	}
+}

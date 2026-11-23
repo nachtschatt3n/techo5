@@ -33,6 +33,14 @@ func thinkingTurn(t *testing.T) *conversation {
 	return c
 }
 
+// listeningTurn is thinkingTurn's turn, but still listening to the request.
+func listeningTurn(t *testing.T) *conversation {
+	t.Helper()
+	c := thinkingTurn(t)
+	c.enter(phaseListening)
+	return c
+}
+
 // settle handles what the turn posts to itself for a while.
 func settle(c *conversation, d time.Duration) {
 	end := time.After(d)

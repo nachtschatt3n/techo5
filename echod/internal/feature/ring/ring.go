@@ -126,6 +126,13 @@ func InOnset(at time.Time) bool {
 	return state.sounding > 0 && at.Before(state.began.Add(Onset))
 }
 
+// SoundingWithin reports whether a ring is sounding, or the last one stopped less than d ago.
+func SoundingWithin(d time.Duration) bool {
+	state.mu.Lock()
+	defer state.mu.Unlock()
+	return state.sounding > 0 || (!state.ended.IsZero() && state.now().Sub(state.ended) < d)
+}
+
 // Hush holds the chime back for a moment, so a word said into the gap reaches the microphones
 // without the ring on top of it. The screen and the LED are untouched: the alarm stays obviously
 // alive while it is quiet.
