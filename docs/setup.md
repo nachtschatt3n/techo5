@@ -1713,8 +1713,12 @@ close and wasn't heard leaves a `wake near miss` line with `slot=101` in the dev
 the setup page's [scores](#watching-the-wake-word-scores). Said over an answer or music with echo
 cancellation active, it counts as close from further under the threshold than other words do: how
 close it came there is what says whether to lower the threshold. How close a "stop" said over an
-answer came is also in the log, one line an answer (see
-[Watching the wake word scores](#watching-the-wake-word-scores)).
+answer or an announcement came is also in the log, one line each (`stop word over the reply` and
+`stop word over the announcement`, see [Watching the wake word scores](#watching-the-wake-word-scores)).
+The announcement's line also says how it ended (`ended=played`, `stopped`, `taken` or `failed`) and
+what the wake words scored over it; one cut short by a stop shows `heard=true ended=stopped`. When the
+stop word, or anything else, silences a sound outside a request, the log says `sound silenced` with
+what was playing (`holder=announce` for an announcement).
 
 **Stop word**, beside the threshold, picks the word: **Stop**, the English one that comes with the
 device and the default, or one of the wake word models the device has, such as a "Stopp" of your own

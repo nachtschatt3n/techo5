@@ -27,7 +27,13 @@ func (t *conversation) announce(a esphome.Announce) {
 	// One claim covers both urls, so silencing an announcement stops the whole thing rather than
 	// letting the second one start once the first has been drained.
 	t.player.Sounding(true)
+	// Told as the claim takes the speaker (media.Announcing). It is written on the claim's goroutine,
+	// before the claim's done channel is closed (the driver defers that), so reading it after
+	// <-claim.Done() is ordered.
+	var began time.Time
 	claim := t.sound.ClaimSpeech("announce", func(ctx context.Context, _ *speaker.Player) error {
+		began = time.Now()
+		media.Announcing.Emit(media.Announcement{Began: began})
 		for _, url := range []string{a.PreannounceMediaID, a.MediaID} {
 			if url == "" {
 				continue
@@ -42,6 +48,9 @@ func (t *conversation) announce(a esphome.Announce) {
 	safe.Go("announce", func() {
 		<-claim.Done()
 		t.player.Sounding(false)
+		if !began.IsZero() {
+			media.Announcing.Emit(media.Announcement{Began: began, Ended: time.Now(), Why: media.AnnouncementEnd(claim)})
+		}
 
 		if err := claim.Err(); err != nil && !errors.Is(err, context.Canceled) {
 			slog.Error("playing the announcement failed", "err", err) // a stop is not a failure

@@ -966,7 +966,12 @@ func (p *Player) command(c esphome.MediaCommand) {
 // a chime is not speech, and nothing here has ever made one louder.
 func (p *Player) announce(url string) {
 	p.Sounding(true)
+	// Told as the claim takes the speaker (Announcing). It is written on the claim's goroutine before
+	// the claim's done channel is closed, so reading it after <-claim.Done() is ordered.
+	var began time.Time
 	claim := speaker.Sound().ClaimSpeech("announce", func(ctx context.Context, spk *speaker.Player) error {
+		began = time.Now()
+		Announcing.Emit(Announcement{Began: began})
 		return PlaySpeech(ctx, url, &SpeechStream{Buffer: AnnounceBuffer}, spk)
 	})
 
@@ -975,6 +980,9 @@ func (p *Player) announce(url string) {
 	safe.Go("announce", func() {
 		<-claim.Done()
 		p.Sounding(false)
+		if !began.IsZero() {
+			Announcing.Emit(Announcement{Began: began, Ended: time.Now(), Why: AnnouncementEnd(claim)})
+		}
 
 		if err := claim.Err(); err != nil && !errors.Is(err, context.Canceled) {
 			slog.Error("playing the announcement failed", "url", url, "err", err) // a stop is not a failure

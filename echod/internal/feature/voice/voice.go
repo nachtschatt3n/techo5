@@ -548,6 +548,8 @@ func (v *Voice) Stop() bool {
 
 	// An announcement outside a turn: nothing is listening, but something is playing.
 	if sound := speaker.Sound(); sound.Busy() {
+		// Said before it is done, so the log has what was cut off: the holder is gone afterwards.
+		slog.Info("sound silenced", "holder", sound.Holder())
 		sound.Silence()
 		return true
 	}
