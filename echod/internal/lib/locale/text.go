@@ -1178,6 +1178,8 @@ var uiEnglish = map[string]string{
 	"meals_ingredients_n": "Ingredients (%d)",
 	// the Cooking view's servings: %s is the number, as in 4 servings.
 	"meals_servings": "%s servings",
+	// the Cooking view's servings when it is the one: %s is the number, as in 1 serving.
+	"meals_serving": "%s serving",
 	// the Cooking view's place in the recipe: the step, then how many there are.
 	"meals_step_of": "Step %d of %d",
 	// the Cooking view's button on the overview that goes to the first step.
@@ -2337,6 +2339,7 @@ var uiTranslations = map[string]map[string]string{
 		"meals_ingredients_n": "Ingredients (%d)",
 		// the Cooking view's servings: %s is the number, as in 4 servings.
 		"meals_servings": "%s racions",
+		"meals_serving":  "%s ració",
 		// the Cooking view's place in the recipe: the step, then how many there are.
 		"meals_step_of": "Pas %d de %d",
 		// the Cooking view's button on the overview that goes to the first step.
@@ -3513,6 +3516,7 @@ var uiTranslations = map[string]map[string]string{
 		"meals_ingredients_n": "Ingredientes (%d)",
 		// the Cooking view's servings: %s is the number, as in 4 servings.
 		"meals_servings": "%s raciones",
+		"meals_serving":  "%s ración",
 		// the Cooking view's place in the recipe: the step, then how many there are.
 		"meals_step_of": "Paso %d de %d",
 		// the Cooking view's button on the overview that goes to the first step.
@@ -4684,6 +4688,7 @@ var uiTranslations = map[string]map[string]string{
 		"meals_ingredients_n": "Ingrédients (%d)",
 		// the Cooking view's servings: %s is the number, as in 4 servings.
 		"meals_servings": "%s portions",
+		"meals_serving":  "%s portion",
 		// the Cooking view's place in the recipe: the step, then how many there are.
 		"meals_step_of": "Étape %d sur %d",
 		// the Cooking view's button on the overview that goes to the first step.
@@ -5851,6 +5856,7 @@ var uiTranslations = map[string]map[string]string{
 		"meals_ingredients_n": "Ingredientes (%d)",
 		// the Cooking view's servings: %s is the number, as in 4 servings.
 		"meals_servings": "%s racións",
+		"meals_serving":  "%s ración",
 		// the Cooking view's place in the recipe: the step, then how many there are.
 		"meals_step_of": "Paso %d de %d",
 		// the Cooking view's button on the overview that goes to the first step.
@@ -7022,6 +7028,7 @@ var uiTranslations = map[string]map[string]string{
 		"meals_ingredients_n": "Ingredienti (%d)",
 		// the Cooking view's servings: %s is the number, as in 4 servings.
 		"meals_servings": "%s porzioni",
+		"meals_serving":  "%s porzione",
 		// the Cooking view's place in the recipe: the step, then how many there are.
 		"meals_step_of": "Passo %d di %d",
 		// the Cooking view's button on the overview that goes to the first step.
@@ -10017,6 +10024,7 @@ var uiTranslations = map[string]map[string]string{
 		"meals_ingredients_n": "材料 (%d)",
 		// the Cooking view's servings: %s is the number, as in 4 servings.
 		"meals_servings": "%s人分",
+		"meals_serving":  "%s人分",
 		// the Cooking view's place in the recipe: the step, then how many there are.
 		"meals_step_of": "手順 %d/%d",
 		// the Cooking view's button on the overview that goes to the first step.
@@ -11815,6 +11823,7 @@ var uiTranslations = map[string]map[string]string{
 		"meals_ingredients_n": "Zutaten (%d)",
 		// the Cooking view's servings: %s is the number, as in 4 servings.
 		"meals_servings": "%s Portionen",
+		"meals_serving":  "%s Portion",
 		// the Cooking view's place in the recipe: the step, then how many there are.
 		"meals_step_of": "Schritt %d von %d",
 		// the Cooking view's button on the overview that goes to the first step.
@@ -12972,6 +12981,7 @@ var uiTranslations = map[string]map[string]string{
 		"meals_ingredients_n": "Ingrediente (%d)",
 		// the Cooking view's servings: %s is the number, as in 4 servings.
 		"meals_servings": "%s porții",
+		"meals_serving":  "%s porție",
 		// the Cooking view's place in the recipe: the step, then how many there are.
 		"meals_step_of": "Pasul %d din %d",
 		// the Cooking view's button on the overview that goes to the first step.
@@ -14144,6 +14154,7 @@ var uiTranslations = map[string]map[string]string{
 		"meals_ingredients_n": "Malzemeler (%d)",
 		// the Cooking view's servings: %s is the number, as in 4 servings.
 		"meals_servings": "%s porsiyon",
+		"meals_serving":  "%s porsiyon",
 		// the Cooking view's place in the recipe: the step, then how many there are.
 		"meals_step_of": "Adım %d / %d",
 		// the Cooking view's button on the overview that goes to the first step.

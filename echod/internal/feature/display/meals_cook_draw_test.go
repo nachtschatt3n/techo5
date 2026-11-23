@@ -16,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HuskerMinion/techo5/echod/internal/config"
 	"github.com/HuskerMinion/techo5/echod/internal/hardware/touch"
 	"github.com/HuskerMinion/techo5/echod/internal/lib/mealie"
 )
@@ -893,5 +894,29 @@ func TestCookFetchOfAnotherRecipeOpensNothing(t *testing.T) {
 	}
 	if mealsCooking() != pancakes {
 		t.Fatal("the recipe being cooked was replaced by a fetch of another")
+	}
+}
+
+// The stepper says "1 serving" at its least, and the plural for every other number, in every complete
+// language.
+func TestCookServingsSingular(t *testing.T) {
+	cookSetUp(t, 960, 480)
+	if got := cookServings(1); got != "1 serving" {
+		t.Errorf("one serving reads %q", got)
+	}
+	if got := cookServings(4); got != "4 servings" {
+		t.Errorf("four servings read %q", got)
+	}
+	if got := cookServings(1.5); got != "1.5 servings" {
+		t.Errorf("a serving and a half reads %q", got)
+	}
+	for _, lang := range completeLangs {
+		if err := config.Set().Screen().Language(lang); err != nil {
+			t.Fatal(err)
+		}
+		one, many := cookServings(1), cookServings(4)
+		if !strings.Contains(one, "1") || !strings.Contains(many, "4") || tr("meals_serving") == "" {
+			t.Errorf("%s: %q, %q", lang, one, many)
+		}
 	}
 }

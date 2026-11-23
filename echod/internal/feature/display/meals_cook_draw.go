@@ -400,13 +400,23 @@ func (r *renderer) cookDescription(c *mealsCook, box image.Rectangle, lines int)
 	return len(all) * line
 }
 
+// cookServings is the stepper's words for sv servings: "1 serving", and
+// otherwise "4 servings".
+func cookServings(sv float64) string {
+	n := cookNum(sv)
+	if n == "1" {
+		return fmt.Sprintf(tr("meals_serving"), n)
+	}
+	return fmt.Sprintf(tr("meals_servings"), n)
+}
+
 // cookStepper draws [-] 4 servings [+] in row and returns the two buttons' zones. A recipe that does not
 // say how many it makes shows the multiple instead ("x1.5").
 func (r *renderer) cookStepper(row image.Rectangle, c *mealsCook) []customZone {
 	fc := r.faces()
 	words := ""
 	if sv, ok := c.Servings(); ok {
-		words = fmt.Sprintf(tr("meals_servings"), cookNum(sv))
+		words = cookServings(sv)
 	} else {
 		words = "x" + cookNum(c.Scale())
 	}
