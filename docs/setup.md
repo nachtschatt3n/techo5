@@ -1200,6 +1200,16 @@ puts it away for two minutes.
 - **Plan** is the next seven days of Mealie's meal plan, a card for each day, today first, with each
   entry's picture, name and how long it takes. What is planned for the whole week has a **This week**
   card before today's. Swipe sideways to move over the days, or up and down on a screen held upright.
+- **Cooking** is one recipe, and its tab is there once a recipe is open: tap an entry in the plan, and
+  it opens at the number of servings the plan gives it. The first page is the overview: the photo, the
+  servings (the **+** and **-** go from one to four times what the recipe is written for) and the
+  ingredients, with their amounts scaled where an amount can be, and **Start**. Each step then has a
+  page of its own, with the ingredients the step uses marked and **Back** and **Next** where a thumb
+  finds them. A time written in a step, such as "10-15 minutes", is a button that sets a timer on the
+  device (English and German steps are read for them). Swipe sideways to turn a page, up or down to
+  scroll a long step. With **Keep the screen on while cooking** ticked, the screen does not dim while
+  you cook, for up to three hours without a touch. A recipe is remembered for half an hour after the
+  page is put away, and for as long as it is being cooked.
 - When Mealie cannot be reached, the page keeps showing what it last had, marked **Offline, as of** the
   time it is from, with a **Retry** pill.
 
