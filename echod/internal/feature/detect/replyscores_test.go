@@ -220,7 +220,7 @@ func TestAShortQuietReplySaysThePlaybackCutoff(t *testing.T) {
 	var lines []string
 	stops, dropped := true, uint64(0)
 	r := &replyScores{marks: k, dropped: func() uint64 { return dropped }, stops: func() bool { return stops },
-		say: func(msg string, args ...any) { lines = append(lines, msg+" "+fmt.Sprint(args...)) }}
+		over: "reply", say: func(msg string, args ...any) { lines = append(lines, msg+" "+fmt.Sprint(args...)) }}
 
 	began := time.Now()
 	r.follow(voice.Reply{Began: began})
@@ -259,7 +259,8 @@ func TestTheStopWordsPeakIsSaidAsAnAnnouncementEnds(t *testing.T) {
 	}
 	r.followAnnouncement(media.Announcement{Began: at, Ended: at.Add(3500 * time.Millisecond), Why: "stopped"})
 	want := "stop word over the announcement " + fmt.Sprint("peak", 0.71, "at_s", 3.4, "cutoff", 0.7, "canceling", true,
-		"held", false, "heard", true, "window_s", 3.5, "ended", "stopped", "frames_dropped", uint64(0))
+		"held", false, "heard", true, "canceling_from_s", "none", "canceling_to_s", "none", "window_s", 3.5, "ended", "stopped",
+		"frames_dropped", uint64(0))
 	if len(*lines) != 1 || (*lines)[0] != want {
 		t.Fatalf("said %q, want %q", *lines, want)
 	}
