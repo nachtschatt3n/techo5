@@ -152,7 +152,7 @@ func TestMealsShowPages(t *testing.T) {
 		{"plan", "", "plan", ""},
 		{"today", "", "cooking", "Pancakes"},
 		{"recipe", "tomato-soup", "cooking", "Tomato soup"},
-		{"cooking", "", "cooking", "Pancakes"},
+		{"cooking", "", "cooking", "Tomato soup"}, // the recipe opened last
 	} {
 		got, err := mealsRun(t, d, "meals_show", map[string]any{"page": c.page, "recipe": c.recipe})
 		if err != nil {
@@ -393,7 +393,7 @@ func TestMealsStepWakesScreen(t *testing.T) {
 		<-d.poke
 	}
 	now := mealsNow()
-	mealsNow = func() time.Time { return now.Add(time.Hour) }
+	mealsNow = func() time.Time { return now.Add(10 * time.Minute) }
 	if _, err := mealsRun(t, d, "meals_step", map[string]any{"step": "next"}); err != nil {
 		t.Fatal(err)
 	}
@@ -406,7 +406,7 @@ func TestMealsStepWakesScreen(t *testing.T) {
 	if len(d.poke) == 0 {
 		t.Error("the screen was not woken")
 	}
-	if got := c.lastTouched(); !got.Equal(now.Add(time.Hour)) {
+	if got := c.lastTouched(); !got.Equal(now.Add(10 * time.Minute)) {
 		t.Errorf("the step did not count as a touch: %v", got)
 	}
 }
