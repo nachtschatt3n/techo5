@@ -12,6 +12,7 @@ import (
 	"unicode"
 
 	"github.com/HuskerMinion/techo5/echod/internal/config"
+	"github.com/HuskerMinion/techo5/echod/internal/lib/hook"
 	"github.com/HuskerMinion/techo5/echod/internal/lib/mealie"
 )
 
@@ -34,6 +35,18 @@ type mealieAnswer struct {
 	listed bool
 }
 
+// MealieNote is what the screen is told of the Meals settings: that they were saved here, or the shopping
+// lists Mealie answered with. The device's own entities (feature/display/meals_entities.go) listen, so
+// the list the select offers is the one this card was just shown, without a request of their own.
+type MealieNote struct {
+	// Lists are the shopping lists Mealie named; only meaningful when Listed.
+	Lists  []mealie.ListSummary
+	Listed bool
+}
+
+// MealieNoted fires after a settings save and after each lookup that got Mealie's lists.
+var MealieNoted hook.Hook[MealieNote]
+
 // mealieLookup keeps Mealie's answer (lookup.go): up to three questions, bounded together.
 var mealieLookup = &lookup[mealieAnswer]{ask: 8 * time.Second}
 
@@ -54,6 +67,7 @@ func askMealie(ctx context.Context, m config.Mealie) mealieAnswer {
 		return a
 	}
 	a.lists, a.listed = lists, true
+	MealieNoted.Emit(MealieNote{Lists: lists, Listed: true})
 	return a
 }
 
@@ -173,6 +187,7 @@ func saveMealie(r *http.Request) string {
 		}
 	}
 	mealieLookup.forget() // the next draw asks the server as it is now saved
+	MealieNoted.Emit(MealieNote{})
 	slog.Info("setup page: mealie set", "token", tok != nil, "list", list != "")
 	return ""
 }
