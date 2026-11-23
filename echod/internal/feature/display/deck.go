@@ -63,6 +63,8 @@ func deckReason(b config.DeckButton, err error) string {
 			return tr("deck_nothing_playing")
 		case errors.Is(err, errScreenOff):
 			return tr("deck_screen_off")
+		case errors.Is(err, errMealsOff):
+			return tr("meals_not_set_up")
 		}
 		return tr("deck_failed")
 	}
@@ -343,7 +345,8 @@ func deckPageOBS(cfg config.Deck, p int) bool {
 }
 
 // deckLauncherPage is the deck's built-in page, for a device whose deck has no buttons of its own: one
-// large button for each of the screen's pages that is there to open, three by two. A deck with
+// large button for each of the screen's pages that is there to open, three by two, or four by two
+// when Meals is set up and makes it seven. A deck with
 // buttons of its own is never this page; one made on the setup page can have these buttons and more.
 // Its labels are in the screen's language, as nobody wrote them.
 func deckLauncherPage() config.Deck {
@@ -355,18 +358,26 @@ func deckLauncherPage() config.Deck {
 	}
 	_, music := libClient()
 	add(config.DeckScreenLibrary, tr("music"), music)
+	add(config.DeckScreenMeals, tr("meals"), config.Get().Mealie.Set())
 	add(config.DeckScreenDashboard, tr("dashboard"), dashboard.Get().Mode() != config.DashboardOff)
 	add(config.DeckScreenCalendar, tr("ui_calendar"), calendarsShown())
 	add(config.DeckScreenWeather, tr("weather"), config.Get().Home.WeatherEntity() != "")
 	add(config.DeckScreenRadio, tr("drawer_radio"), true)
 	add(config.DeckScreenCameras, tr("cameras"), true)
-	return config.Deck{Cols: 3, Rows: 2, Pages: []config.DeckPage{{Buttons: bs}}}
+	// Meals is the seventh button, which three by two cannot hold: four columns then, and three
+	// by two as it always was for a screen without it.
+	cols := 3
+	if len(bs) > 3*2 {
+		cols = 4
+	}
+	return config.Deck{Cols: cols, Rows: 2, Pages: []config.DeckPage{{Buttons: bs}}}
 }
 
 // What a press of a button for one of the screen's pages can fail with, for the foot of the deck.
 var (
 	errScreenOff      = errors.New("deck: that page is not set up on this screen")
 	errNothingPlaying = errors.New("deck: nothing is playing")
+	errMealsOff       = errors.New("deck: Meals is not set up on this screen")
 )
 
 // deckScreenDo opens the page a button for one of the screen's pages is for; a variable for the tests.
@@ -420,6 +431,23 @@ func (d *Display) screenPress(b config.DeckButton) error {
 		return nil
 	case config.DeckScreenCameras:
 		d.openDrawer(drawerCameras)
+		return nil
+	case config.DeckScreenMeals:
+		// Nothing is asked of the network here, or by opening the page while Mealie is not set up.
+		if !config.Get().Mealie.Set() {
+			return errMealsOff
+		}
+		// Path picks the view; empty opens the page on the one it was left on. The Plan opens at
+		// today, so "today" is that view.
+		switch b.Path {
+		case "shopping", "plan":
+			meals.show(b.Path)
+		case "today":
+			meals.show("plan")
+		}
+		if !d.openCustom(mealsID) {
+			return errMealsOff
+		}
 		return nil
 	case config.DeckScreenNowPlaying:
 		if !d.nowPlaying() {

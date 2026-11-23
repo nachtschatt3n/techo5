@@ -104,6 +104,7 @@ const (
 	DeckScreenRadio      DeckAction = "screen_radio"       // the drawer's Radio tab
 	DeckScreenCameras    DeckAction = "screen_cameras"     // the drawer's Cameras tab
 	DeckScreenNowPlaying DeckAction = "screen_now_playing" // Now Playing, while something plays
+	DeckScreenMeals      DeckAction = "screen_meals"       // Meals, at Path (shopping, plan or today) when one is given
 )
 
 // OnComputer is whether the action is done by a computer's agent.
@@ -123,7 +124,7 @@ func (a DeckAction) OnOBS() bool {
 }
 
 var deckScreenActions = []DeckAction{DeckScreenLibrary, DeckScreenDashboard, DeckScreenCalendar, DeckScreenWeather,
-	DeckScreenRadio, DeckScreenCameras, DeckScreenNowPlaying}
+	DeckScreenRadio, DeckScreenCameras, DeckScreenNowPlaying, DeckScreenMeals}
 
 // DeckActions is every action, in the order a list shows them.
 func DeckActions() []DeckAction {
@@ -166,6 +167,8 @@ func (a DeckAction) Label() string {
 		return "Cameras"
 	case DeckScreenNowPlaying:
 		return "Now playing"
+	case DeckScreenMeals:
+		return "Meals"
 	}
 	return "Empty"
 }

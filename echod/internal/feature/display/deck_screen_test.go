@@ -3,13 +3,16 @@
 package display
 
 import (
+	"context"
 	"errors"
 	"path/filepath"
 	"slices"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/HuskerMinion/techo5/echod/internal/config"
+	"github.com/HuskerMinion/techo5/echod/internal/lib/mealie"
 	"github.com/HuskerMinion/techo5/echod/internal/lib/musicassistant"
 )
 
@@ -200,5 +203,96 @@ func TestTheBuiltInLauncherPage(t *testing.T) {
 	_ = config.Set().Deck().Page(0, []config.DeckButton{{Action: config.DeckOBSStream}})
 	if !d.openLauncher() || d.deckLauncher {
 		t.Error("the deck's own buttons did not replace the built-in page")
+	}
+}
+
+// With Meals set up and every other page there, the built-in page has seven buttons, Meals right after
+// Music, and grows to four columns to hold them.
+func TestDeckLauncherWithMeals(t *testing.T) {
+	noLibrary(t)
+	mealsSetUp(t)
+	libClient = func() (musicassistant.Client, bool) { return musicassistant.Client{URL: "http://ma.invalid"}, true }
+	_ = config.Set().Dashboard().Mode(config.DashboardStreamed)
+	page := deckLauncherPage()
+	if cols, rows := page.Grid(); cols != 4 || rows != 2 {
+		t.Errorf("the launcher's grid with Meals is %dx%d", cols, rows)
+	}
+	var got []config.DeckAction
+	for _, b := range page.Pages[0].Buttons {
+		got = append(got, b.Action)
+	}
+	if len(got) < 7 || got[0] != config.DeckScreenLibrary || got[1] != config.DeckScreenMeals {
+		t.Errorf("the buttons: %v", got)
+	}
+	if b := page.Pages[0].Buttons[1]; b.Label != tr("meals") {
+		t.Errorf("the Meals button's label: %q", b.Label)
+	}
+}
+
+// Without Meals the built-in page is the three by two it always was, and has no Meals button.
+func TestDeckLauncherWithoutMeals(t *testing.T) {
+	noLibrary(t)
+	config.Use(filepath.Join(t.TempDir(), "state.json"))
+	libClient = func() (musicassistant.Client, bool) { return musicassistant.Client{URL: "http://ma.invalid"}, true }
+	_ = config.Set().Dashboard().Mode(config.DashboardStreamed)
+	page := deckLauncherPage()
+	if cols, rows := page.Grid(); cols != 3 || rows != 2 {
+		t.Errorf("the launcher's grid without Meals is %dx%d", cols, rows)
+	}
+	for _, b := range page.Pages[0].Buttons {
+		if b.Action == config.DeckScreenMeals {
+			t.Error("a Meals button with Mealie not set up")
+		}
+	}
+}
+
+// The deck's Meals button opens the page, on the view its Path names, and the deck gives way.
+func TestDeckMealsPress(t *testing.T) {
+	mealsSetUp(t)
+	for path, view := range map[string]string{"shopping": "shopping", "plan": "plan", "today": "plan"} {
+		d := deckUpOn()
+		if err := d.screenPress(config.DeckButton{Action: config.DeckScreenMeals, Path: path}); err != nil {
+			t.Fatalf("%q: %v", path, err)
+		}
+		if d.customs.up != mealsID || d.deckUp {
+			t.Errorf("%q: page up %q, deck up %v", path, d.customs.up, d.deckUp)
+		}
+		if meals.view != view {
+			t.Errorf("%q: view %q, want %q", path, meals.view, view)
+		}
+	}
+	// An empty Path leaves the page on the view it was left on.
+	meals.view = "plan"
+	d := deckUpOn()
+	if err := d.screenPress(config.DeckButton{Action: config.DeckScreenMeals}); err != nil || meals.view != "plan" {
+		t.Errorf("an empty path: %v, view %q", err, meals.view)
+	}
+}
+
+// With Mealie not set up the button fails with a line for the foot of the deck, opens nothing and asks
+// nothing of the network.
+func TestDeckMealsNotSetUp(t *testing.T) {
+	config.Use(filepath.Join(t.TempDir(), "state.json"))
+	var calls atomic.Int32
+	wasHub, wasViews := meals, mealsViews
+	meals = &mealsHub{}
+	mealsViews = []mealsView{mealsTestView("shopping", 1, func(context.Context, mealie.Client) (any, error) {
+		calls.Add(1)
+		return "x", nil
+	}, nil)}
+	t.Cleanup(func() { meals.wg.Wait(); meals, mealsViews = wasHub, wasViews })
+
+	d := deckUpOn()
+	b := config.DeckButton{Action: config.DeckScreenMeals, Path: "shopping"}
+	err := d.screenPress(b)
+	if !errors.Is(err, errMealsOff) || d.customs.up != "" || !d.deckUp {
+		t.Fatalf("err %v, page up %q, deck up %v", err, d.customs.up, d.deckUp)
+	}
+	if r := deckReason(b, err); r != tr("meals_not_set_up") {
+		t.Errorf("the foot says %q", r)
+	}
+	meals.wg.Wait()
+	if n := calls.Load(); n != 0 {
+		t.Errorf("%d calls to Mealie", n)
 	}
 }
