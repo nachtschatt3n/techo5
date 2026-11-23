@@ -345,7 +345,8 @@ shows, how it is drawn, what a finger does and how often it moves. `custom_scree
 the voice assistant's pages. A screen may keep its page between frames and has a cache of its own.
 A screen can also ask to keep the device awake while it is up, so that the screen neither dims nor goes
 out for nobody near and the Dashboard returns time does not close it, and to keep a page that Home
-Assistant asked for at night lit for as long as it is up.
+Assistant asked for at night lit for as long as it is up. Its tab can be named in the screen's
+language.
 
 Once a build has a custom screen, Home Assistant gets an **Idle screen** select: the clock, or one of
 the screens shown in its place whenever the clock would be. Music, a dashboard and everything else that
