@@ -313,6 +313,10 @@ func TestCaptionsSitAboveTheFootControls(t *testing.T) {
 // A tap on the captions puts them away; a tap anywhere else is left to the page under them.
 func TestCaptionsTap(t *testing.T) {
 	config.Use(filepath.Join(t.TempDir(), "state.json"))
+	stops := 0
+	was := stopReply
+	stopReply = func() bool { stops++; return true }
+	t.Cleanup(func() { stopReply = was })
 	d := &Display{r: newRenderer(image.NewRGBA(image.Rect(0, 0, showWide, showHigh))), poke: make(chan struct{}, 1)}
 	at := time.Now()
 	d.r.draw(scene{now: at, since: at, phase: "idle", cue: "replying", reply: "It's noon."})
@@ -322,7 +326,13 @@ func TestCaptionsTap(t *testing.T) {
 	if d.captionsTap(touch.Gesture{Kind: touch.Hold, X: showWide / 2, Y: showHigh - 20}) {
 		t.Error("a hold on the captions was taken as a tap")
 	}
+	if stops != 0 {
+		t.Errorf("a tap off the captions stopped the reply %d times", stops)
+	}
 	if !d.captionsTap(touch.Gesture{Kind: touch.Tap, X: showWide / 2, Y: showHigh - 20}) || !d.quiet {
 		t.Error("a tap on the captions did not put them away")
+	}
+	if stops != 1 {
+		t.Errorf("a tap on the captions stopped the reply %d times, want once", stops)
 	}
 }

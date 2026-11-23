@@ -509,6 +509,21 @@ func (v *Voice) Interrupt() {
 	v.Stop()
 }
 
+// StopReply ends a turn's reply that is still being said, as the stop word does over it, and reports
+// whether there was one. A tap on the reply's words on the screen (the captions, Rainbow's card) is
+// somebody who has read enough: putting the words away while the voice goes on reading them out
+// was half an answer to that. Only the reply: a turn still listening or thinking, the music, a ringing
+// alarm and an announcement outside a turn are left as they are, since it was the reply's words the
+// hand reached for.
+func (v *Voice) StopReply() bool {
+	if v.turn.Phase() != phaseReplying {
+		return false
+	}
+	slog.Info("reply stopped by a tap on its words")
+	v.turn.Cancel()
+	return true
+}
+
 // LookHere says the answer being given put something on the screen, so it is not followed by
 // listening again, whose screen would cover it.
 func (v *Voice) LookHere() { v.turn.LookHere() }

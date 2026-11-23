@@ -1185,9 +1185,10 @@ other Shows don't have the switches.
   the right edge and a wave of pink crossing the screen. During night hours it is Cue and captions
   instead (red over the night clock), so the colors don't light the room.
   The screen under a cue keeps working: a tap there does what it always does, and a tap on the
-  captions (or Rainbow's card) puts them away. Stop a request by voice or with the stop word. A page
-  with buttons to answer (a call, a ringing alarm, the settings, a camera) gets neither the light nor
-  captions over it.
+  captions (or Rainbow's card) puts them away, and stops the answer if it is still being said, as
+  the stop word does. Stop a request that is still listening or thinking by voice or with the stop
+  word. A page with buttons to answer (a call, a ringing alarm, the settings, a camera) gets neither
+  the light nor captions over it.
 - **Timers** (Show; **Timers on the clock** in Home Assistant): how running timers show on the clock.
   **Line** is the soonest under the date with a thin bar, as before. **Ring** is a ring for each (up
   to three) that empties as it runs, and on the Analog style a wedge on the dial from the minute hand

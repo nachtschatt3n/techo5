@@ -6,6 +6,7 @@ import (
 	"image"
 	"time"
 
+	"github.com/HuskerMinion/techo5/echod/internal/feature/voice"
 	"github.com/HuskerMinion/techo5/echod/internal/hardware/touch"
 )
 
@@ -22,8 +23,12 @@ import (
 // captions are laid over it, as the other turn screens are not drawn over it either.
 //
 // The page keeps its taps through a cue: it is on the screen, and whoever touches it is using it. A
-// tap on the captions puts them away, as a tap on an answer does; the turn itself is stopped by voice
-// or the stop word.
+// tap on the captions puts them away, as a tap on an answer does, and an answer still being said stops
+// with them, as it does at the stop word (voice.StopReply); a turn still listening or thinking is
+// stopped by voice or the stop word.
+
+// stopReply ends a reply still being said, for a tap on its words; here so tests can stand in for it.
+var stopReply = func() bool { return voice.Get().StopReply() }
 
 // cueFrame is how often a lit cue is drawn again at the most: ten a second, as the wave is, for the
 // light breathing and running. A page that moves faster keeps its own pace.
@@ -99,12 +104,13 @@ func (r *paint) captionsTapped(p image.Point) bool {
 	return !r.captionsAt.Empty() && p.In(r.captionsAt)
 }
 
-// captionsTap is a tap on the captions: it puts the words away, as a tap on an answer does, and is not
-// a tap on the page under them. Anywhere else the page has the tap.
+// captionsTap is a tap on the captions: it puts the words away, as a tap on an answer does, stops the
+// answer if it is still being said, and is not a tap on the page under them. Anywhere else the page has the tap.
 func (d *Display) captionsTap(g touch.Gesture) bool {
 	if g.Kind != touch.Tap || d.r == nil || !d.r.captionsTapped(image.Pt(g.X, g.Y)) {
 		return false
 	}
 	d.clearAnswer()
+	stopReply() // a reply still being said goes with its words (voice.StopReply)
 	return true
 }
