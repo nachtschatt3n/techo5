@@ -17,12 +17,10 @@ jobs:
       fail-fast: false
       matrix:
         branch:
-          - mic-builtin-learns-over-reply
-          - aec-capture-delay
-          - library-without-drawn-dashboard-v2
-          - deck-screen-pages-launcher-v2
-          - house-build-v3
-          - rainbow-cap-long-answers-fix
+          - pr-detect-stop-peak-per-reply
+          - pr-detect-stop-near-miss-floor
+          - pr-rainbow-cap-followups
+          - pr-home-hint-test-wait
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -84,76 +82,3 @@ jobs:
         run: |
           go vet ./...
           test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
-
-  # The echo canceller helper (tools/aec/techo5-aec.cpp) on the branches that changed it, and on the
-  # base they started from. Built for armv7 the way tools/linux/build-aec.sh does (Alpine armv7 under
-  # QEMU), and natively on x86_64, where a smoke test pipes synthetic blocks through it.
-  aec-helper:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: base-2d62357e
-            ref: 2d62357ee352353e66197ed1b36fffdf159be746
-            cases: ""
-          - name: aec-capture-delay
-            ref: aec-capture-delay
-            cases: ";--delay-ms 10"
-          - name: house-build-v3
-            ref: house-build-v3
-            cases: ";--delay-ms 10;--linear;--delay-ms 10 --linear"
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          path: ci
-
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          ref: ${{ matrix.ref }}
-          path: src
-
-      - uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
-        with:
-          platforms: arm
-
-      # Alpine 3.24 is the release tools/linux/build-aec.sh's minirootfs (3.24.2) comes from.
-      - name: armv7 build and smoke test (Alpine under QEMU)
-        run: |
-          mkdir -p out
-          docker run --rm --platform linux/arm/v7 -v "$PWD:/w" alpine:3.24 sh -ec '
-            apk add --no-cache build-base webrtc-audio-processing-1-dev pkgconf curl xz python3
-            sh /w/ci/.github/aec-ci/build.sh /w/src /w/out/techo5-aec-arm
-            python3 /w/ci/.github/aec-ci/smoke.py /w/out/techo5-aec-arm --cases "$CASES"
-          ' sh
-        env:
-          CASES: ${{ matrix.cases }}
-
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        if: always()
-        with:
-          name: techo5-aec-arm-${{ matrix.name }}
-          path: out/techo5-aec-arm
-          if-no-files-found: warn
-
-      # Ubuntu's own package when it carries the same library version the Alpine one does, else
-      # an Alpine x86_64 container.
-      - name: x86_64 build and smoke test
-        run: |
-          mkdir -p out
-          sudo apt-get update -qq
-          cand=$(apt-cache policy libwebrtc-audio-processing-1-dev | sed -n 's/^ *Candidate: *\([0-9.]*\).*/\1/p')
-          echo "apt candidate libwebrtc-audio-processing-1-dev: ${cand:-none}"
-          if [ "$cand" = "1.3" ]; then
-            sudo apt-get install -y -qq libwebrtc-audio-processing-1-dev pkg-config g++ curl xz-utils
-            sh ci/.github/aec-ci/build.sh src out/techo5-aec-x86
-            python3 ci/.github/aec-ci/smoke.py out/techo5-aec-x86 --cases "$CASES"
-          else
-            docker run --rm -v "$PWD:/w" alpine:3.24 sh -ec '
-              apk add --no-cache build-base webrtc-audio-processing-1-dev pkgconf curl xz python3
-              sh /w/ci/.github/aec-ci/build.sh /w/src /w/out/techo5-aec-x86
-              python3 /w/ci/.github/aec-ci/smoke.py /w/out/techo5-aec-x86 --cases "$CASES"
-            ' sh
-          fi
-        env:
-          CASES: ${{ matrix.cases }}
