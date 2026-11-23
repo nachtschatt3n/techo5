@@ -403,6 +403,19 @@ func (v *Voice) Interrupt() {
 	v.Stop()
 }
 
+// TalkedOver says a wake word or the stop word was heard, nearly heard, or was a wake worth asking Home
+// Assistant about (feature/detect): somebody may be talking. at is when the word was said, which for a
+// near miss is a moment before it is told. Once a turn has stopped listening, a word said after that
+// ends the echo canceller's learning over its reply (learnOverReply), whatever the word goes on to do.
+// Nothing is posted at other times, so a room full of near misses does not fill the turn's queue while
+// nothing would act on them.
+func (v *Voice) TalkedOver(at time.Time) {
+	switch v.turn.Phase() {
+	case phaseThinking, phaseReplying:
+		v.turn.post(event{kind: evTalkedOver, at: at})
+	}
+}
+
 // LookHere says the answer being given put something on the screen, so it is not followed by
 // listening again, whose screen would cover it.
 func (v *Voice) LookHere() { v.turn.LookHere() }

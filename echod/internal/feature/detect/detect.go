@@ -317,6 +317,9 @@ func newDetect() *Detect {
 	d = &Detect{engine: e, busy: newWakeBusy(led.Get().Busy(), e.Ready), base: base}
 	d.ducker = newDucker()
 	d.ducker.watch(e)
+	// Wraps the hooks set above, so it comes after them: the turn hears of a word over its reply before
+	// the word is routed (talkover.go).
+	watchTalkingOver(e, func(at time.Time) { voice.Get().TalkedOver(at) })
 	d.stop = newStopEntity(d)
 	d.hangup = newHangup(d)
 	// What the words scored during each call, said as it ends (#484). Read as it runs, as the hang-up

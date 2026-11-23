@@ -106,6 +106,7 @@ const (
 	evAnnouncing                   // an announcement that asks for an answer is being said (event.text)
 	evAnnounced                    // and was cut off, so no answer follows
 	evScored                       // the peak a wake word reached (event.slot, event.peak)
+	evTalkedOver                   // a wake word or the stop word was heard or nearly heard (TalkedOver)
 )
 
 type event struct {
@@ -122,6 +123,10 @@ type event struct {
 	// stopped, or from anything that is not a reply, must not take the turn's deadline away or end
 	// the turn after it.
 	reply uint64
+
+	// elsewhere is an evPlaying for a reply another player is saying (playElsewhere): none of it plays
+	// on this device's speaker.
+	elsewhere bool
 
 	// woke is an evStart from the wake word (Woke), not a button or Home Assistant (Start).
 	woke bool
@@ -217,6 +222,19 @@ type conversation struct {
 	// holding is whether the turn has taken the speaker from a track, so that taking it twice or
 	// giving it back twice cannot happen however the turn ends.
 	holding bool
+
+	// learning is the built-in echo canceller learning again while the turn holds the speaker, because
+	// all that is playing is the reply (learnOverReply). It is never true outside phaseReplying.
+	learning bool
+
+	// talkedOver is a wake word or the stop word heard or nearly heard since the turn stopped listening
+	// (evTalkedOver): somebody may be talking, and the canceller does not learn again before the turn
+	// ends.
+	talkedOver bool
+
+	// listenedTo is when the turn last stopped listening, so a word said before it, told late, is not
+	// taken for one said over the reply (evTalkedOver).
+	listenedTo time.Time
 
 	// followUp says this turn was opened without a wake word, so hearing nothing is a normal ending
 	// rather than Home Assistant having gone away. followUps is how many follow-ups in a row there have
@@ -381,6 +399,10 @@ type reply struct {
 
 	// began is when its audio started, zero until it has (Replying).
 	began time.Time
+
+	// elsewhere is the reply being said by another player (playElsewhere), so this device's speaker
+	// plays none of it and the echo canceller has none of it to learn from (learnOverReply).
+	elsewhere bool
 }
 
 func newConversation(vs *esphome.VoiceSatellite) *conversation {
@@ -827,6 +849,30 @@ func (c *conversation) turnEvent(e event) {
 			c.reply.began = c.now()
 			Replying.Emit(Reply{Began: c.reply.began})
 		}
+		if e.elsewhere {
+			c.reply.elsewhere = true
+		}
+		c.learnOverReply()
+
+	case evTalkedOver:
+		// Somebody may be talking over the answer, whether or not the word goes on to stop it: from here
+		// to the end of the turn the canceller learns nothing more, so a second try is canceled by what it
+		// knew before the first. Not while listening, where somebody talking is the point and a near
+		// miss says nothing about the reply to come. A near miss is told some time after its peak, a
+		// little more than NearMissSettle (feature/detect), so one that peaked in the request itself can
+		// arrive once the turn is already thinking: e.at is when the word was said, its peak for a near
+		// miss, and a word said before the turn stopped listening is still the request.
+		if c.phase != phaseThinking && c.phase != phaseReplying {
+			return
+		}
+		if !e.at.IsZero() && e.at.Before(c.listenedTo) {
+			return
+		}
+		c.talkedOver = true
+		if c.learning {
+			slog.Info("echo canceller stops learning over the reply: a word was heard or nearly heard", "slot", c.slot+1)
+			c.setLearning(false)
+		}
 
 	case evCutOff:
 		// An announcement, or an alarm, took the speaker from the reply. Nothing else would end the
@@ -1240,7 +1286,11 @@ func (c *conversation) speakReply(url string, early bool) {
 	// A reply taken over by its url (a streamed one, or one fetched early) keeps when its audio began:
 	// the turn has had audio, and is told as ended whether or not the url's own audio came (Replying).
 	c.reply = reply{url: url, id: id, early: early, began: c.reply.began}
+	// A reply that takes over from another one learns from its own audio, not from the gap before it.
+	c.setLearning(false)
 	playing := func() { c.post(event{kind: evPlaying, reply: id}) }
+	// The same news for a reply another player took, which the canceller must not learn over.
+	elsewhere := func() { c.post(event{kind: evPlaying, reply: id, elsewhere: true}) }
 
 	c.showPhase(wakeword.ReplyingEffect(c.slot))
 	c.player.Sounding(true)
@@ -1249,7 +1299,7 @@ func (c *conversation) speakReply(url string, early bool) {
 	// audio, and the limit it was given when the device stopped listening goes on running until some
 	// of that audio turns up.
 	errand := func(ctx context.Context, p *speaker.Player) error {
-		if c.playElsewhere(ctx, url, playing) {
+		if c.playElsewhere(ctx, url, elsewhere) {
 			return nil
 		}
 		return c.play(ctx, url, playing, phone.RepliesIntoCall())
@@ -1344,6 +1394,11 @@ func (c *conversation) idle(why string, how activity.Ending) {
 		Replying.Emit(Reply{Began: c.reply.began, Ended: c.now(), Why: why})
 	}
 	c.reply = reply{}
+	// Before hold, which tells the canceller. A next turn already pending here keeps it frozen through the
+	// gap, whatever the reply was doing: an interruption, a turn Home Assistant asked for, a realtime
+	// follow-up. Any other follow-up is set only after idle (evPlayed), so the canceller is told to learn
+	// here and frozen again a moment later when that turn opens, as it always was.
+	c.learning, c.talkedOver = false, false
 	c.hold(c.pending != nil)
 
 	if was != phaseIdle {
@@ -1416,6 +1471,9 @@ func (c *conversation) showPhase(override string) {
 }
 
 func (c *conversation) enter(p phase) {
+	if c.phase == phaseListening && p != phaseListening {
+		c.listenedTo = c.now()
+	}
 	c.phase = p
 	c.visible.Store(int32(p))
 	c.shown.Phase = p.String()
@@ -1474,19 +1532,85 @@ func (c *conversation) clearPending() {
 // back. A turn is several sounds with listening in between, so it holds it across all of them
 // rather than one claim at a time.
 func (c *conversation) hold(on bool) {
-	if on == c.holding {
-		return
-	}
+	changed := on != c.holding
 	c.holding = on
 
-	// Ducked music keeps playing under the whole turn, so the echo canceller has a live reference while
-	// somebody is talking — which is the one thing an adaptive filter must not learn from. Stop it
-	// learning for the duration; it goes on canceling with what it already knows.
-	mic.Get().SetAdapting(!on)
+	// Told every time, not only on a change: idle has just put learning over the reply away, and a turn
+	// that goes on holding for the next one has to stop the canceller learning all the same.
+	c.adapt()
 
 	// Every background, not just the track: a room playing along with the rest of the house is also
 	// something a reply has to be heard over, and it is not the media player's to quieten.
-	speaker.Sound().Backgrounds().Duck("turn", on)
+	if changed {
+		speaker.Sound().Backgrounds().Duck("turn", on)
+	}
+}
+
+// setAdapting reaches the echo canceller; here so tests can stand in for it.
+var setAdapting = func(on bool) { mic.Get().SetAdapting(on) }
+
+// adapt tells the echo canceller whether to learn.
+//
+// Ducked music keeps playing under the whole turn, so the canceller has a live reference while somebody
+// is talking — which is the one thing an adaptive filter must not learn from. It stops learning for as
+// long as the turn holds the speaker, and goes on canceling with what it already knows.
+//
+// The exception is the reply, while it plays and nobody is known to be talking over it (learnOverReply).
+// Outside a turn it learns, as it always has.
+func (c *conversation) adapt() {
+	setAdapting(!c.holding || c.learning)
+}
+
+// setLearning starts or stops the canceller learning over the reply.
+func (c *conversation) setLearning(on bool) {
+	if on == c.learning {
+		return
+	}
+	c.learning = on
+	c.adapt()
+}
+
+// learnOverReply lets the built-in echo canceller learn while the reply plays, from its first audio.
+//
+// Frozen for the whole turn, the filter cancels a reply with whatever it last learned: nothing at all
+// after a restart, and an old room after the device or something near it moved. The reply is then echo
+// the filter cannot take out, and the stop word, the word people say over it, is judged on what is left.
+// While only the reply plays, nobody is being listened to: the request has been heard, and the
+// microphone opens again only when the reply is over. That is the stretch where learning is safe, and
+// it is long enough to matter — the filter takes 10 dB off within half a second (cancelMu in
+// hardware/mic).
+//
+// What it guards against is still the double talk the freeze is for: somebody saying the stop word or
+// a wake word over the reply. A word heard, nearly heard, or worth asking Home Assistant about ends the
+// learning for the rest of the turn (evTalkedOver), and a turn that is interrupted or ends goes back to
+// the freeze, or out of the turn, in idle. Before it is heard nothing can say somebody is talking, so a
+// first word over the reply is learned from while it is said: the learning bends a voice it hears
+// either way, and pausing it through the word measured no better over music (cancelMu in hardware/mic).
+//
+// Not for a reply another player says (playElsewhere): this speaker plays none of it, so the reference
+// holds at most the ducked music while the microphones hear a voice in the room it does not contain,
+// which is double talk for the whole reply. Not while a call is up, the microphones are somebody
+// else's or they are muted, either: a call is somebody talking by definition, and a muted microphone
+// hears no echo for the filter to learn. One of those arriving while the reply plays ends the learning
+// too (stopLearningIfBusy). WebRTC's canceller is not reached by any of this (mic.Source.SetAdapting).
+func (c *conversation) learnOverReply() {
+	if c.phase != phaseReplying || c.reply.elsewhere || c.learning || c.talkedOver || c.micBusy() {
+		return
+	}
+	// At Info, once per reply: the idle line's learned_s counts the canceller's whole run, which can
+	// start with music before the turn, so this is what says the reply itself was learned over.
+	slog.Info("echo canceller learning over the reply", "slot", c.slot+1)
+	c.setLearning(true)
+}
+
+// stopLearningIfBusy ends the learning over the reply once the microphones are cut, taken or on a
+// call, which learnOverReply only checks at the reply's first audio. It runs on evWatch, which the mute
+// switch posts on every change and the loop every second.
+func (c *conversation) stopLearningIfBusy() {
+	if c.learning && c.micBusy() {
+		slog.Info("echo canceller stops learning over the reply: the microphones are busy", "slot", c.slot+1)
+		c.setLearning(false)
+	}
 }
 
 // arm gives the current phase a limit; disarm removes it. Each phase sets its own, so a slow model

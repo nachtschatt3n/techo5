@@ -1501,6 +1501,19 @@ for a moment, whatever that setting says, so a second try is heard. The device's
 features the word is on, in the line `stop word listening` with `front=tflm` (`tflm` is the exact
 one, `zserge` the approximation).
 
+With **Microphone echo canceller** on **Built-in**, the canceller goes on learning the room while an
+answer plays on this device, from its first sound, where it used to stay frozen from the wake word to
+the end of the turn. It stops learning as soon as somebody may be talking over the answer: the stop
+word or a wake word heard or nearly heard, and whenever the device listens, as before. It doesn't
+learn over an answer during a call, with the microphones muted, or when **Replies play on** sends the
+answer to another speaker. **WebRTC** decides for itself when to learn and isn't changed. Whether
+this makes the stop word easier to hear over an answer hasn't been measured on a device yet. The log
+says `echo canceller learning over the reply` when an answer is learned over, and `echo canceller
+stops learning over the reply` when a word or the microphones stopped it. The `echo cancellation
+idle` line's `learned_s` counts all the sound the built-in canceller learned from since the speaker
+last went quiet, which includes music playing before the wake word, so on its own it can't tell an
+answer that was learned over from one that wasn't.
+
 **What was said, in Home Assistant.** The **Last wake word**, **Last heard** and **Last reply**
 sensors say which wake word started the last request, what the device heard and what it answered,
 for the logbook or a dashboard. Like any sensor, they go into Home Assistant's history, as plain text
