@@ -1137,7 +1137,8 @@ var uiEnglish = map[string]string{
 	// the Meals page when Mealie refuses the token.
 	"meals_token_refused": "Mealie refused the token. Check it on the setup page.",
 	// the Meals page when Mealie wants the https address.
-	"meals_use_https": "Use the https address on the setup page.",
+	"meals_use_https":  "Use the https address on the setup page.",
+	"meals_not_set_up": "Meals isn't set up",
 	// the note over Meals data that could not be refreshed: %s is the time it is from.
 	"meals_offline_as_of": "Offline, as of %s",
 	// the Retry button on the Meals page.
@@ -1507,6 +1508,8 @@ var uiTranslations = map[string]map[string]string{
 		"deck_pc_silent":                "%s no respon",
 		"deck_pc_unpaired":              "%s no està vinculat",
 		"deck_pc_key":                   "La clau de %s no coincideix",
+		"deck_nothing_playing":          "No s'està reproduint res",
+		"deck_screen_off":               "Això no està configurat en aquesta pantalla",
 		"minutes_before":                "%d minuts abans",
 		"month":                         "Mes",
 		"music":                         "Música",
@@ -2306,6 +2309,7 @@ var uiTranslations = map[string]map[string]string{
 		"meals_unreachable":   "No s'arriba a Mealie",
 		"meals_token_refused": "Mealie ha rebutjat el token. Comprova'l a la pàgina de configuració.",
 		"meals_use_https":     "Utilitza l'adreça https a la pàgina de configuració.",
+		"meals_not_set_up":    "Menjars no està configurat",
 		"meals_offline_as_of": "Sense connexió, des de les %s",
 		"meals_retry":         "Reintenta",
 		"meals_updated":       "actualitzat a les %s",
@@ -3444,7 +3448,8 @@ var uiTranslations = map[string]map[string]string{
 		// the Meals page when Mealie refuses the token.
 		"meals_token_refused": "Mealie ha rebutjat el token. Comprova'l a la pàgina de configuració.",
 		// the Meals page when Mealie wants the https address.
-		"meals_use_https": "Usa l'adreça https a la pàgina de configuració.",
+		"meals_use_https":  "Usa l'adreça https a la pàgina de configuració.",
+		"meals_not_set_up": "Menjars no està configurat",
 		// the note over Meals data that could not be refreshed: %s is the time it is from.
 		"meals_offline_as_of": "Sense connexió, des de les %s",
 		// the Retry button on the Meals page.
@@ -4639,7 +4644,8 @@ var uiTranslations = map[string]map[string]string{
 		// the Meals page when Mealie refuses the token.
 		"meals_token_refused": "Mealie rechazó el token. Revísalo en la página de configuración.",
 		// the Meals page when Mealie wants the https address.
-		"meals_use_https": "Usa la dirección https en la página de configuración.",
+		"meals_use_https":  "Usa la dirección https en la página de configuración.",
+		"meals_not_set_up": "Comidas no está configurado",
 		// the note over Meals data that could not be refreshed: %s is the time it is from.
 		"meals_offline_as_of": "Sin conexión, a las %s",
 		// the Retry button on the Meals page.
@@ -5829,7 +5835,8 @@ var uiTranslations = map[string]map[string]string{
 		// the Meals page when Mealie refuses the token.
 		"meals_token_refused": "Jeton refusé par Mealie. À vérifier sur la page de réglages.",
 		// the Meals page when Mealie wants the https address.
-		"meals_use_https": "Adresse https à saisir sur la page de réglages.",
+		"meals_use_https":  "Adresse https à saisir sur la page de réglages.",
+		"meals_not_set_up": "Repas n'est pas configuré",
 		// the note over Meals data that could not be refreshed: %s is the time it is from.
 		"meals_offline_as_of": "Hors ligne, à %s",
 		// the Retry button on the Meals page.
@@ -7015,7 +7022,8 @@ var uiTranslations = map[string]map[string]string{
 		// the Meals page when Mealie refuses the token.
 		"meals_token_refused": "Mealie rexeitou o token. Revísao na páxina de configuración.",
 		// the Meals page when Mealie wants the https address.
-		"meals_use_https": "Usa o enderezo https na páxina de configuración.",
+		"meals_use_https":  "Usa o enderezo https na páxina de configuración.",
+		"meals_not_set_up": "Comidas non está configurado",
 		// the note over Meals data that could not be refreshed: %s is the time it is from.
 		"meals_offline_as_of": "Sen conexión, ás %s",
 		// the Retry button on the Meals page.
@@ -8205,7 +8213,8 @@ var uiTranslations = map[string]map[string]string{
 		// the Meals page when Mealie refuses the token.
 		"meals_token_refused": "Mealie ha rifiutato il token. Controllalo nella pagina di configurazione.",
 		// the Meals page when Mealie wants the https address.
-		"meals_use_https": "Usa l'indirizzo https nella pagina di configurazione.",
+		"meals_use_https":  "Usa l'indirizzo https nella pagina di configurazione.",
+		"meals_not_set_up": "Pasti non è configurato",
 		// the note over Meals data that could not be refreshed: %s is the time it is from.
 		"meals_offline_as_of": "Offline, alle %s",
 		// the Retry button on the Meals page.
@@ -11223,7 +11232,8 @@ var uiTranslations = map[string]map[string]string{
 		// the Meals page when Mealie refuses the token.
 		"meals_token_refused": "Mealieがトークンを拒否しました。設定ページで確認してください。",
 		// the Meals page when Mealie wants the https address.
-		"meals_use_https": "設定ページでhttpsのアドレスを使ってください。",
+		"meals_use_https":  "設定ページでhttpsのアドレスを使ってください。",
+		"meals_not_set_up": "食事は設定されていません",
 		// the note over Meals data that could not be refreshed: %s is the time it is from.
 		"meals_offline_as_of": "オフライン（%s時点）",
 		// the Retry button on the Meals page.
@@ -13040,7 +13050,8 @@ var uiTranslations = map[string]map[string]string{
 		// the Meals page when Mealie refuses the token.
 		"meals_token_refused": "Mealie hat das Token abgelehnt. Prüfe es auf der Einrichtungsseite.",
 		// the Meals page when Mealie wants the https address.
-		"meals_use_https": "Auf der Einrichtungsseite die https-Adresse verwenden.",
+		"meals_use_https":  "Auf der Einrichtungsseite die https-Adresse verwenden.",
+		"meals_not_set_up": "Essen ist nicht eingerichtet",
 		// the note over Meals data that could not be refreshed: %s is the time it is from.
 		"meals_offline_as_of": "Offline, Stand %s",
 		// the Retry button on the Meals page.
@@ -14216,7 +14227,8 @@ var uiTranslations = map[string]map[string]string{
 		// the Meals page when Mealie refuses the token.
 		"meals_token_refused": "Mealie a refuzat tokenul. Verifică-l în pagina de configurare.",
 		// the Meals page when Mealie wants the https address.
-		"meals_use_https": "Folosește adresa https în pagina de configurare.",
+		"meals_use_https":  "Folosește adresa https în pagina de configurare.",
+		"meals_not_set_up": "Mese nu este configurat",
 		// the note over Meals data that could not be refreshed: %s is the time it is from.
 		"meals_offline_as_of": "Offline, la %s",
 		// the Retry button on the Meals page.
@@ -15407,7 +15419,8 @@ var uiTranslations = map[string]map[string]string{
 		// the Meals page when Mealie refuses the token.
 		"meals_token_refused": "Mealie belirteci reddetti. Kurulum sayfasında kontrol edin.",
 		// the Meals page when Mealie wants the https address.
-		"meals_use_https": "Kurulum sayfasında https adresini kullanın.",
+		"meals_use_https":  "Kurulum sayfasında https adresini kullanın.",
+		"meals_not_set_up": "Yemek ayarlanmadı",
 		// the note over Meals data that could not be refreshed: %s is the time it is from.
 		"meals_offline_as_of": "Çevrimdışı, saat %s",
 		// the Retry button on the Meals page.
@@ -15772,6 +15785,8 @@ var uiTranslations = map[string]map[string]string{
 		"deck_pc_silent":                "%s nie odpowiada",
 		"deck_pc_unpaired":              "%s nie jest sparowany",
 		"deck_pc_key":                   "Klucz dla %s się nie zgadza",
+		"deck_nothing_playing":          "Nic nie jest odtwarzane",
+		"deck_screen_off":               "Tego nie skonfigurowano na tym ekranie",
 		"minutes_before":                "%d min wcześniej",
 		"month":                         "Miesiąc",
 		"music":                         "Muzyka",
@@ -16562,5 +16577,50 @@ var uiTranslations = map[string]map[string]string{
 		"ui_this_tablet_has_no_settings_screen_to_open": "Ten tablet nie ma ekranu ustawień do otwarcia",
 		"tablet_apps":                                   "Aplikacje",
 		"ui_open_another_app_on_this_tablet":            "Otwórz inną aplikację na tym tablecie",
+		// meals: the Meals page, its switcher and its states.
+		"meals":                 "Posiłki",
+		"meals_shopping":        "Zakupy",
+		"meals_plan":            "Plan",
+		"meals_cooking":         "Gotowanie",
+		"meals_loading":         "Wczytywanie…",
+		"meals_unreachable":     "Mealie jest niedostępne",
+		"meals_token_refused":   "Mealie odrzuciło token. Sprawdź go na stronie konfiguracji.",
+		"meals_use_https":       "Użyj adresu https na stronie konfiguracji.",
+		"meals_not_set_up":      "Posiłki nie są skonfigurowane",
+		"meals_offline_as_of":   "Offline, stan z %s",
+		"meals_retry":           "Ponów",
+		"meals_updated":         "zaktualizowano %s",
+		"meals_shopping_list":   "Lista zakupów",
+		"meals_to_buy":          "Do kupienia: %d",
+		"meals_done_count":      "Gotowe (%d)",
+		"meals_nothing_to_buy":  "Nic do kupienia",
+		"meals_save_failed":     "Nie udało się zapisać, spróbuj ponownie",
+		"meals_undo":            "Cofnij",
+		"meals_this_week":       "Ten tydzień",
+		"meals_today":           "Dzisiaj",
+		"meals_tomorrow":        "Jutro",
+		"meals_breakfast":       "Śniadanie",
+		"meals_lunch":           "Obiad",
+		"meals_dinner":          "Kolacja",
+		"meals_side":            "Dodatek",
+		"meals_snack":           "Przekąska",
+		"meals_drink":           "Napój",
+		"meals_dessert":         "Deser",
+		"meals_nothing_planned": "Nic nie zaplanowano",
+		"meals_nothing_week":    "Nic nie zaplanowano na najbliższe 7 dni",
+		"meals_minutes":         "%d min",
+		"meals_hours":           "%d godz.",
+		"meals_hours_minutes":   "%d godz. %d min",
+		"meals_ingredients":     "Składniki",
+		"meals_ingredients_n":   "Składniki (%d)",
+		"meals_servings":        "Porcje: %s",
+		"meals_serving":         "Porcja: %s",
+		"meals_step_of":         "Krok %d z %d",
+		"meals_start":           "Start",
+		"meals_next":            "Dalej",
+		"meals_back":            "Wstecz",
+		"meals_finish":          "Zakończ",
+		"meals_recipe_gone":     "Tego przepisu nie ma już w Mealie",
+		"meals_not_scaled":      "Niektóre ilości nie są przeliczone",
 	},
 }
