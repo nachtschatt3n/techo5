@@ -10,11 +10,15 @@ import (
 // answered takes the open turn from listening, after listened, through a reply to the end of it, with
 // Home Assistant asking a question back when asks is set. Whatever follows the reply has opened, or not,
 // when it returns.
+//
+// The turn's own run starts first, as Home Assistant's does: a follow-up opens right after a reply, and
+// until its RUN_START comes what arrives is taken for the run before's and dropped (#776).
 func answered(t *testing.T, w *watcher, listened time.Duration, asks bool) {
 	t.Helper()
 	if w.phase != phaseListening {
 		t.Fatalf("no turn listening: %s", w.phase)
 	}
+	w.handle(event{kind: evRunStart})
 	w.at = w.at.Add(listened)
 	w.handle(event{kind: evHeard, text: "The kitchen."})
 	if asks {
