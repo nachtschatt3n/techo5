@@ -71,7 +71,7 @@ func stopRig(t *testing.T, r *floorRig) (*Engine, chan int) {
 		t.Fatalf("Use(0): %v", err)
 	}
 	told := make(chan int, 8)
-	e.OnNearMiss = func(slot int, _ float64) { told <- slot }
+	e.OnNearMiss = func(slot int, _ float64, _ time.Time) { told <- slot }
 	return e, told
 }
 
